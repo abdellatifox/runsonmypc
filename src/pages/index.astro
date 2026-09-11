@@ -695,7 +695,16 @@ const homeFaqSchema = {
     font-weight: 700;
     color: hsl(var(--hue) 70% 72%);
   }
-  .game-info h3 a { color: inherit; text-decoration: none; }
+  /* WCAG 2.2 wants a 24px target; the title link was 21px tall with a mouse.
+     The padding grows the hit area and the equal negative margin gives the
+     space back, so the card does not move. Touch devices get 40px below. */
+  .game-info h3 a {
+    color: inherit;
+    text-decoration: none;
+    display: inline-block;
+    padding-block: 4px;   /* 17.6px line + 8px = 25.6px */
+    margin-block: -4px;
+  }
   .game-info h3 a:hover { color: var(--accent); }
   /* --------------------------------------------------------------------------
      Homepage responsive layer.

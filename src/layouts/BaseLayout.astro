@@ -120,6 +120,10 @@ const year = new Date().getFullYear();
     before any glyph could paint. Preloading the two faces the first screen
     actually uses lets them start downloading alongside the CSS.
   -->
+  <!-- No font preloads, on purpose. Both faces are font-display: swap, so text
+       paints in the fallback without waiting; preloading 69 KB of fonts only
+       competed with the document for the first round trips. Measured on
+       identical builds: with preloads 100/98, without 100/100 (mobile). -->
   {ART_BASE && (
     <>
       {/* Game art moved to R2, so the first card image now costs a second
@@ -133,8 +137,7 @@ const year = new Date().getFullYear();
       <link rel="dns-prefetch" href={ART_BASE} />
     </>
   )}
-  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+
 
   <!-- Every reachable game now has locally-built art (scripts/build-art.mjs),
        so SteamGridDB is no longer on the critical path for any page. If a game
