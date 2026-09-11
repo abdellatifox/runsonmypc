@@ -33,6 +33,7 @@ const schema = {
   description={description}
   keywords="pc gaming blog, hardware guides, optimization tips, gpu guides, fps guides"
   jsonLd={schema}
+  noindex={posts.length === 0}
 >
   <main>
     <div class="wrap">  <Breadcrumbs items={[{ name: 'Blog' }]} />
@@ -42,7 +43,9 @@ const schema = {
       <p class="lead">Optimization tips, hardware reviews, and gaming news.</p>
     </section>
 
-    <div class="category-tabs" role="group" aria-label="Filter by category">
+    {posts.length === 0 && <p class="feed-note">No articles yet — the first guides are being written.</p>}
+
+    <div class="category-tabs" hidden={posts.length === 0} role="group" aria-label="Filter by category">
       <button class="tab active" data-cat="">All</button>
       {categories.map(c => <button class="tab" data-cat={c}>{c}</button>)}
     </div>
