@@ -18,6 +18,11 @@ npm run dev        # http://localhost:4321
 npm run build
 ```
 
+## Design
+
+All colours, fonts and radii are tokens at the top of `src/styles/global.css`.
+Pages use the tokens (`var(--accent)`, `rgb(var(--accent-rgb) / .1)`), never literals.
+
 ## Identity
 
 Domain, brand, contact address and fetcher User-Agent live only in
@@ -32,8 +37,8 @@ Domain, brand, contact address and fetcher User-Agent live only in
 | 02 Keywords | waiting on SEMrush API units |
 | 04 Repo | local git; no GitHub remote yet |
 | 05 Cloudflare | not started — `wrangler.toml` ids are placeholders |
-| 07 Design | not started — still PCGameFit's look |
-| 08 Brand assets | not started — no favicon, logo or share cards yet |
+| 07 Design | first pass done — violet/cyan instrument-panel look, new homepage; inner page layouts still PCGameFit's |
+| 08 Brand assets | mark (BrandMark.astro) + SVG favicon done; PNG icons, manifest icons and share cards not yet |
 
 Known leftovers to clear in phase 06: `migrations/0002–0004` and the
 `gpus`/`cpus`/`games` in `src/lib/fallback-data.json` are PCGameFit's old
