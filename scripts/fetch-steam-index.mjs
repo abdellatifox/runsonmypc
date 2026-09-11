@@ -10,10 +10,11 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { USER_AGENT } from '../src/lib/site.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'data', 'steam-index.json');
-const UA = { 'User-Agent': 'PCGameFit/1.0 (+https://pcgamefit.com)' };
+const UA = { 'User-Agent': USER_AGENT };
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

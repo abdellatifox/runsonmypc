@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Autocomplete from '../components/Autocomplete.astro';
 import Icon from '../components/Icon.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const RES_OPTIONS = [
   { label: '1080p (1920 × 1080)', value: '1080p' },
@@ -52,7 +52,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="FPS Calculator — Estimate Your Frame Rate | PCGameFit"
+  title={`FPS Calculator — Estimate Your Frame Rate | ${SITE_NAME}`}
   description="Estimate the frame rate your PC will reach in any game at 1080p, 1440p or 4K, based on the publisher's own stated requirements."
   keywords="fps calculator, frame rate estimator, how many fps will i get, calculate frame rate, fps predictor"
   jsonLd={schema}

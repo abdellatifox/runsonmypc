@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGpus } from '../lib/db';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const gpus = await getGpus(Astro.locals);
 const brands = [...new Set(gpus.map(g => g.brand))].sort();
@@ -29,7 +29,7 @@ const schema = {
 };
 ---
 <BaseLayout
-  title={`GPU Database — ${gpus.length} Graphics Cards Ranked | PCGameFit`}
+  title={`GPU Database — ${gpus.length} Graphics Cards Ranked | ${SITE_NAME}`}
   description={description}
   keywords="gpu database, graphics card list, gpu comparison, gpu specs, vram, gpu benchmark ranking"
   jsonLd={schema}

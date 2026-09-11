@@ -1,4 +1,4 @@
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getPosts } from '../lib/db';
@@ -20,7 +20,7 @@ export const GET: APIRoute = async (context) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>PCGameFit Blog</title>
+    <title>${SITE_NAME} Blog</title>
     <link>${SITE_URL}/blog</link>
     <description>PC gaming guides, hardware benchmarks and system requirement breakdowns.</description>
     <language>en</language>

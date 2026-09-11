@@ -1,5 +1,5 @@
 /**
- * Uploads public/art/ to the pcgamefit-assets R2 bucket.
+ * Uploads public/art/ to the runsonmypc-assets R2 bucket.
  *
  * wrangler has no bulk upload, and one `r2 object put` costs ~4s of process
  * startup, so this fans out N at a time against wrangler's own entry point
@@ -18,7 +18,7 @@ import { spawn } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WRANGLER = path.join(ROOT, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
-const BUCKET = 'pcgamefit-assets';
+const BUCKET = 'runsonmypc-assets';
 const STATE = path.join(ROOT, 'src', 'lib', 'r2-uploaded.json');
 
 const arg = (name, fallback) => {

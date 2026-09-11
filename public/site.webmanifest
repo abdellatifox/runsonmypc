@@ -1,7 +1,7 @@
 {
-  "name": "PCGameFit — PC Game Compatibility Checker",
-  "short_name": "PCGameFit",
-  "description": "Check if your PC can run any game. Free FPS, bottleneck and hardware tools.",
+  "name": "RunsOnMyPC — Will This Game Run on My PC?",
+  "short_name": "RunsOnMyPC",
+  "description": "Check if a game runs on your PC against its publisher-stated requirements. Free FPS, bottleneck and hardware tools.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090A0F",

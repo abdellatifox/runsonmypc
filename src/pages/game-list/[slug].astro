@@ -6,7 +6,7 @@ import GameCard from '../../components/GameCard.astro';
 import { getGames } from '../../lib/db';
 import { GAME_LISTS } from '../../lib/site-data';
 import Icon from '../../components/Icon.astro';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const { slug } = Astro.params;
 const list = GAME_LISTS.find(l => l.slug === slug);
@@ -33,7 +33,7 @@ const coverage = list.featureBased
 
 const others = GAME_LISTS.filter(l => l.slug !== slug);
 
-const title = `${list.h1} | PCGameFit`;
+const title = `${list.h1} | ${SITE_NAME}`;
 const description = `${list.blurb.slice(0, 155).trim()}`;
 
 const schema = [

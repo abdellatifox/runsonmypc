@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getCpus } from '../lib/db';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 /* Reads the same table as /cpus and /cpu/[slug]; the page used to keep its own
    hardcoded list of chip names with no scores behind them. */
@@ -79,7 +79,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title={`CPU Tier List ${year} — ${cpus.length} Gaming CPUs Ranked | PCGameFit`}
+  title={`CPU Tier List ${year} — ${cpus.length} Gaming CPUs Ranked | ${SITE_NAME}`}
   description={description}
   keywords="cpu tier list, top rated cpus, best gaming cpu 2026, processor ranking, cpu hierarchy, amd vs intel gaming"
   jsonLd={schema}

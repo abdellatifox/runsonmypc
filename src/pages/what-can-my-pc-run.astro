@@ -5,7 +5,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Autocomplete from '../components/Autocomplete.astro';
 import Icon from '../components/Icon.astro';
 import { bundledCount } from '../lib/game-reqs';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const bundled = bundledCount();
 
@@ -49,7 +49,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="What Can My PC Run? — Find Compatible Games | PCGameFit"
+  title={`What Can My PC Run? — Find Compatible Games | ${SITE_NAME}`}
   description="What will my PC run? Enter your specs once and see every game your machine handles, and at which settings — Ultra, High or Medium — checked against real published requirements."
   keywords="what can my pc run, what will my pc run, what games can my pc run, compatible games for my pc, pc game compatibility"
   jsonLd={schema}

@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getCpus } from '../lib/db';
 import Icon from '../components/Icon.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const cpus = await getCpus(Astro.locals);
 
@@ -19,8 +19,8 @@ const pct = paired ? Math.round((Math.abs(diff) / Math.min(a!.score, b!.score)) 
 const winner = paired ? (diff > 0 ? a! : diff < 0 ? b! : null) : null;
 
 const title = paired
-  ? `${a!.name} vs ${b!.name} — Which CPU Is Better for Gaming? | PCGameFit`
-  : 'CPU Comparison Tool — Compare Processors | PCGameFit';
+  ? `${a!.name} vs ${b!.name} — Which CPU Is Better for Gaming? | ${SITE_NAME}`
+  : `CPU Comparison Tool — Compare Processors | ${SITE_NAME}`;
 
 const description = paired
   ? `${a!.name} vs ${b!.name}: ${winner ? `the ${winner.name} is about ${pct}% faster for gaming` : 'both chips score identically'}. Cores, threads, clocks, TDP and tier compared side by side.`

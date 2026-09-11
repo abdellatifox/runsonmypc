@@ -17,6 +17,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { SITE_NAME, SITE_DOMAIN } from '../src/lib/site.ts';
+
+const TLD = SITE_DOMAIN.split('.').pop();
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public', 'covers');
@@ -118,7 +121,7 @@ function cover({ title, category, kicker, slug }) {
     </text>
     <text font-size="${fontSize}" font-weight="800" fill="#F2F5F9" letter-spacing="-1">${tspans}</text>
     <text x="80" y="${H - 62}" font-size="27" font-weight="600" fill="#7E8796">
-      PCGameFit<tspan fill="${t.a}">.com</tspan>
+      ${esc(SITE_NAME)}<tspan fill="${t.a}">.${TLD}</tspan>
     </text>
   </g>
 </svg>`;
@@ -162,7 +165,7 @@ function banner({ category, kicker, slug }) {
 
 /** The share card used by any page that has no image of its own. */
 function brandCard() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="PCGameFit">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(SITE_NAME)}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#121A0B"/>
@@ -181,7 +184,7 @@ function brandCard() {
     <text x="80" y="286" font-size="86" font-weight="800" fill="#F2F5F9" letter-spacing="-2">Can your PC</text>
     <text x="80" y="382" font-size="86" font-weight="800" fill="#B6FF00" letter-spacing="-2">run that game?</text>
     <text x="80" y="470" font-size="30" fill="#98A1AE">Publisher-stated requirements, checked against your parts.</text>
-    <text x="80" y="${H - 62}" font-size="27" font-weight="600" fill="#7E8796">PCGameFit<tspan fill="#B6FF00">.com</tspan></text>
+    <text x="80" y="${H - 62}" font-size="27" font-weight="600" fill="#7E8796">${esc(SITE_NAME)}<tspan fill="#B6FF00">.${TLD}</tspan></text>
   </g>
 </svg>`;
 }

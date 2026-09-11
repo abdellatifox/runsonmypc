@@ -4,9 +4,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { TOOLS } from '../lib/site-data';
 import Icon from '../components/Icon.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
-const description = `All ${TOOLS.length} PCGameFit tools in one place — compatibility checks, FPS estimates, bottleneck analysis, tier lists and PSU sizing. Free, no download.`;
+const description = `All ${TOOLS.length} ${SITE_NAME} tools in one place — compatibility checks, FPS estimates, bottleneck analysis, tier lists and PSU sizing. Free, no download.`;
 
 const schema = [
   {
@@ -29,7 +29,7 @@ const schema = [
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "PCGameFit PC Toolkit",
+    "name": `${SITE_NAME} PC Toolkit`,
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any (web browser)",
     "url": `${SITE_URL}/tools`,
@@ -38,7 +38,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="Free PC Gaming Tools & Calculators | PCGameFit"
+  title={`Free PC Gaming Tools & Calculators | ${SITE_NAME}`}
   description={description}
   keywords="pc gaming tools, fps calculator, bottleneck calculator, psu calculator, gpu tier list, build suggester"
   jsonLd={schema}

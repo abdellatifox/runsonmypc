@@ -44,7 +44,7 @@ export const POST: APIRoute = async (context) => {
     const res = ['1080p', '1440p', '4k'].includes(body.resolution) ? body.resolution : '1080p';
     const preset = ['low', 'medium', 'high', 'ultra'].includes(body.preset) ? body.preset : 'high';
 
-    const kv = (context.locals as any).runtime?.env?.PGF_KV;
+    const kv = (context.locals as any).runtime?.env?.TOOLS_KV;
     const [reqs, gpu, cpu] = await Promise.all([
       getRequirements(String(body.game ?? ''), kv),
       getGpu(context.locals, String(body.gpu ?? '')),

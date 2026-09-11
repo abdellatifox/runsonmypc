@@ -5,7 +5,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Autocomplete from '../components/Autocomplete.astro';
 import { bundledCount } from '../lib/game-reqs';
 import Icon from '../components/Icon.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const preselectGame = Astro.url.searchParams.get('game') ?? '';
 const bundled = bundledCount();
@@ -65,7 +65,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="Can I Run It? — Check Any PC Game | PCGameFit"
+  title={`Can I Run It? — Check Any PC Game | ${SITE_NAME}`}
   description="Will it run? Check any PC game against your graphics card, processor and memory using the publisher's own stated requirements. Free, instant, no download."
   keywords="can i run it, will it run, will my pc run this game, can my pc run it, system requirements checker, can my pc run this game, pc game requirements"
   jsonLd={schema}

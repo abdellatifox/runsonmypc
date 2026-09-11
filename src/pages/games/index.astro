@@ -6,7 +6,7 @@ import GameCard from '../../components/GameCard.astro';
 import { getGames } from '../../lib/db';
 import { GAME_LISTS } from '../../lib/site-data';
 import Icon from '../../components/Icon.astro';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const games = await getGames(Astro.locals);
 const q = (Astro.url.searchParams.get('q') || '').trim();
@@ -18,8 +18,8 @@ const filtered = q
 const genres = [...new Set(games.map(g => g.genre).filter(Boolean))].sort();
 
 const title = q
-  ? `PC Games Matching "${q}" — System Requirements | PCGameFit`
-  : `PC Game System Requirements — ${games.length} Games | PCGameFit`;
+  ? `PC Games Matching "${q}" — System Requirements | ${SITE_NAME}`
+  : `PC Game System Requirements — ${games.length} Games | ${SITE_NAME}`;
 
 const description = q
   ? `Search results for "${q}". Minimum and recommended PC system requirements, with an instant can-I-run-it check for every title.`

@@ -8,8 +8,8 @@ type R2Bucket = import('@cloudflare/workers-types').R2Bucket;
 
 interface CloudflareEnv {
   DB: D1Database;
-  PGF_KV: KVNamespace;
-  PGF_R2: R2Bucket;
+  TOOLS_KV: KVNamespace;
+  ART_R2: R2Bucket;
 }
 
 declare namespace App {

@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGpus } from '../lib/db';
 import Icon from '../components/Icon.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 /* Previously this page carried its own hardcoded copy of the GPU table, which
    had drifted out of sync with the database — the RTX 4070 was listed at 71
@@ -84,7 +84,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title={`GPU Tier List ${year} — All ${gpus.length} Graphics Cards Ranked | PCGameFit`}
+  title={`GPU Tier List ${year} — All ${gpus.length} Graphics Cards Ranked | ${SITE_NAME}`}
   description={description}
   keywords="gpu tier list, best graphics card, graphics card ranking, best gpu 2026, gpu hierarchy, graphics card tier list"
   jsonLd={schema}

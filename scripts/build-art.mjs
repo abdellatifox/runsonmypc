@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 import { isExcludedGame } from '../data/excluded-games.mjs';
+import { USER_AGENT } from '../src/lib/site.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public', 'art');
@@ -43,7 +44,7 @@ const WIDTHS = [
   { w: 480, avif: 46, webp: 73 },
   { w: 640, avif: 50, webp: 76 }
 ];
-const UA = { 'User-Agent': 'PCGameFit/1.0 (+https://pcgamefit.com)' };
+const UA = { 'User-Agent': USER_AGENT };
 
 fs.mkdirSync(OUT, { recursive: true });
 

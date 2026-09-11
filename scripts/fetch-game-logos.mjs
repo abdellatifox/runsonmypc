@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isExcludedGame } from '../data/excluded-games.mjs';
+import { USER_AGENT } from '../src/lib/site.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const KEY = process.env.SGDB_API_KEY;
@@ -21,7 +22,7 @@ if (!KEY) {
   console.error('Set SGDB_API_KEY before running this script (SteamGridDB API key).');
   process.exit(1);
 }
-const H = { Authorization: `Bearer ${KEY}`, 'User-Agent': 'PCGameFit/1.0' };
+const H = { Authorization: `Bearer ${KEY}`, 'User-Agent': USER_AGENT };
 
 const REQS = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'lib', 'game-reqs.json'), 'utf8'));
 const ART_PATH = path.join(ROOT, 'src', 'lib', 'game-art.json');

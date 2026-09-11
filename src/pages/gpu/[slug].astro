@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getGpu, getGpus, getGames } from '../../lib/db';
 import { estimateFps } from '../../lib/perf';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const { slug } = Astro.params;
 const gpu = await getGpu(Astro.locals, slug!);
@@ -61,7 +61,7 @@ const upscalers = [
   gpu.supports_xess && 'XeSS'
 ].filter(Boolean) as string[];
 
-const title = `${gpu.name} — Benchmarks & FPS | PCGameFit`;
+const title = `${gpu.name} — Benchmarks & FPS | ${SITE_NAME}`;
 const description = `${gpu.name}: ${gpu.vram_gb}GB VRAM, ${gpu.tdp_watts}W, score ${gpu.score}/100 (tier ${gpu.tier}). Best at ${resVerdict}, with estimated FPS in ${showcase.length} demanding games.`;
 
 const schema = [

@@ -101,7 +101,7 @@ export const POST: APIRoute = async (context) => {
       );
     }
 
-    const kv = (context.locals as any).runtime?.env?.PGF_KV;
+    const kv = (context.locals as any).runtime?.env?.TOOLS_KV;
     const [reqs, gpu, cpu] = await Promise.all([
       getRequirements(String(game), kv),
       getGpu(context.locals, String(gpuSlug)),

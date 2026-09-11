@@ -1,52 +1,48 @@
-name = "pcgamefit"
+name = "runsonmypc"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 # --------------------------------------------------------------------------
-# The ids below are placeholders. Deployment will fail until each is replaced
-# with a real resource id. Create them with:
+# The ids below are placeholders until phase 05 creates the resources. Run
+# `npx wrangler whoami` first and confirm it is this site's account — never
+# the PCGameFit account's resources and never anything named critvolt-*.
 #
-#   npx wrangler d1 create pcgamefit-db
-#   npx wrangler kv namespace create PGF_KV
-#   npx wrangler kv namespace create SESSION
-#   npx wrangler r2 bucket create pcgamefit-assets
+#   npx wrangler d1 create runsonmypc-db
+#   npx wrangler kv namespace create runsonmypc-tools
+#   npx wrangler kv namespace create runsonmypc-session
 #
 # then paste the ids each command prints into the matching field.
 #
 # The site degrades gracefully without them: src/lib/db.ts falls back to the
-# rows baked out of migrations/, so pages still render. D1 is what makes the
-# content editable without a redeploy.
+# bundled rows, and the tool APIs skip the cache when TOOLS_KV is missing.
 # --------------------------------------------------------------------------
 
 [[d1_databases]]
 binding = "DB"
-database_name = "pcgamefit-db"
-database_id = "f9cf287b-051c-440c-93ee-4b468a0cf503"
+database_name = "runsonmypc-db"
+database_id = "REPLACE_WITH_D1_ID"
 migrations_dir = "migrations"
 
-# Caches autocomplete results. Optional: the search APIs skip the cache and
-# query directly when this namespace is missing or erroring.
+# Caches tool and autocomplete results. Optional: the APIs query directly when
+# this namespace is missing or erroring.
 [[kv_namespaces]]
-binding = "PGF_KV"
-id = "cabbc2ee9b044d52ab4a5acc184bc3d0"
+binding = "TOOLS_KV"
+id = "REPLACE_WITH_TOOLS_KV_ID"
 
 # Required by @astrojs/cloudflare's session support. Without it the build
 # warns "Invalid binding `SESSION`".
 [[kv_namespaces]]
 binding = "SESSION"
-id = "a9f50da3521746b79875f04e18d7bb08"
+id = "REPLACE_WITH_SESSION_KV_ID"
 
-# R2 is enabled on this account but deliberately unused. Game art (2,862 files,
-# 56 MB) ships as Pages static assets instead: Pages serves them from the same
-# Cloudflare edge with no egress cost and without invoking a Worker, which is
-# both faster and cheaper than proxying R2.
+# R2 is deliberately unused. Game art ships as Pages static assets, which the
+# same edge serves with no egress cost and no Worker invocation.
 #
-# Revisit when the art set approaches Pages' 20,000-file cap. At 5.9 files per
-# game that is roughly 3,300 games; the catalogue is 489 today, so there is
-# headroom for ~2,800 more. Past that, move public/art/ to R2 behind
-# cdn.pcgamefit.com and point getArtSources() at it.
+# Revisit near Pages' 20,000-file cap (~5.9 files per game, so ~3,300 games).
+# Before switching: create a Cache Rule for the CDN hostname (R2 custom-domain
+# traffic is not edge-cached without one), then set ART_BASE in src/lib/site.ts.
 #
 # [[r2_buckets]]
-# binding = "PGF_R2"
-# bucket_name = "pcgamefit-assets"
+# binding = "ART_R2"
+# bucket_name = "runsonmypc-assets"

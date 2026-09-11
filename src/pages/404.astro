@@ -1,4 +1,5 @@
 ---
+import { SITE_NAME } from '../lib/site';
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { TOOLS } from '../lib/site-data';
@@ -7,7 +8,7 @@ import Icon from '../components/Icon.astro';
 const popular = TOOLS.slice(0, 6);
 ---
 <BaseLayout
-  title="Page Not Found (404) | PCGameFit"
+  title={`Page Not Found (404) | ${SITE_NAME}`}
   description="That page does not exist. Jump back to the game database, the hardware tier lists, or any of our free PC gaming tools."
   noindex={true}
 >

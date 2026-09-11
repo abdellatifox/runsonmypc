@@ -3,17 +3,17 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Icon from '../components/Icon.astro';
-import { SITE_URL, CONTACT_EMAIL } from '../lib/site';
+import { SITE_URL, CONTACT_EMAIL, SITE_NAME } from '../lib/site';
 
 const EMAIL = CONTACT_EMAIL;
 ---
 <BaseLayout
-  title="Contact Us | PCGameFit"
-  description="Get in touch with PCGameFit — report a data error, suggest a game or GPU to add, ask about our methodology, or raise a partnership enquiry."
+  title={`Contact Us | ${SITE_NAME}`}
+  description={`Get in touch with ${SITE_NAME} — report a data error, suggest a game or GPU to add, ask about our methodology, or raise a partnership enquiry.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": "Contact PCGameFit",
+    "name": `Contact ${SITE_NAME}`,
     "url": `${SITE_URL}/contact`,
     "mainEntity": {
       "@id": `${SITE_URL}/#organization`

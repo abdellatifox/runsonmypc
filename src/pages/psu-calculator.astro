@@ -1,10 +1,11 @@
 ---
+import { SITE_NAME } from '../lib/site';
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 ---
 <BaseLayout
-  title="PSU Calculator — What Wattage PSU Do I Need? | PCGameFit"
+  title={`PSU Calculator — What Wattage PSU Do I Need? | ${SITE_NAME}`}
   description="Size your power supply correctly. Pick your GPU, CPU and drives to get a recommended wattage with proper transient and efficiency headroom."
   keywords="psu calculator, power supply wattage, what psu do i need, pc power consumption"
 >

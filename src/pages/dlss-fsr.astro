@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGames, getGpus } from '../lib/db';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const [games, gpus] = await Promise.all([getGames(Astro.locals), getGpus(Astro.locals)]);
 
@@ -54,7 +54,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="DLSS vs FSR — Which Upscaler Should You Use? | PCGameFit"
+  title={`DLSS vs FSR — Which Upscaler Should You Use? | ${SITE_NAME}`}
   description={description}
   keywords="dlss vs fsr, dlss or fsr, upscaling comparison, fsr quality mode, dlss performance uplift"
   jsonLd={schema}

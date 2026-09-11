@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getCpus } from '../lib/db';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const cpus = await getCpus(Astro.locals);
 const brands = [...new Set(cpus.map(c => c.brand))].sort();
@@ -29,7 +29,7 @@ const schema = {
 };
 ---
 <BaseLayout
-  title={`CPU Database — All ${cpus.length} Gaming Processors Ranked | PCGameFit`}
+  title={`CPU Database — All ${cpus.length} Gaming Processors Ranked | ${SITE_NAME}`}
   description={description}
   keywords="cpu database, processor list, gaming cpu ranking, intel vs amd, cpu specs, cpu comparison"
   jsonLd={schema}

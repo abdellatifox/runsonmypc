@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPost, getPosts } from '../../lib/db';
 import { getPostCover } from '../../lib/images';
 import Icon from '../../components/Icon.astro';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const { slug } = Astro.params;
 const post = await getPost(Astro.locals, slug!);
@@ -38,7 +38,7 @@ const shareImg = `${SITE_URL}${cover.png}`;
 const published = post.published_at || new Date().toISOString();
 const readTime = typeof post.read_time === 'number' ? `${post.read_time} min read` : (post.read_time || '5 min read');
 
-const description = post.excerpt || `${post.title} — a guide from PCGameFit.`;
+const description = post.excerpt || `${post.title} — a guide from ${SITE_NAME}.`;
 
 const schema = {
   "@context": "https://schema.org",
@@ -49,21 +49,21 @@ const schema = {
   "url": `${SITE_URL}/blog/${post.slug}`,
   "mainEntityOfPage": { "@type": "WebPage", "@id": `${SITE_URL}/blog/${post.slug}` },
   "articleSection": post.category,
-  "author": { "@type": "Organization", "name": post.author || "PCGameFit Team", "url": `${SITE_URL}/about` },
+  "author": { "@type": "Organization", "name": post.author || `${SITE_NAME} Team`, "url": `${SITE_URL}/about` },
   "publisher": { "@id": `${SITE_URL}/#organization` },
   "datePublished": published,
   "dateModified": published
 };
 ---
 <BaseLayout
-  title={`${post.title} | PCGameFit`}
+  title={`${post.title} | ${SITE_NAME}`}
   description={description}
   ogImage={shareImg}
   ogType="article"
   jsonLd={schema}
   publishedAt={published}
   modifiedAt={published}
-  author={post.author || 'PCGameFit Team'}
+  author={post.author || `${SITE_NAME} Team`}
   keywords={`${post.category?.toLowerCase() || 'pc gaming'}, ${post.title.toLowerCase()}`}
 >
   <main>
@@ -76,7 +76,7 @@ const schema = {
         <span class="badge">{post.category}</span>
         <h1>{post.title}</h1>
         <div class="meta">
-          <span>By {post.author || 'PCGameFit Team'}</span> &bull;
+          <span>By {post.author || `${SITE_NAME} Team`}</span> &bull;
           <span>{new Date(post.published_at).toLocaleDateString()}</span> &bull;
           <span>{readTime}</span>
         </div>

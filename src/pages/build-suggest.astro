@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGpus, getCpus } from '../lib/db';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 
 const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 
@@ -60,7 +60,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title="Gaming PC Build Suggester by Budget | PCGameFit"
+  title={`Gaming PC Build Suggester by Budget | ${SITE_NAME}`}
   description={description}
   keywords="gaming pc build, pc parts list, build a gaming pc, pc builder by budget, 1440p gaming pc build"
   jsonLd={schema}

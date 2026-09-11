@@ -1,4 +1,4 @@
-import { SITE_URL } from './site';
+import { SITE_URL, USER_AGENT } from './site';
 /**
  * Runtime access to real, publisher-stated PC requirements.
  *
@@ -91,7 +91,7 @@ export async function fetchLive(appid: number): Promise<GameReqs | null> {
   try {
     const r = await fetch(
       `https://store.steampowered.com/api/appdetails?appids=${appid}&l=english`,
-      { headers: { 'User-Agent': 'PCGameFit/1.0 (+${SITE_URL})' } }
+      { headers: { 'User-Agent': USER_AGENT } }
     );
     if (!r.ok) return null;
     const j: any = await r.json();

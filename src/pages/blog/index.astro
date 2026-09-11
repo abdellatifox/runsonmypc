@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getPosts } from '../../lib/db';
 import { getPostCover } from '../../lib/images';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const posts = await getPosts(Astro.locals);
 const categories = [...new Set(posts.map(p => p.category).filter(Boolean))].sort();
@@ -14,7 +14,7 @@ const description = `PC gaming guides, hardware breakdowns and optimisation walk
 const schema = {
   "@context": "https://schema.org",
   "@type": "Blog",
-  "name": "PCGameFit Blog",
+  "name": `${SITE_NAME} Blog`,
   "description": description,
   "url": `${SITE_URL}/blog`,
   "publisher": { "@id": `${SITE_URL}/#organization` },
@@ -24,12 +24,12 @@ const schema = {
     "url": `${SITE_URL}/blog/${p.slug}`,
     "datePublished": p.published_at,
     "articleSection": p.category,
-    "author": { "@type": "Organization", "name": p.author || "PCGameFit Team" }
+    "author": { "@type": "Organization", "name": p.author || `${SITE_NAME} Team` }
   }))
 };
 ---
 <BaseLayout
-  title="PC Gaming Guides & Hardware Blog | PCGameFit"
+  title={`PC Gaming Guides & Hardware Blog | ${SITE_NAME}`}
   description={description}
   keywords="pc gaming blog, hardware guides, optimization tips, gpu guides, fps guides"
   jsonLd={schema}

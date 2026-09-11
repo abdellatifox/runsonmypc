@@ -1,5 +1,5 @@
 {
-  "name": "pcgamefit",
+  "name": "runsonmypc",
   "type": "module",
   "version": "1.0.0",
   "scripts": {
@@ -7,8 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "deploy": "wrangler pages deploy dist",
-    "db:migrate": "wrangler d1 migrations apply pcgamefit-db --remote",
-    "db:migrate:local": "wrangler d1 migrations apply pcgamefit-db --local",
+    "db:migrate": "wrangler d1 migrations apply runsonmypc-db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply runsonmypc-db --local",
     "data:index": "node scripts/fetch-steam-index.mjs",
     "data:reqs": "node scripts/fetch-steam-requirements.mjs",
     "data:hardware": "node scripts/build-hardware.mjs",

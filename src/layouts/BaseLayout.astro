@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
 import Icon from '../components/Icon.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, ART_BASE } from '../lib/site';
+import { SITE_URL, SITE_NAME, ART_BASE } from '../lib/site';
 
 interface Props {
   title: string;
@@ -19,7 +19,6 @@ interface Props {
   modifiedAt?: string;
   author?: string;
 }
-const SITE_NAME = 'PCGameFit';
 
 const {
   title,
@@ -154,7 +153,7 @@ const year = new Date().getFullYear();
   <link rel="manifest" href="/site.webmanifest">
 
   <!-- Feeds -->
-  <link rel="alternate" type="application/rss+xml" title="PCGameFit Blog" href="/rss.xml">
+  <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} Blog`} href="/rss.xml">
 
   <!-- JSON-LD -->
   {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)}></script>)}
@@ -177,7 +176,7 @@ const year = new Date().getFullYear();
       <div class="foot-inner">
         <div class="brand">
           <div class="icon"><Icon name="controller" /></div>
-          <b>PCGameFit</b>
+          <b>{SITE_NAME}</b>
         </div>
       </div>
 
@@ -223,7 +222,7 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="divider" style="margin: 20px 0;"></div>
-      <small>&copy; {year} PCGameFit.com. All rights reserved. Independent PC hardware &amp; game performance resource.</small>
+      <small>&copy; {year} {SITE_NAME}. All rights reserved. Independent PC hardware &amp; game performance resource.</small>
     </div>
   </footer>
 

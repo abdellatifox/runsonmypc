@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getCpu, getCpus, getGames } from '../../lib/db';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const { slug } = Astro.params;
 const cpu = await getCpu(Astro.locals, slug!);
@@ -45,7 +45,7 @@ const verdict =
   : cpu.score >= 40 ? 'an entry-level gaming processor that will bottleneck faster GPUs in CPU-heavy titles'
   : 'a dated processor that limits performance in most modern titles';
 
-const title = `${cpu.name} — Gaming Benchmarks & Specs | PCGameFit`;
+const title = `${cpu.name} — Gaming Benchmarks & Specs | ${SITE_NAME}`;
 const description = `${cpu.name} review and specs: ${cpu.cores} cores, ${cpu.threads} threads, up to ${cpu.boost_ghz} GHz. Performance score ${cpu.score}/100, tier ${cpu.tier}. See which games it runs and what GPU to pair it with.`;
 
 const schema = [

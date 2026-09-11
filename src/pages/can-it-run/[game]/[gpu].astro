@@ -1,4 +1,5 @@
 ---
+import { SITE_NAME } from '../../../lib/site';
 export const prerender = false;
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
@@ -68,7 +69,7 @@ const alternatives = gpus
   }));
 
 const year = new Date().getFullYear();
-const title = `Can a ${gpu.name} Run ${game.name}? (${year}) | PCGameFit`;
+const title = `Can a ${gpu.name} Run ${game.name}? (${year}) | ${SITE_NAME}`;
 const description = `${summary.slice(0, 150)}`;
 
 const schema = [

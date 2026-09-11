@@ -1,4 +1,4 @@
-import { SITE_URL } from '../../../lib/site';
+import { SITE_URL, USER_AGENT } from '../../../lib/site';
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import gameIndex from '../../../lib/game-index.json';
@@ -18,7 +18,7 @@ async function steamSearch(q: string): Promise<Suggestion[]> {
   try {
     const r = await fetch(
       `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`,
-      { headers: { 'User-Agent': 'PCGameFit/1.0 (+${SITE_URL})' } }
+      { headers: { 'User-Agent': USER_AGENT } }
     );
     if (!r.ok) return [];
     const j: any = await r.json();

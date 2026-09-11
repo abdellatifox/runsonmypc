@@ -21,11 +21,12 @@ import {
   parsePcRequirements, parseRamGb, parseStorageGb,
   parseVramGb, parseDirectX, parseOs, splitAlternatives, parseCpuFloor
 } from '../src/lib/steam-parse.mjs';
+import { USER_AGENT } from '../src/lib/site.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const INDEX = path.join(ROOT, 'data', 'steam-index.json');
 const OUT = path.join(ROOT, 'data', 'games.requirements.json');
-const UA = { 'User-Agent': 'PCGameFit/1.0 (+https://pcgamefit.com)' };
+const UA = { 'User-Agent': USER_AGENT };
 
 const LIMIT = parseInt(process.argv[2] || '3000', 10);
 const DELAY_MS = 1500;               // ~40 req/min, inside Steam's store-API budget

@@ -2,23 +2,23 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL, CONTACT_EMAIL } from '../lib/site';
+import { SITE_URL, CONTACT_EMAIL, SITE_NAME, SITE_NAME_SPACED } from '../lib/site';
 ---
 <BaseLayout
-  title="About PCGameFit — Who We Are | PCGameFit"
-  description="PCGameFit builds free, independent PC gaming tools: compatibility checks, FPS estimates and hardware rankings. Here is who we are and how we work."
-  keywords="about pcgamefit, pc gaming tools, hardware rankings methodology"
+  title={`About ${SITE_NAME} — Who We Are | ${SITE_NAME}`}
+  description={`${SITE_NAME} builds free, independent PC gaming tools: compatibility checks, FPS estimates and hardware rankings. Here is who we are and how we work.`}
+  keywords={`about ${SITE_NAME.toLowerCase()}, pc gaming tools, hardware rankings methodology`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    "name": "About PCGameFit",
+    "name": `About ${SITE_NAME}`,
     "url": `${SITE_URL}/about`,
     "mainEntity": { "@id": `${SITE_URL}/#organization` }
   }}
 >
   <div class="about-container">
   <Breadcrumbs items={[{ name: 'About' }]} />
-    <h1>About PC Game Fit</h1>
+    <h1>About {SITE_NAME_SPACED}</h1>
     <p class="mission">Mission: We build free tools that help PC gamers make smarter hardware decisions.</p>
     
     <section>
@@ -38,7 +38,7 @@ import { SITE_URL, CONTACT_EMAIL } from '../lib/site';
 
     <section>
       <h2>Team</h2>
-      <p>We are the PCGameFit Team, a group of dedicated PC enthusiasts, hardware reviewers, and software engineers.</p>
+      <p>We are the {SITE_NAME} Team, a group of dedicated PC enthusiasts, hardware reviewers, and software engineers.</p>
     </section>
 
     <section>

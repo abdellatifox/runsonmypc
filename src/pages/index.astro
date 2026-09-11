@@ -1,4 +1,5 @@
 ---
+import { SITE_NAME, SITE_NAME_SPACED } from '../lib/site';
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { staticGames, staticPosts, staticGpus, staticCpus } from '../lib/db';
@@ -70,7 +71,7 @@ const homeFaqSchema = {
 };
 ---
 <BaseLayout
-  title="Can I Run It? Free PC Game Requirements Checker | PCGameFit"
+  title={`Can I Run It? Free PC Game Requirements Checker | ${SITE_NAME}`}
   description="Check if your PC can run any game instantly. Free FPS calculator, bottleneck checker, GPU tier list & more. No download needed — 100% browser-based tools."
   keywords="can i run it, can my pc run it, will it run, will my pc run this game, pc game requirements, fps calculator, bottleneck calculator, gpu tier list, can my pc run this game"
   jsonLd={homeFaqSchema}
@@ -121,7 +122,7 @@ const homeFaqSchema = {
           <button id="hero-check-btn" class="btn-primary full-width">Check Now &rarr;</button>
           <div id="hero-verdict" style="display: none;" class="verdict-box"></div>
           <p class="hero-err" id="hero-err" style="display:none;"></p>
-          <p class="tiny-footer">Powered by PC Game Fit</p>
+          <p class="tiny-footer">Powered by {SITE_NAME_SPACED}</p>
         </div>
       </div>
     </section>
@@ -289,7 +290,7 @@ const homeFaqSchema = {
     <!-- SEO PROSE SECTION -->
     <section class="seo-prose">
       <h2>The Most Comprehensive Free PC Game Checker</h2>
-      <p>PC Game Fit is the ultimate destination for PC gamers looking to optimize their setup and ensure they can run the latest titles. Our browser-based suite of tools lets you instantly check game requirements without the need to download any sketchy executables or sign up for an account.</p>
+      <p>{SITE_NAME_SPACED} is the ultimate destination for PC gamers looking to optimize their setup and ensure they can run the latest titles. Our browser-based suite of tools lets you instantly check game requirements without the need to download any sketchy executables or sign up for an account.</p>
       <p>Our database holds {gameCount} games with requirements taken from the publisher's own Steam listing, plus {gpuCount} graphics cards and {cpuCount} processors. We calculate accurate performance estimations by comparing relative hardware scores, letting you know exactly if your rig meets the minimum or recommended specs.</p>
       <p>Whether you're asking "can my PC run it" for the newest release, trying to find out if your CPU is bottlenecking your brand new RTX GPU, or simply want to browse the definitive GPU tier list, we have the tools you need.</p>
     </section>

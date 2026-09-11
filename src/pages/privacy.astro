@@ -2,11 +2,11 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 ---
 <BaseLayout
-  title="Privacy Policy | PCGameFit"
-  description="How PCGameFit handles your data: what we collect, what we do not, how the hardware specs you enter are processed, and your rights over any of it."
+  title={`Privacy Policy | ${SITE_NAME}`}
+  description={`How ${SITE_NAME} handles your data: what we collect, what we do not, how the hardware specs you enter are processed, and your rights over any of it.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebPage",

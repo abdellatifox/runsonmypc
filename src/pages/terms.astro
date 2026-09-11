@@ -2,13 +2,13 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_DOMAIN } from '../lib/site';
 
 const updated = '2026-09-01';
 ---
 <BaseLayout
-  title="Terms of Service | PCGameFit"
-  description="The terms governing use of PCGameFit — what our tools are, how our estimates should be treated, and the limits of our liability."
+  title={`Terms of Service | ${SITE_NAME}`}
+  description={`The terms governing use of ${SITE_NAME} — what our tools are, how our estimates should be treated, and the limits of our liability.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -27,10 +27,10 @@ const updated = '2026-09-01';
 
     <div class="prose">
       <h2>1. Acceptance</h2>
-      <p>By using PCGameFit.com you agree to these terms. If you do not agree with them, please do not use the site.</p>
+      <p>By using {SITE_DOMAIN} you agree to these terms. If you do not agree with them, please do not use the site.</p>
 
       <h2>2. What this service is</h2>
-      <p>PCGameFit provides free, browser-based tools that estimate PC gaming performance: compatibility checks, frame-rate estimates, bottleneck analysis, hardware rankings and power-supply sizing. All tools are provided for informational purposes.</p>
+      <p>{SITE_NAME} provides free, browser-based tools that estimate PC gaming performance: compatibility checks, frame-rate estimates, bottleneck analysis, hardware rankings and power-supply sizing. All tools are provided for informational purposes.</p>
 
       <h2>3. Accuracy of estimates</h2>
       <p>Our figures are <strong>modelled estimates, not measured benchmark results</strong>. They are derived from published system requirements and aggregated hardware performance data. Real-world performance varies with drivers, operating system, background load, thermals, memory configuration, game patches and individual hardware samples.</p>
@@ -51,7 +51,7 @@ const updated = '2026-09-01';
       <p>The service is provided "as is" and "as available", without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose and non-infringement.</p>
 
       <h2>7. Limitation of liability</h2>
-      <p>To the fullest extent permitted by law, PCGameFit is not liable for any indirect, incidental or consequential damages arising from use of the site — including, without limitation, purchasing decisions made in reliance on our estimates.</p>
+      <p>To the fullest extent permitted by law, {SITE_NAME} is not liable for any indirect, incidental or consequential damages arising from use of the site — including, without limitation, purchasing decisions made in reliance on our estimates.</p>
 
       <h2>8. External links</h2>
       <p>We link to third-party sites for reference. We do not control those sites and are not responsible for their content, accuracy or privacy practices.</p>

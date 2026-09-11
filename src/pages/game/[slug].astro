@@ -8,7 +8,7 @@ import { demandLabelFor } from '../../lib/games';
 import GameArt from '../../components/GameArt.astro';
 import { getGameArt, getGameOgImage } from '../../lib/images';
 import { estimateFps } from '../../lib/perf';
-import { SITE_URL } from '../../lib/site';
+import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const { slug } = Astro.params;
 const game = await getGame(Astro.locals, slug!);
@@ -88,7 +88,7 @@ const boundLabel =
 
 const gbOrDash = (n: number | null) => n != null ? `${n}GB` : null;
 
-const title = `${game.name} System Requirements (2026) | PCGameFit`;
+const title = `${game.name} System Requirements (2026) | ${SITE_NAME}`;
 const specBits = [
   game.min_ram_gb != null && `${game.min_ram_gb}GB RAM`,
   game.min_vram_gb != null && `${game.min_vram_gb}GB VRAM`,

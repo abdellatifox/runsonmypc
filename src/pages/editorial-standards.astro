@@ -2,11 +2,11 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL } from '../lib/site';
+import { SITE_URL, SITE_NAME } from '../lib/site';
 ---
 <BaseLayout
-  title="Editorial Standards — How We Score Hardware | PCGameFit"
-  description="How PCGameFit builds its performance index, where our data comes from, how we handle corrections, and our policy on sponsorship and affiliate relationships."
+  title={`Editorial Standards — How We Score Hardware | ${SITE_NAME}`}
+  description={`How ${SITE_NAME} builds its performance index, where our data comes from, how we handle corrections, and our policy on sponsorship and affiliate relationships.`}
   keywords="editorial standards, methodology, how we test, gpu scoring methodology"
   jsonLd={{
     "@context": "https://schema.org",
