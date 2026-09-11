@@ -35,7 +35,7 @@ Domain, brand, contact address and fetcher User-Agent live only in
 | 00 Decisions | done |
 | 01 Domain | chosen: runsonmypc.com — not yet registered |
 | 02 Keywords | waiting on SEMrush API units |
-| 04 Repo | local git; no GitHub remote yet |
+| 04 Repo | pushed to github.com/abdellatifox/runsonmypc (public) |
 | 05 Cloudflare | not started — `wrangler.toml` ids are placeholders |
 | 07 Design | first pass done — violet/cyan instrument-panel look, new homepage; inner page layouts still PCGameFit's |
 | 08 Brand assets | mark (BrandMark.astro) + SVG favicon done; PNG icons, manifest icons and share cards not yet |
