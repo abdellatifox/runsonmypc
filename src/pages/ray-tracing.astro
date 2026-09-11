@@ -1,0 +1,220 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGames, getGpus } from '../lib/db';
+import { SITE_URL } from '../lib/site';
+
+const [games, gpus] = await Promise.all([getGames(Astro.locals), getGpus(Astro.locals)]);
+
+const rtGames = games
+  .filter(g => g.supports_ray_tracing === 1)
+  .sort((a, b) => (b.release_year ?? 0) - (a.release_year ?? 0));
+
+// Steam publishes no ray-tracing field, so this list can only cover titles we
+// have checked by hand. Saying "11 games support ray tracing" without that
+// context implies the other 490 do not.
+const verifiedCount = games.filter(g => g.supports_ray_tracing !== null).length;
+
+const rtGpus = gpus.filter(g => g.supports_ray_tracing === 1);
+
+const intensityRank: Record<string, number> = { light: 1, medium: 2, heavy: 3, path: 4 };
+const heaviest = [...rtGames].sort((a, b) =>
+  (intensityRank[(b.ray_tracing_intensity || '').toLowerCase()] || 0) -
+  (intensityRank[(a.ray_tracing_intensity || '').toLowerCase()] || 0)
+).slice(0, 6);
+
+const description = `Every PC game with ray tracing support (${rtGames.length} titles) and the ${rtGpus.length} graphics cards that can run it. See which games are light on RT and which demand a flagship card.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Ray Tracing Games and GPU Support",
+    "description": description,
+    "url": `${SITE_URL}/ray-tracing`,
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": rtGames.length,
+      "itemListElement": rtGames.map((g, i) => ({
+        "@type": "ListItem", "position": i + 1,
+        "url": `${SITE_URL}/game/${g.slug}`, "name": g.name
+      }))
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What GPU do I need for ray tracing?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Any NVIDIA RTX card, AMD Radeon RX 6000 series or newer, or Intel Arc GPU has the hardware for ray tracing. Whether it is playable is a separate question: light ray tracing works on mid-range cards, while path-traced titles realistically need an upper-tier card plus upscaling." }
+      },
+      {
+        "@type": "Question",
+        "name": "How much FPS does ray tracing cost?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Light implementations such as ray-traced shadows typically cost 10-20% of your frame rate. Full ray-traced reflections and global illumination cost 35-50%, and path tracing can cost 60-75%, which is why it is almost always paired with DLSS or FSR." }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ray tracing worth turning on?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It depends on the game and your headroom. In titles built around it the difference to lighting and reflections is substantial. If enabling it drops you below your monitor's comfortable frame rate, turn on upscaling first and lower the RT preset before disabling it entirely." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title={`Ray Tracing Games & GPU Support | PCGameFit`}
+  description={description}
+  keywords="ray tracing games, rtx games list, what gpu for ray tracing, path tracing games, ray tracing performance cost"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Ray Tracing' }]} />
+
+    <header class="page-head">
+      <h1>Ray Tracing: Games, GPUs and What It Costs You</h1>
+      <p class="lede">
+        {rtGames.length} of the {verifiedCount} games whose graphics features we have verified
+        support hardware ray tracing, and {rtGpus.length} of the cards we track can run it.
+        Steam publishes no ray-tracing field, so titles outside that verified set are
+        unconfirmed rather than unsupported. The question is rarely "can I enable this" —
+        it is "what will it cost me in frames".
+      </p>
+    </header>
+
+    <section class="cost-band">
+      <h2>What ray tracing costs in frame rate</h2>
+      <div class="cost-grid">
+        <div><span class="lvl">Light</span><b>−10 to −20%</b><p>Ray-traced shadows or a single reflection pass. Comfortable on mid-range cards.</p></div>
+        <div><span class="lvl">Medium</span><b>−25 to −35%</b><p>Reflections plus ambient occlusion. Upper-mid-range card territory.</p></div>
+        <div><span class="lvl">Heavy</span><b>−35 to −50%</b><p>Full reflections and global illumination. Enable upscaling.</p></div>
+        <div><span class="lvl">Path traced</span><b>−60 to −75%</b><p>Fully path-traced lighting. Flagship card plus upscaling and frame generation.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Games with ray tracing support</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Game</th><th>Year</th><th>Genre</th><th>RT intensity</th><th>DLSS</th><th>FSR</th><th>Rec. GPU score</th></tr>
+          </thead>
+          <tbody>
+            {rtGames.map(g => (
+              <tr>
+                <td><a href={`/game/${g.slug}`}>{g.name}</a></td>
+                <td>{g.release_year}</td>
+                <td>{g.genre}</td>
+                <td><span class={`rt rt-${(g.ray_tracing_intensity || 'medium').toLowerCase()}`}>{g.ray_tracing_intensity || 'Medium'}</span></td>
+                <td>{g.supports_dlss ? '✓' : '—'}</td>
+                <td>{g.supports_fsr ? '✓' : '—'}</td>
+                <td>{g.rec_gpu_score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Graphics cards with ray tracing hardware</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Graphics card</th><th>Tier</th><th>Score</th><th>VRAM</th><th>Upscaling</th><th>RT verdict</th></tr>
+          </thead>
+          <tbody>
+            {rtGpus.map(g => (
+              <tr>
+                <td><a href={`/gpu/${g.slug}`}>{g.name}</a></td>
+                <td><span class={`pill t-${g.tier}`}>{g.tier}</span></td>
+                <td>{g.score}</td>
+                <td>{g.vram_gb} GB</td>
+                <td>{[g.supports_dlss && 'DLSS', g.supports_fsr && 'FSR', g.supports_xess && 'XeSS'].filter(Boolean).join(', ')}</td>
+                <td>
+                  {g.score >= 85 ? <span class="v ok">Path tracing capable</span>
+                    : g.score >= 65 ? <span class="v ok">Heavy RT with upscaling</span>
+                    : g.score >= 45 ? <span class="v warn">Light to medium RT</span>
+                    : <span class="v bad">Light RT only</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="heavy">
+      <h2>The most demanding ray-traced games</h2>
+      <ul class="heavy-list">
+        {heaviest.map(g => (
+          <li>
+            <a href={`/game/${g.slug}`}>{g.name}</a>
+            <span>{g.ray_tracing_intensity || 'Medium'} RT · recommended GPU score {g.rec_gpu_score}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What GPU do I need for ray tracing?</summary>
+        <p>Any NVIDIA RTX card, AMD Radeon RX 6000 series or newer, or Intel Arc GPU has the hardware. Whether it is <em>playable</em> is separate: light ray tracing works on mid-range cards, while path-traced titles realistically need an upper-tier card plus upscaling.</p>
+      </details>
+      <details>
+        <summary>How much FPS does ray tracing cost?</summary>
+        <p>Light implementations cost 10–20%. Full reflections and global illumination cost 35–50%. Path tracing can cost 60–75%, which is why it is almost always paired with <a href="/dlss-fsr">DLSS or FSR</a>.</p>
+      </details>
+      <details>
+        <summary>Is ray tracing worth turning on?</summary>
+        <p>In games built around it, the difference to lighting and reflections is substantial. If enabling it drops you below your monitor's comfortable frame rate, turn on upscaling first and lower the RT preset before switching it off entirely.</p>
+      </details>
+      <details>
+        <summary>Does AMD do ray tracing as well as NVIDIA?</summary>
+        <p>Historically NVIDIA holds a lead in heavy ray-tracing workloads, and the gap widens as intensity rises. In light RT titles the two are much closer. Compare specific cards on the <a href="/compare-gpu">GPU comparison tool</a>.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dlss-fsr">DLSS vs FSR</a></li>
+        <li><a href="/game-list/ray-tracing-games">All ray tracing games</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/benchmarks">Benchmarks</a></li>
+        <li><a href="/fps-estimator">FPS Calculator</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .cost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .cost-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--surface); }
+  .lvl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .cost-grid b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 22px; color: var(--accent); margin: 8px 0 8px; }
+  .cost-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+  .rt { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; text-transform: capitalize; }
+  .rt-light { background: rgba(120,255,120,.12); color: #7fe98a; }
+  .rt-medium { background: rgba(255,200,80,.12); color: #ffc850; }
+  .rt-heavy { background: rgba(255,140,80,.14); color: #ff9d5c; }
+  .rt-path { background: rgba(255,110,110,.14); color: #ff8080; }
+
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
+  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
+  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+
+  .heavy-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .heavy-list li { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .heavy-list a { color: var(--text); text-decoration: none; font-weight: 600; display: block; margin-bottom: 4px; }
+  .heavy-list a:hover { color: var(--accent); }
+  .heavy-list span { color: var(--muted); font-size: 12.5px; }
+</style>

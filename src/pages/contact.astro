@@ -1,0 +1,102 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Icon from '../components/Icon.astro';
+import { SITE_URL, CONTACT_EMAIL } from '../lib/site';
+
+const EMAIL = CONTACT_EMAIL;
+---
+<BaseLayout
+  title="Contact Us | PCGameFit"
+  description="Get in touch with PCGameFit — report a data error, suggest a game or GPU to add, ask about our methodology, or raise a partnership enquiry."
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact PCGameFit",
+    "url": `${SITE_URL}/contact`,
+    "mainEntity": {
+      "@id": `${SITE_URL}/#organization`
+    }
+  }}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Contact' }]} />
+
+    <header class="page-head">
+      <h1>Contact Us</h1>
+      <p class="lede">
+        Corrections get priority. If something on the site is wrong, tell us which page and
+        what the right value should be, and we will fix the underlying data.
+      </p>
+    </header>
+
+    <div class="contact-grid">
+      <div class="c-card">
+        <div class="ic"><Icon name="exclamation-triangle" /></div>
+        <h2>Report a data error</h2>
+        <p>Wrong system requirement, wrong specification, or a score that looks off. Include the page URL and the correct value if you know it.</p>
+        <a href={`mailto:${EMAIL}?subject=Data%20correction`}>{EMAIL}</a>
+      </div>
+      <div class="c-card">
+        <div class="ic"><Icon name="plus-circle" /></div>
+        <h2>Request an addition</h2>
+        <p>A game, graphics card or processor we do not cover yet. Tell us what is missing and we will look at adding it.</p>
+        <a href={`mailto:${EMAIL}?subject=Please%20add`}>{EMAIL}</a>
+      </div>
+      <div class="c-card">
+        <div class="ic"><Icon name="question-circle" /></div>
+        <h2>Methodology questions</h2>
+        <p>How a score was derived, or why two tools disagree. Our <a href="/editorial-standards">editorial standards</a> page covers most of it.</p>
+        <a href={`mailto:${EMAIL}?subject=Methodology`}>{EMAIL}</a>
+      </div>
+      <div class="c-card">
+        <div class="ic"><Icon name="briefcase" /></div>
+        <h2>Business enquiries</h2>
+        <p>Partnerships, licensing our data, or press. Note that we do not sell placement in tier lists or scores.</p>
+        <a href={`mailto:${EMAIL}?subject=Business%20enquiry`}>{EMAIL}</a>
+      </div>
+    </div>
+
+    <section class="before">
+      <h2>Before you write</h2>
+      <p>A few things that come up often:</p>
+      <ul>
+        <li><b>Our numbers are estimates, not benchmarks.</b> If a figure differs from a review that actually ran the game, the review is the better source — see <a href="/editorial-standards">how we calculate</a>.</li>
+        <li><b>Scores are relative and get recalibrated.</b> A card's number can drop when a new flagship launches without its real performance changing.</li>
+        <li><b>We do not test hardware ourselves.</b> We aggregate published data, so we cannot answer questions about individual sample variance or overclocking headroom.</li>
+      </ul>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/about">About us</a></li>
+        <li><a href="/editorial-standards">Editorial standards</a></li>
+        <li><a href="/privacy">Privacy policy</a></li>
+        <li><a href="/terms">Terms of service</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 48px; }
+  .c-card { border: 1px solid var(--line); border-radius: 16px; padding: 24px; background: var(--surface); }
+  .c-card .ic {
+    width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px;
+    background: rgba(182,255,0,.1); color: var(--accent); font-size: 19px; margin-bottom: 14px;
+  }
+  .c-card h2 { font-size: 17px; margin: 0 0 8px; }
+  .c-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
+  .c-card p a, .c-card > a { color: var(--accent); text-decoration: none; font-size: 14px; word-break: break-all; }
+  .c-card > a:hover { text-decoration: underline; }
+
+  .before { margin-bottom: 48px; }
+  .before h2 { font-size: 22px; margin-bottom: 12px; }
+  .before p { color: var(--muted); margin-bottom: 12px; }
+  .before ul { padding-left: 20px; }
+  .before li { color: var(--muted); line-height: 1.75; margin-bottom: 10px; }
+  .before li b { color: var(--text); }
+  .before a { color: var(--accent); }
+</style>

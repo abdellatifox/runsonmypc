@@ -1,0 +1,298 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getGpu, getGpus, getGames } from '../../lib/db';
+import { estimateFps } from '../../lib/perf';
+import { SITE_URL } from '../../lib/site';
+
+const { slug } = Astro.params;
+const gpu = await getGpu(Astro.locals, slug!);
+
+// A missing card is a genuine 404. Redirecting to the homepage would create a
+// soft-404, which is how these pages get quietly dropped from the index.
+if (!gpu) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [allGpus, games] = await Promise.all([
+  getGpus(Astro.locals),
+  getGames(Astro.locals)
+]);
+
+const rank = allGpus.findIndex(g => g.slug === gpu.slug) + 1;
+const pctFaster = Math.round(((allGpus.length - allGpus.filter(g => g.score > gpu.score).length) / allGpus.length) * 100);
+
+const rivals = allGpus
+  .filter(g => g.slug !== gpu.slug)
+  .sort((a, b) => Math.abs(a.score - gpu.score) - Math.abs(b.score - gpu.score))
+  .slice(0, 6);
+
+// Assume a processor that will not hold this card back, so the numbers reflect
+// the GPU rather than an arbitrary pairing.
+const refCpuScore = Math.min(100, Math.round(gpu.score * 1.05));
+
+const canRun = games.filter(g => gpu.score >= g.rec_gpu_score && gpu.vram_gb >= g.rec_vram_gb);
+const playable = games.filter(g =>
+  gpu.score >= g.min_gpu_score && !(gpu.score >= g.rec_gpu_score && gpu.vram_gb >= g.rec_vram_gb));
+const struggles = games.filter(g => gpu.score < g.min_gpu_score);
+
+const showcase = games
+  .filter(g => g.rec_gpu_score >= 55)
+  .sort((a, b) => b.rec_gpu_score - a.rec_gpu_score)
+  .slice(0, 10)
+  .map(g => ({
+    game: g,
+    fps1080: estimateFps(g, gpu.score, refCpuScore, '1080p', 'high'),
+    fps1440: estimateFps(g, gpu.score, refCpuScore, '1440p', 'high'),
+    fps4k: estimateFps(g, gpu.score, refCpuScore, '4k', 'high')
+  }));
+
+const resVerdict =
+  gpu.score >= 85 ? '4K at high refresh'
+  : gpu.score >= 68 ? '1440p at high refresh, or 4K with upscaling'
+  : gpu.score >= 48 ? '1440p at 60fps, or 1080p at high refresh'
+  : gpu.score >= 30 ? '1080p at 60fps on medium to high settings'
+  : '1080p at reduced settings';
+
+const upscalers = [
+  gpu.supports_dlss && 'DLSS',
+  gpu.supports_fsr && 'FSR',
+  gpu.supports_xess && 'XeSS'
+].filter(Boolean) as string[];
+
+const title = `${gpu.name} — Benchmarks & FPS | PCGameFit`;
+const description = `${gpu.name}: ${gpu.vram_gb}GB VRAM, ${gpu.tdp_watts}W, score ${gpu.score}/100 (tier ${gpu.tier}). Best at ${resVerdict}, with estimated FPS in ${showcase.length} demanding games.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": gpu.name,
+    "url": `${SITE_URL}/gpu/${gpu.slug}`,
+    "brand": { "@type": "Brand", "name": gpu.brand },
+    "category": "Graphics Card",
+    "description": description,
+    "releaseDate": String(gpu.release_year),
+    ...(gpu.msrp_usd ? {
+      "offers": {
+        "@type": "Offer",
+        "price": String(gpu.msrp_usd),
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    } : {}),
+    "additionalProperty": [
+      { "@type": "PropertyValue", "name": "VRAM", "value": `${gpu.vram_gb} GB` },
+      { "@type": "PropertyValue", "name": "TDP", "value": `${gpu.tdp_watts} W` },
+      { "@type": "PropertyValue", "name": "Performance tier", "value": gpu.tier },
+      { "@type": "PropertyValue", "name": "Ray tracing", "value": gpu.supports_ray_tracing ? "Yes" : "No" },
+      { "@type": "PropertyValue", "name": "Upscaling", "value": upscalers.join(', ') || 'None' }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Is the ${gpu.name} good in 2026?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${gpu.name} scores ${gpu.score}/100 in our gaming index, ranking #${rank} of ${allGpus.length} cards we track and ahead of roughly ${pctFaster}% of them. It is best suited to ${resVerdict}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `How much VRAM does the ${gpu.name} have?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${gpu.name} has ${gpu.vram_gb}GB of video memory. ${gpu.vram_gb >= 12 ? 'That is comfortable for 1440p and workable at 4K in most current titles.' : gpu.vram_gb >= 8 ? 'That is adequate for 1080p and most 1440p titles, but tight in the most texture-heavy recent releases.' : 'That is below what several 2024-onward releases assume, so expect to lower texture settings.'}`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What power supply does the ${gpu.name} need?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${gpu.name} draws ${gpu.tdp_watts}W. Allowing for the rest of the system and transient spikes, a quality ${Math.ceil((gpu.tdp_watts * 2 + 150) / 50) * 50}W 80+ unit is a sensible target. Verify the exact figure with our PSU calculator.`
+        }
+      }
+    ]
+  }
+];
+---
+<BaseLayout title={title} description={description} jsonLd={schema}
+  keywords={`${gpu.name}, ${gpu.name} benchmark, ${gpu.name} specs, ${gpu.name} fps, ${gpu.name} review`}>
+  <div class="wrap">
+    <Breadcrumbs items={[
+      { name: 'GPU Database', href: '/gpus' },
+      { name: gpu.name }
+    ]} />
+
+    <header class="part-head">
+      <div>
+        <span class="eyebrow">{gpu.brand} · {gpu.release_year}</span>
+        <h1>{gpu.name}</h1>
+        <p class="lede">
+          Ranked <b>#{rank}</b> of {allGpus.length} graphics cards we track — faster than about
+          <b> {pctFaster}%</b> of them. Best suited to <b>{resVerdict}</b>.
+        </p>
+        <div class="feat-row">
+          {gpu.supports_ray_tracing ? <span class="tag rt">Ray tracing</span> : null}
+          {upscalers.map(u => <span class="tag">{u}</span>)}
+          <span class="tag">{gpu.vram_gb}GB VRAM</span>
+        </div>
+      </div>
+      <div class="score-box">
+        <span class={`pill t-${gpu.tier}`}>Tier {gpu.tier}</span>
+        <div class="score-num">{gpu.score}<small>/100</small></div>
+        <div class="score-track"><div class="score-fill" style={`width:${gpu.score}%`}></div></div>
+        <span class="score-label">Gaming performance index</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Specifications</h2>
+      <div class="table-scroll">
+        <table class="data-table spec">
+          <tbody>
+            <tr><td>Manufacturer</td><td>{gpu.brand}</td></tr>
+            <tr><td>Video memory</td><td>{gpu.vram_gb} GB</td></tr>
+            <tr><td>Power draw (TDP)</td><td>{gpu.tdp_watts} W</td></tr>
+            <tr><td>Launch MSRP</td><td>{gpu.msrp_usd ? `$${gpu.msrp_usd}` : '—'}</td></tr>
+            <tr><td>Release year</td><td>{gpu.release_year}</td></tr>
+            <tr><td>Performance tier</td><td><span class={`pill t-${gpu.tier}`}>{gpu.tier}</span></td></tr>
+            <tr><td>Ray tracing</td><td>{gpu.supports_ray_tracing ? '✓ Supported' : '— Not supported'}</td></tr>
+            <tr><td>Upscaling</td><td>{upscalers.join(', ') || '—'}</td></tr>
+            <tr><td>Suggested PSU</td><td>{Math.ceil((gpu.tdp_watts * 2 + 150) / 50) * 50} W</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>What the {gpu.name} can run</h2>
+      <div class="stat-row">
+        <div class="stat"><b>{canRun.length}</b><span>games at or above recommended spec</span></div>
+        <div class="stat"><b>{playable.length}</b><span>games playable above minimum spec</span></div>
+        <div class="stat"><b>{struggles.length}</b><span>games below minimum spec</span></div>
+      </div>
+      <p class="note">
+        Counts are against the {games.length} titles in our
+        <a href="/games"> requirements database</a>. Run a
+        <a href="/can-it-run"> full check</a> to include your processor and memory.
+      </p>
+    </section>
+
+    <section>
+      <h2>Estimated frame rates</h2>
+      <p class="sub">
+        High preset, upscaling off, paired with a processor fast enough not to hold this card back.
+      </p>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Game</th><th>1080p</th><th>1440p</th><th>4K</th></tr>
+          </thead>
+          <tbody>
+            {showcase.map(r => (
+              <tr>
+                <td><a href={`/can-it-run/${r.game.slug}/${gpu.slug}`}>{r.game.name}</a></td>
+                <td class="fps" data-v={r.fps1080}>{r.fps1080}</td>
+                <td class="fps" data-v={r.fps1440}>{r.fps1440}</td>
+                <td class="fps" data-v={r.fps4k}>{r.fps4k}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer">Modelled estimates, not captured benchmark runs. See our <a href="/editorial-standards">methodology</a>.</p>
+    </section>
+
+    <section>
+      <h2>Compare the {gpu.name}</h2>
+      <ul class="rival-list">
+        {rivals.map(r => (
+          <li>
+            <a href={`/compare-gpu?a=${gpu.slug}&b=${r.slug}`}>
+              <span>{gpu.name} vs {r.name}</span>
+              <em>{r.score > gpu.score ? `+${r.score - gpu.score}` : `${r.score - gpu.score}`}</em>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/gpus">All graphics cards</a></li>
+        <li><a href="/benchmarks">Benchmarks</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/psu-calculator">PSU Calculator</a></li>
+        {gpu.supports_ray_tracing ? <li><a href="/ray-tracing">Ray tracing games</a></li> : null}
+        <li><a href="/dlss-fsr">DLSS vs FSR</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .part-head {
+    display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: start;
+    padding: 40px 0 32px; border-bottom: 1px solid var(--line); margin-bottom: 40px;
+  }
+  .part-head h1 { font-size: clamp(28px, 4.5vw, 42px); margin: 8px 0 14px; }
+  .part-head .lede { color: var(--muted); max-width: 60ch; line-height: 1.65; margin: 0 0 16px; }
+  .feat-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    padding: 4px 10px; border-radius: 99px; background: rgba(182,255,0,.12); color: var(--accent);
+  }
+  .tag.rt { background: rgba(120,180,255,.14); color: #8ab8ff; }
+
+  .score-box {
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px;
+    padding: 20px 24px; min-width: 220px; text-align: center;
+  }
+  .score-num { font-family: 'Space Grotesk', sans-serif; font-size: 44px; font-weight: 700; line-height: 1; margin: 12px 0 10px; }
+  .score-num small { font-size: 16px; color: var(--faint); font-weight: 500; }
+  .score-track { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .score-fill { height: 100%; background: var(--accent); border-radius: 99px; }
+  .score-label { display: block; margin-top: 10px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  @media (max-width: 760px) { .part-head { grid-template-columns: 1fr; } }
+
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .spec td:first-child { color: var(--muted); width: 220px; }
+  .sub { color: var(--muted); font-size: 14px; margin: -8px 0 16px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .stat b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 32px; color: var(--accent); line-height: 1; margin-bottom: 8px; }
+  .stat span { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  .note, .disclaimer { color: var(--muted); font-size: 14px; line-height: 1.7; margin-top: 16px; }
+  .disclaimer { color: var(--faint); font-size: 13px; }
+  .note a, .disclaimer a { color: var(--accent); }
+
+  .fps { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .rival-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .rival-list a {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
+    color: var(--text); text-decoration: none; font-size: 14px; transition: border-color .2s var(--ease);
+  }
+  .rival-list a:hover { border-color: var(--accent); }
+  .rival-list em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+  // Colour-code frame rates on the client so the markup stays cacheable.
+  document.querySelectorAll<HTMLElement>('.fps').forEach(el => {
+    const v = parseInt(el.dataset.v || '0', 10);
+    el.style.color = v >= 90 ? '#7fe98a' : v >= 60 ? '#b6ff00' : v >= 30 ? '#ffc850' : '#ff8080';
+  });
+</script>

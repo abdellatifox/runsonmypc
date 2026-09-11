@@ -1,0 +1,440 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Autocomplete from '../components/Autocomplete.astro';
+import { bundledCount } from '../lib/game-reqs';
+import Icon from '../components/Icon.astro';
+import { SITE_URL } from '../lib/site';
+
+const preselectGame = Astro.url.searchParams.get('game') ?? '';
+const bundled = bundledCount();
+
+// Common capacities, plus the odd sizes people actually run.
+const RAM_OPTIONS = [4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128].map(n => ({
+  label: `${n} GB`,
+  value: String(n),
+  meta: n <= 8 ? 'Below what most current releases assume'
+      : n <= 12 ? 'Workable for older titles'
+      : n === 16 ? 'The common target today'
+      : 'Comfortable headroom'
+}));
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Can I Run It?",
+    "url": `${SITE_URL}/can-it-run`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "description": "Check any PC game against your graphics card, processor and memory using the publisher's own stated system requirements.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Will my PC run this game?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Pick the game and enter your GPU, CPU and RAM above — the checker compares them against the publisher's own stated requirements and gives you a pass/fail verdict in seconds." }
+      },
+      {
+        "@type": "Question",
+        "name": "Where do these system requirements come from?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Directly from the publisher's own listing on Steam. We show the exact wording the publisher wrote alongside our comparison, and we link to the store page so you can verify it yourself." }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to download anything?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. The check runs in your browser against our hardware database. There is no download, no account and no installed agent." }
+      },
+      {
+        "@type": "Question",
+        "name": "What if my game is not listed?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Start typing and the search falls through to Steam's live catalogue, so titles outside our pre-loaded set are still found and their requirements fetched on the spot." }
+      },
+      {
+        "@type": "Question",
+        "name": "Why is a row marked \"not stated\"?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Because the publisher did not state it. Plenty of older titles list \"256MB video memory\" and no model name at all. We would rather mark that unverified than invent a number for it." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="Can I Run It? — Check Any PC Game | PCGameFit"
+  description="Will it run? Check any PC game against your graphics card, processor and memory using the publisher's own stated requirements. Free, instant, no download."
+  keywords="can i run it, will it run, will my pc run this game, can my pc run it, system requirements checker, can my pc run this game, pc game requirements"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Can I Run It' }]} />
+
+    <header class="page-head">
+      <h1>Can I Run It?</h1>
+      <p class="lede">
+        Will my PC run this game? Pick a game and your parts. We check them against the requirements the
+        publisher actually published, and show you their exact wording next to the verdict.
+      </p>
+    </header>
+
+    <section class="tool">
+      <form class="panel" id="check-form" novalidate>
+        <Autocomplete
+          id="game"
+          label="Game"
+          placeholder="Start typing a game name…"
+          endpoint="/api/games/search"
+          value={preselectGame}
+          hint="Not in the list? Keep typing — we search Steam live."
+          required
+        />
+
+        <div class="gpu-row">
+          <Autocomplete
+            id="gpu"
+            label="Graphics card"
+            placeholder="e.g. RTX 4070, RX 6600, Arc B580…"
+            endpoint="/api/gpus/search"
+            required
+          />
+          <button type="button" id="detect-gpu" class="detect" title="Detect my graphics card">
+            <Icon name="magic" />
+            <span class="sr">Detect my graphics card</span>
+          </button>
+        </div>
+
+        <Autocomplete
+          id="cpu"
+          label="Processor"
+          placeholder="e.g. Ryzen 5 5600, i5-12400…"
+          endpoint="/api/cpus/search"
+          hint="Optional, but it makes the verdict more accurate."
+        />
+
+        <Autocomplete
+          id="ram"
+          label="System memory"
+          placeholder="e.g. 16 GB"
+          endpoint=""
+          options={RAM_OPTIONS}
+          freeText
+          required
+        />
+
+        <button type="submit" class="btn btn-primary submit" id="check-btn">
+          Check system requirements <span aria-hidden="true">&rarr;</span>
+        </button>
+        <p class="err" id="form-err" role="alert" hidden></p>
+      </form>
+
+      <div class="results" id="results" aria-live="polite">
+        <div class="placeholder" id="placeholder">
+          <Icon name="search" />
+          <h2>Enter your specs to see results</h2>
+          <p>{bundled > 0
+            ? `${bundled.toLocaleString('en-US')} games pre-loaded, plus live Steam search for everything else.`
+            : 'Games are searched live against Steam.'}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Will my PC run this game?</summary>
+        <p>Pick the game and enter your GPU, CPU and RAM above — the checker compares them against the publisher's own stated requirements and gives you a pass/fail verdict in seconds.</p>
+      </details>
+      <details>
+        <summary>Where do these requirements come from?</summary>
+        <p>Straight from the publisher's own listing on Steam. We show their exact wording next to our comparison and link the store page so you can check it yourself.</p>
+      </details>
+      <details>
+        <summary>Do I need to download anything?</summary>
+        <p>No. The check runs in your browser against our hardware database — no download, no account, no agent installed.</p>
+      </details>
+      <details>
+        <summary>What if my game is not listed?</summary>
+        <p>Keep typing. The search falls through to Steam's live catalogue, so titles outside our pre-loaded set are still found and their requirements fetched on the spot.</p>
+      </details>
+      <details>
+        <summary>Why is a row marked "not stated"?</summary>
+        <p>Because the publisher did not state it. Plenty of older titles list "256MB video memory" and no model name at all. We would rather mark that unverified than invent a number for it.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/fps-estimator">FPS Calculator</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/games">All games</a></li>
+        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 56px;
+  }
+  @media (max-width: 900px) { .tool { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    padding: 22px;
+    display: grid;
+    gap: 16px;
+  }
+  .gpu-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+  .detect {
+    height: 43px; width: 43px;
+    display: grid; place-items: center;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--bg-soft);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .18s var(--ease);
+  }
+  .detect:hover { color: var(--accent); border-color: var(--accent); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .submit { width: 100%; margin-top: 4px; }
+  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+
+  .results { min-height: 320px; }
+  .placeholder {
+    height: 100%;
+    min-height: 320px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 40px 24px;
+  }
+  .placeholder :global(.icon) { font-size: 40px; color: var(--faint); }
+  .placeholder h2 { font-size: 18px; margin: 0; }
+  .placeholder p { margin: 0; color: var(--muted); font-size: 14px; max-width: 42ch; }
+
+  /* --- result card (built by the client) --- */
+  :global(.verdict-card) {
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  :global(.verdict-head) { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; flex-wrap: wrap; }
+  :global(.verdict-pill) {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px; font-weight: 600; font-size: 15px;
+  }
+  :global(.verdict-pill.pass) { background: rgba(120,255,120,.1); color: #7fe98a; border: 1px solid rgba(120,255,120,.25); }
+  :global(.verdict-pill.warn) { background: rgba(255,200,80,.1); color: #ffc850; border: 1px solid rgba(255,200,80,.25); }
+  :global(.verdict-pill.fail) { background: rgba(255,110,110,.1); color: #ff8080; border: 1px solid rgba(255,110,110,.25); }
+  :global(.verdict-game) { font-size: 15px; color: var(--muted); }
+  :global(.verdict-game b) { color: var(--text); }
+  :global(.verdict-detail) { color: var(--muted); line-height: 1.7; margin: 10px 0 22px; max-width: 62ch; }
+
+  :global(.req-tabs) { display: flex; gap: 8px; margin-bottom: 14px; }
+  :global(.req-tab) {
+    background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
+    padding: 7px 15px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  :global(.req-tab.active) { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+  :global(.req-table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  :global(.req-table th) {
+    text-align: left; padding: 9px 10px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--accent); border-bottom: 1px solid var(--line-strong);
+    white-space: nowrap;
+  }
+  :global(.req-table td) { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  :global(.req-table td.state) { width: 96px; white-space: nowrap; }
+  :global(.req-table .pub) { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+  /* Four columns (a label, your part, the publisher's own wording, a verdict
+     pill) do not fit a phone screen — scrolling sideways worked but read as
+     content getting cut off rather than a deliberate table. Below the
+     breakpoint each row becomes its own card instead, with data-label driving
+     a heading in front of each value; nothing needs to wrap or scroll. */
+  @media (max-width: 640px) {
+    :global(.table-scroll) { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+    :global(.req-table), :global(.req-table tbody) { display: block; width: 100%; }
+    :global(.req-table thead) { display: none; }
+    :global(.req-table tr) {
+      display: block; border: 1px solid var(--line-strong); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 10px; background: var(--surface);
+    }
+    :global(.req-table td) {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+      padding: 6px 0; border-bottom: none; text-align: right;
+    }
+    :global(.req-table td.pub) { text-align: right; }
+    :global(.req-table td.state) { width: auto; }
+    :global(.req-table td::before) {
+      content: attr(data-label); flex: none; text-align: left;
+      font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent);
+    }
+  }
+  :global(.st) { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  :global(.st.pass) { background: rgba(120,255,120,.12); color: #7fe98a; }
+  :global(.st.fail) { background: rgba(255,110,110,.12); color: #ff8080; }
+  :global(.st.unknown) { background: rgba(255,255,255,.06); color: var(--muted); }
+
+  :global(.caveat) { color: var(--faint); font-size: 12.5px; line-height: 1.6; margin-top: 14px; }
+  :global(.src-link) { display: inline-block; margin-top: 16px; color: var(--accent); font-size: 13px; }
+  :global(.result-actions) { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+</style>
+
+<script>
+  const form = document.getElementById('check-form') as HTMLFormElement;
+  const results = document.getElementById('results')!;
+  const errEl = document.getElementById('form-err') as HTMLElement;
+  const btn = document.getElementById('check-btn') as HTMLButtonElement;
+
+  const val = (id: string) =>
+    (document.getElementById(`${id}-value`) as HTMLInputElement | null)?.value?.trim() || '';
+
+  function esc(s: unknown) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  }
+
+  function stateLabel(s: string) {
+    return s === 'pass' ? 'Meets' : s === 'fail' ? 'Below' : 'Not stated';
+  }
+
+  function tableFor(side: any) {
+    if (!side) return '<p class="caveat">The publisher did not publish this tier of requirements.</p>';
+    const rows = side.checks.map((c: any) => `
+      <tr>
+        <td data-label="Component">${esc(c.label)}</td>
+        <td data-label="Yours">${esc(c.yours)}</td>
+        <td class="pub" data-label="Publisher states">${c.required ? esc(c.required) : '<em>not stated</em>'}</td>
+        <td class="state" data-label="Result"><span class="st ${c.state}">${stateLabel(c.state)}</span></td>
+      </tr>`).join('');
+    const extra = [side.os && `OS: ${side.os}`, side.directx && side.directx].filter(Boolean).join(' · ');
+    return `
+      <div class="table-scroll">
+        <table class="req-table">
+          <thead><tr><th>Component</th><th>Yours</th><th>Publisher states</th><th>Result</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${extra ? `<p class="caveat">${esc(extra)}</p>` : ''}`;
+  }
+
+  function render(d: any) {
+    const gameLine = `<span class="verdict-game"><b>${esc(d.game.name)}</b>${d.game.year ? ` (${d.game.year})` : ''}${d.game.live ? ' · fetched live from Steam' : ''}</span>`;
+    results.innerHTML = `
+      <div class="verdict-card">
+        <div class="verdict-head">
+          <span class="verdict-pill ${d.tone}">${esc(d.verdict)}</span>
+          ${gameLine}
+        </div>
+        <p class="verdict-detail">${esc(d.detail)}</p>
+
+        <div class="req-tabs" role="group" aria-label="Requirement tier">
+          <button type="button" class="req-tab active" data-tier="min">Minimum</button>
+          <button type="button" class="req-tab" data-tier="rec">Recommended</button>
+        </div>
+        <div id="tier-body">${tableFor(d.minimum)}</div>
+
+        ${(d.caveats || []).map((c: string) => `<p class="caveat">${esc(c)}</p>`).join('')}
+        <a class="src-link" href="${esc(d.game.source)}" target="_blank" rel="noopener nofollow">
+          Verify on the Steam store page &rarr;
+        </a>
+        <div class="result-actions">
+          <a class="btn btn-ghost" href="/gpu/${esc(d.you.gpu.slug)}">About your ${esc(d.you.gpu.name)}</a>
+          <a class="btn btn-ghost" href="/bottleneck">Check for a bottleneck</a>
+        </div>
+      </div>`;
+
+    const body = document.getElementById('tier-body')!;
+    results.querySelectorAll<HTMLButtonElement>('.req-tab').forEach(t => {
+      t.addEventListener('click', () => {
+        results.querySelectorAll('.req-tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        body.innerHTML = tableFor(t.dataset.tier === 'min' ? d.minimum : d.recommended);
+      });
+    });
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    errEl.hidden = true;
+
+    const game = val('game');
+    const gpu = val('gpu');
+    const cpu = val('cpu');
+    const ram = parseInt(val('ram') || '0', 10);
+
+    if (!game) { errEl.textContent = 'Pick a game from the suggestions.'; errEl.hidden = false; return; }
+    if (!gpu) { errEl.textContent = 'Pick your graphics card from the suggestions.'; errEl.hidden = false; return; }
+    if (!ram) { errEl.textContent = 'Choose how much system memory you have.'; errEl.hidden = false; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/tools/can-it-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game, gpu, cpu, ram })
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        errEl.textContent = d.error || 'That check could not be completed.';
+        errEl.hidden = false;
+      } else {
+        render(d);
+      }
+    } catch {
+      errEl.textContent = 'Network error — please try again.';
+      errEl.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Check system requirements <span aria-hidden="true">&rarr;</span>';
+    }
+  });
+
+  // Best-effort GPU detection via the WebGL renderer string.
+  document.getElementById('detect-gpu')?.addEventListener('click', async () => {
+    const canvas = document.createElement('canvas');
+    const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+    const renderer = ext ? String(gl!.getParameter((ext as any).UNMASKED_RENDERER_WEBGL)) : '';
+    if (!renderer) { errEl.textContent = 'Your browser will not reveal the graphics card. Please pick it manually.'; errEl.hidden = false; return; }
+
+    // Ask the search endpoint to resolve the renderer string to a known card.
+    const cleaned = renderer.replace(/\((?:R|TM)\)/gi, ' ').replace(/\s+/g, ' ').trim();
+    const r = await fetch(`/api/gpus/search?q=${encodeURIComponent(cleaned)}`);
+    const j = await r.json();
+    const hit = j.data?.[0];
+    const input = document.getElementById('gpu') as HTMLInputElement;
+    const hidden = document.getElementById('gpu-value') as HTMLInputElement;
+    if (hit) {
+      input.value = hit.label;
+      hidden.value = hit.value;
+      errEl.hidden = true;
+    } else {
+      input.value = cleaned;
+      errEl.textContent = `Detected "${cleaned}" but it is not in our database — please pick the closest match.`;
+      errEl.hidden = false;
+    }
+  });
+</script>

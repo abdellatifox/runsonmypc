@@ -1,0 +1,1444 @@
+@import './fonts.css';
+/* ==========================================================================
+   PCGAMEFIT - GLOBAL STYLESHEET
+   Comprehensive stylesheet covering layout, typography, animations, and UI
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Section 1 - Custom Properties
+   -------------------------------------------------------------------------- */
+:root {
+  /* Colors - Gaming Dark + Neon Lime Green */
+  --bg: #090A0F;
+  --bg-soft: #0D0F16;
+  --surface: #111420;
+  --surface-2: #181C2A;
+  
+  /* Borders and Lines */
+  --line: rgba(182, 255, 0, 0.08);
+  --line-strong: rgba(182, 255, 0, 0.18);
+  
+  /* Typography Colors */
+  --text: #E8ECF2;
+  --muted: #8A9099;
+  /* 5.47:1 on the ground, 4.69:1 on --surface-2 — it was 3.15 and 2.70. */
+  --faint: #808794;
+  
+  /* Accents */
+  --accent: #B6FF00;
+  --accent-deep: #8BCC00;
+  --accent-glow: rgba(182, 255, 0, 0.35);
+  
+  /* Shared Values */
+  --radius: 16px;
+  --maxw: 1200px;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Section 2 - Reset & Base
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+  opacity: 0.04;
+}
+
+/* --------------------------------------------------------------------------
+   Section 3 - Aurora Background (Animated)
+   -------------------------------------------------------------------------- */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* The glows used to be three discs up to 600px wide under filter: blur(100px),
+   each on an infinite transform animation. Rasterising that blur was the single
+   most expensive thing on every page. The same falloff drawn as radial
+   gradients costs one paint and never repaints. Stops approximate a solid disc
+   at 0.4 opacity blurred by 100px: flat through the core, half strength at the
+   disc's edge, gone ~150px beyond it. */
+.aurora {
+  background:
+    radial-gradient(circle 450px at 200px 200px,
+      rgba(182, 255, 0, 0.36) 0%, rgba(182, 255, 0, 0.28) 45%,
+      rgba(182, 255, 0, 0.14) 67%, rgba(182, 255, 0, 0) 100%),
+    radial-gradient(circle 350px at calc(100% - 150px) 150px,
+      rgba(139, 204, 0, 0.34) 0%, rgba(139, 204, 0, 0.18) 57%,
+      rgba(139, 204, 0, 0) 100%),
+    radial-gradient(circle 400px at 50% calc(100% - 100px),
+      rgba(182, 255, 0, 0.08) 0%, rgba(182, 255, 0, 0.04) 62%,
+      rgba(182, 255, 0, 0) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Section 4 - Scroll Progress
+   -------------------------------------------------------------------------- */
+.progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  will-change: transform;
+  z-index: 60;
+  background: linear-gradient(90deg, var(--accent), var(--accent-deep));
+  box-shadow: 0 0 14px var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Section 5 - Typography
+   -------------------------------------------------------------------------- */
+h1, h2, h3, h4, .heading-like {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.g-text {
+  background: linear-gradient(115deg, var(--accent), #D9FF66, #E8ECF2, var(--accent));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(182, 255, 0, 0.7); transform: scale(0.95); }
+  70% { box-shadow: 0 0 0 10px rgba(182, 255, 0, 0); transform: scale(1); }
+  100% { box-shadow: 0 0 0 0 rgba(182, 255, 0, 0); transform: scale(0.95); }
+}
+
+/* --------------------------------------------------------------------------
+   Section 6 - Layout
+   -------------------------------------------------------------------------- */
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  position: relative;
+  z-index: 2;
+  padding: 72px 0;
+}
+
+.divider {
+  height: 1px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Section 7 - Navigation
+   -------------------------------------------------------------------------- */
+header.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 14px auto;
+  max-width: 1200px;
+  padding: 0.55rem 0.7rem 0.55rem 1rem;
+  /* Opaque enough to read over anything, so no backdrop-filter: blurring the
+     page behind a sticky bar is redone on every scrolled frame. */
+  background: rgba(9, 10, 15, 0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: 17px;
+  box-shadow: 0 20px 50px -25px rgba(0, 0, 0, 0.9);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.12rem;
+}
+
+/* The lockup is a fixed-ratio image, so height drives it and width follows.
+   Both attributes are on the tag as well, so it reserves space before it
+   loads and never shifts the header. */
+.brand img {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nav-links a {
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.92rem;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  background: rgba(182, 255, 0, 0.08);
+}
+
+.nav-links a.active {
+  color: var(--accent);
+  background: rgba(182, 255, 0, 0.1);
+}
+
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.menu-btn {
+  display: none;
+  background: none;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Section 8 - Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.14s, background 0.2s, box-shadow 0.25s;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #090A0F;
+  box-shadow: 0 10px 38px -10px var(--accent-glow);
+}
+
+.btn-primary:hover {
+  background: #C9FF26;
+  box-shadow: 0 16px 52px -10px rgba(182, 255, 0, 0.65);
+  transform: translateY(-2px);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.btn-sm {
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 10px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Section 9 - Cards
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.tool-card {
+  background: rgba(17, 20, 32, 0.8);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.stat-card b {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  display: block;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.stat-card span {
+  color: var(--faint);
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Section 10 - Bento Grid (Tools)
+   -------------------------------------------------------------------------- */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.tool {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  overflow: hidden;
+  transition: transform 0.28s, border-color 0.28s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 152px;
+}
+
+.tool::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 50%), rgba(182, 255, 0, 0.12), transparent 60%);
+}
+
+.tool:hover::before {
+  opacity: 1;
+}
+
+.tool:hover {
+  transform: translateY(-5px);
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.tool .ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  background: linear-gradient(150deg, rgba(182, 255, 0, 0.18), rgba(182, 255, 0, 0.05));
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(182, 255, 0, 0.18);
+}
+
+/* Tile titles were h4 at 16px; now that they are h3 (they are peers of the
+   featured tile's h3) this keeps them at the size they rendered. */
+.tool h3 {
+  font-size: 1rem;
+}
+
+.tool p {
+  font-size: 0.86rem;
+  color: var(--muted);
+  flex: 1;
+}
+
+.tool .go {
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: 0.28s;
+}
+
+.tool:hover .go {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.tool.feat {
+  grid-column: span 2;
+  grid-row: span 2;
+  justify-content: flex-end;
+  min-height: 320px;
+  background: linear-gradient(155deg, rgba(182, 255, 0, 0.14), rgba(139, 204, 0, 0.05) 45%, var(--surface) 70%);
+}
+
+.tool.feat .ic {
+  width: 54px;
+  height: 54px;
+  font-size: 1.55rem;
+}
+
+.tool.feat h3 {
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+
+.tool.feat p {
+  font-size: 1rem;
+  max-width: 32ch;
+  flex: none;
+}
+
+.tool.wide {
+  grid-column: span 2;
+}
+
+/* --------------------------------------------------------------------------
+   Section 11 - Hero Section
+   -------------------------------------------------------------------------- */
+.hero {
+  position: relative;
+  padding: 100px 0 72px;
+  z-index: 2;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 52px;
+  align-items: center;
+}
+
+.hero h1 {
+  font-size: clamp(2.6rem, 5.4vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.038em;
+  margin-top: 1rem;
+  text-wrap: balance;
+}
+
+.hero h1 .g {
+  background: linear-gradient(115deg, var(--accent), #D9FF66 45%, #E8ECF2 68%, var(--accent));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Static: animating background-position repainted this headline on the
+     main thread every frame for as long as the page was open. */
+}
+
+.hero p.lead {
+  font-size: 1.18rem;
+  color: var(--muted);
+  max-width: 36ch;
+  margin-top: 1.4rem;
+  text-wrap: pretty;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 1.8rem;
+  margin-top: 2.6rem;
+  flex-wrap: wrap;
+}
+
+.hero-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-stats b {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hero-stats span {
+  font-size: 0.8rem;
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Section 12 - Hero Check Card
+   -------------------------------------------------------------------------- */
+.check-card {
+  position: relative;
+  border-radius: 22px;
+  padding: 28px;
+  transform-style: preserve-3d;
+  background: linear-gradient(180deg, rgba(22, 26, 42, 0.9), rgba(9, 10, 15, 0.92));
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(182, 255, 0, 0.08);
+}
+
+.check-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(150deg, rgba(182, 255, 0, 0.5), transparent 55%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.check-card .badge-new {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: #090A0F;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+}
+
+.check-card h2 {
+  font-size: 1.06rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.check-card .field {
+  margin-top: 15px;
+}
+
+.check-card label {
+  font-size: 0.76rem;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.check-card .ipt {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 0.78rem 0.9rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.check-card .ipt:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(182, 255, 0, 0.15);
+}
+
+.check-card .row-2 {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.verdict {
+  margin-top: 17px;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 13px;
+  background: rgba(182, 255, 0, 0.07);
+  border: 1px solid rgba(182, 255, 0, 0.25);
+  font-size: 0.9rem;
+}
+
+.verdict.pass {
+  background: rgba(182, 255, 0, 0.07);
+  border-color: rgba(182, 255, 0, 0.25);
+}
+
+.verdict.fail {
+  background: rgba(239, 68, 68, 0.07);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.verdict.warn {
+  background: rgba(251, 191, 36, 0.07);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.verdict .icon {
+  font-size: 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   Section 13 - Blog Cards
+   -------------------------------------------------------------------------- */
+.blog-section .sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+
+.posts-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.posts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.bcard {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s, border-color 0.28s;
+}
+
+.bcard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(182, 255, 0, 0.1), transparent 60%);
+}
+
+.bcard:hover::before {
+  opacity: 1;
+}
+
+.bcard:hover {
+  transform: translateY(-5px);
+  border-color: var(--line-strong);
+}
+
+.bcard .thumb {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  width: 100%;
+  display: block;
+  transition: transform 0.5s;
+}
+
+.bcard:hover .thumb {
+  transform: scale(1.05);
+}
+
+.bcard .body {
+  padding: 16px 17px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.bcard .cat {
+  font-size: 0.69rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.bcard h3 {
+  font-size: 1.02rem;
+  line-height: 1.25;
+}
+
+.bcard .meta {
+  margin-top: auto;
+  font-size: 0.77rem;
+  color: var(--faint);
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   Section 14 - Popular Posts Panel
+   -------------------------------------------------------------------------- */
+.popular {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.popular h3 {
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.popular ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: p;
+}
+
+.popular li {
+  counter-increment: p;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.popular li:first-child {
+  border-top: none;
+}
+
+.popular li::before {
+  content: counter(p, decimal-leading-zero);
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--faint);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding-top: 1px;
+}
+
+.popular a {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  transition: color 0.2s;
+}
+
+.popular a:hover {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Section 15 - Stats Grid
+   -------------------------------------------------------------------------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Section 16 - CTA Band
+   -------------------------------------------------------------------------- */
+.cta-band {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 56px 40px;
+  text-align: center;
+  background: linear-gradient(150deg, rgba(182, 255, 0, 0.12), rgba(139, 204, 0, 0.05) 50%, var(--surface));
+  border: 1px solid var(--line-strong);
+}
+
+.cta-band h2 {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+}
+
+.cta-band p {
+  color: var(--muted);
+  margin: 0.8rem auto 1.8rem;
+  max-width: 46ch;
+}
+
+/* --------------------------------------------------------------------------
+   Section 17 - Footer
+   -------------------------------------------------------------------------- */
+footer {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid var(--line);
+  margin-top: 36px;
+  padding: 52px 0 38px;
+}
+
+.foot-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.foot-links {
+  display: flex;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.foot-links a {
+  color: var(--muted);
+  font-size: 0.88rem;
+  transition: color 0.2s;
+}
+
+.foot-links a:hover {
+  color: var(--text);
+}
+
+footer small {
+  color: var(--faint);
+}
+
+/* --------------------------------------------------------------------------
+   Section 18 - Reveal Animations
+   -------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(4px);
+  transition: opacity 0.6s, transform 0.6s, filter 0.6s;
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* --------------------------------------------------------------------------
+   Section 19 - Forms & Autocomplete
+   -------------------------------------------------------------------------- */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  margin-top: 4px;
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8);
+  display: none;
+  overflow: hidden;
+}
+
+.autocomplete-results.show {
+  display: block;
+}
+
+.autocomplete-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.autocomplete-item:hover {
+  background: rgba(182, 255, 0, 0.08);
+  color: var(--accent);
+}
+
+select, input {
+  background: var(--bg-soft);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(182, 255, 0, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   Section 20 - Result Badges
+   -------------------------------------------------------------------------- */
+.result-badge-pass {
+  background: rgba(182, 255, 0, 0.1);
+  border: 1px solid rgba(182, 255, 0, 0.3);
+  color: var(--accent);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.result-badge-fail {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #F87171;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.result-badge-warn {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #FCD34D;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* --------------------------------------------------------------------------
+   Section 21 - Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .bento {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tool.feat {
+    grid-column: span 2;
+    grid-row: auto;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .posts-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+  .nav-links {
+    display: none;
+  }
+  .menu-btn {
+    display: grid;
+    place-items: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .posts {
+    grid-template-columns: 1fr;
+  }
+  .bento {
+    grid-template-columns: 1fr;
+  }
+  .tool.wide, .tool.feat {
+    grid-column: span 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  .live-dot {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Section 22 - SEO Prose
+   -------------------------------------------------------------------------- */
+.prose {
+  font-size: 1.04rem;
+  line-height: 1.78;
+  color: #D3D7E0;
+  max-width: 74ch;
+  margin: 0 auto;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  margin-top: 2.4rem;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.prose h3 {
+  font-size: 1.14rem;
+  margin-top: 1.7rem;
+  color: #fff;
+}
+
+.prose p {
+  margin-top: 1rem;
+}
+
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(182, 255, 0, 0.35);
+}
+
+.prose ul {
+  margin-top: 1rem;
+  padding-left: 1.3rem;
+}
+
+.prose li {
+  margin-top: 0.45rem;
+}
+
+.prose li::marker {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   ACCESSIBILITY + FOOTER COLUMNS + SHARED PAGE FURNITURE (SEO pass)
+   -------------------------------------------------------------------------- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  background: var(--accent);
+  color: #000;
+  padding: 10px 18px;
+  border-radius: 0 0 10px 0;
+  font-weight: 600;
+}
+.skip-link:focus { left: 0; }
+
+.foot-cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+  margin-top: 28px;
+}
+.foot-cols h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+.foot-cols a {
+  display: block;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 4px 0;
+  transition: color .2s var(--ease);
+}
+.foot-cols a:hover { color: var(--text); }
+@media (max-width: 780px) {
+  .foot-cols { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+}
+
+/* Page header used by all secondary pages */
+.page-head {
+  padding: 48px 0 28px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 32px;
+}
+.page-head h1 {
+  font-size: clamp(28px, 4.5vw, 44px);
+  margin: 0 0 12px;
+  line-height: 1.15;
+}
+.page-head p.lede {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 65ch;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Generic data table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th {
+  text-align: left;
+  padding: 12px 14px;
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+.data-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.data-table tr:hover td { background: rgba(182, 255, 0, 0.03); }
+.data-table a { color: var(--text); text-decoration: none; font-weight: 500; }
+.data-table a:hover { color: var(--accent); }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Tier pill */
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.pill.t-S { background: #ff7f7f; color: #000; }
+.pill.t-A { background: #ffbf7f; color: #000; }
+.pill.t-B { background: #ffff7f; color: #000; }
+.pill.t-C { background: #7fff7f; color: #000; }
+.pill.t-D { background: #7fbfff; color: #000; }
+.pill.t-F { background: #bfbfbf; color: #000; }
+
+/* Card grid used by hub pages */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+/* FAQ block (drives FAQPage schema on tool pages) */
+.faq { margin-top: 56px; }
+.faq h2 { margin-bottom: 18px; }
+.faq details {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  background: var(--surface);
+}
+.faq details[open] { border-color: var(--line-strong); }
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; color: var(--accent); font-size: 20px; line-height: 1; }
+.faq details[open] summary::after { content: '\2212'; }
+.faq details p { color: var(--muted); margin: 12px 0 0; line-height: 1.65; font-size: 15px; }
+
+/* Related-links block for internal linking */
+.related { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
+.related h2 { font-size: 20px; margin-bottom: 16px; }
+.related ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.related li a {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all .2s var(--ease);
+}
+.related li a:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ==========================================================================
+   RESPONSIVE LAYER
+   Applies to every page. Written after an audit on a 375px viewport that found
+   the homepage hero overflowing the screen, headings that did not scale, and
+   47 tap targets under the 44px minimum.
+   ========================================================================== */
+
+/* Nothing may push the page sideways. Wide content (tables, benchmark grids)
+   scrolls inside its own container instead — see .table-scroll. */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* The decorative aurora blobs are larger than a phone screen by design; keep
+   them from contributing to layout width on any device. */
+.aurora { max-width: 100vw; }
+
+/* --------------------------------------------------------------------------
+   Fluid typography. clamp() lets the same heading read well at 375px and
+   1440px without a breakpoint for each step.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  h1 { font-size: clamp(26px, 6.4vw, 40px); line-height: 1.18; }
+  h2 { font-size: clamp(20px, 4.8vw, 28px); }
+  h3 { font-size: clamp(17px, 4vw, 22px); }
+  .hero h1 { font-size: clamp(28px, 8vw, 44px); }
+  .lead, .lede { font-size: 15.5px; }
+}
+
+/* --------------------------------------------------------------------------
+   Layout breathing room
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+
+  .page-head { padding: 28px 0 20px; margin-bottom: 24px; }
+  .page-head p.lede { font-size: 15px; }
+
+  section { margin-bottom: 32px; }
+
+  /* Long words (GPU model strings, publisher requirement text) must wrap
+     rather than force the column wider. */
+  h1, h2, h3, p, td, th, li, summary { overflow-wrap: anywhere; }
+
+  /* Pill rails and chip rows scroll rather than stack into a tall wall. */
+  .related ul, .genre-rail, .brand-chips, .req-tabs, .res-switch, .budget-switch {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .related ul::-webkit-scrollbar,
+  .genre-rail::-webkit-scrollbar,
+  .brand-chips::-webkit-scrollbar { display: none; }
+  .related li, .genre-rail .chip, .brand-chips .chip { flex: 0 0 auto; }
+}
+
+/* --------------------------------------------------------------------------
+   Tap targets. Anything interactive should be reachable with a thumb; 44px is
+   the accepted minimum and several links here were 21px.
+   -------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* .brand is rendered by the Navbar component, so this has to live in the
+     global sheet — a page-scoped rule never reaches it. */
+  .brand { min-height: 44px; }
+  .nav-links a,
+  .foot-cols a,
+  .foot-links a,
+  .crumbs a,
+  .related li a,
+  .chip, .rbtn, .bbtn, .tab, .req-tab {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .foot-cols a { padding: 6px 0; }
+  .btn, .btn-primary, .btn-ghost, .btn-sm { min-height: 44px; }
+
+  /*
+   * Data tables hold hundreds of links (the GPU tier list alone has 184).
+   * Giving each one a 44px box would double the table's height for no gain,
+   * so instead the link fills its already-padded cell — the tap area becomes
+   * the whole cell rather than just the glyphs.
+   */
+  .data-table td, .data-table th { padding-top: 13px; padding-bottom: 13px; }
+  .data-table td > a:only-child {
+    display: block;
+    margin: -13px -14px;
+    padding: 13px 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Wide tables. They already scroll; on touch devices say so, because a table
+   that is cut off with no affordance just looks broken.
+   -------------------------------------------------------------------------- */
+.table-scroll { position: relative; }
+@media (max-width: 720px) {
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Fading right edge signals there is more to the side. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  }
+  .table-scroll .data-table { min-width: 520px; }
+  .data-table th, .data-table td { white-space: nowrap; }
+  /* The first column carries the name and must stay readable. */
+  .data-table td:first-child { white-space: normal; min-width: 140px; }
+}
+
+/* --------------------------------------------------------------------------
+   Two-column tool layouts (form beside results) stack on small screens.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .tool, .tool-container { grid-template-columns: 1fr; }
+  .inputs-panel, .results-panel { width: auto; }
+}
+
+/* Forms: 16px minimum on every field, otherwise iOS Safari zooms the page in
+   when one is focused and the user is left scrolled sideways. */
+input, select, textarea, button { font-size: max(16px, 1em); }
+
+/* Media never exceeds its column. */
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* --------------------------------------------------------------------------
+   Navbar on small screens.
+
+   "Check My PC" was wrapping onto two lines, which inflated the sticky header
+   to 96px — a quarter of a phone screen permanently occupied before any
+   content. The label stays (it is the primary action) but is kept on one line
+   and sized down.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .nav-inner {
+    gap: 0.5rem;
+    margin: 8px auto;
+    padding: 0.4rem 0.5rem 0.4rem 0.75rem;
+    border-radius: 14px;
+  }
+  .nav-cta { gap: 0.4rem; }
+  .nav-cta .btn-primary {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 0 12px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .menu-btn { width: 40px; height: 40px; flex: 0 0 auto; }
+    .brand img { height: 26px; }
+}
+
+/* Only the narrowest phones drop the wordmark. 375px covers the iPhone SE and
+   12 mini, which are common enough that the brand should still show there. */
+@media (max-width: 340px) {
+  .brand span { display: none; }
+  .nav-cta .btn-primary { font-size: 12.5px; padding: 0 10px; }
+}
+
+/* The mobile menu panel sits under the sticky bar, so it must scroll if the
+   viewport is short (landscape phones especially). */
+@media (max-width: 1024px) {
+  .nav-links.show-mobile {
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    gap: 2px;
+    z-index: 60;
+  }
+  .nav-links.show-mobile a {
+    padding: 12px 10px;
+    border-radius: 8px;
+  }
+}

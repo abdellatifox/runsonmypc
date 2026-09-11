@@ -1,0 +1,348 @@
+---
+export const prerender = false;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getGame, getGpu, getGpus, getCpus } from '../../../lib/db';
+import GameArt from '../../../components/GameArt.astro';
+import { getGameArt, getGameOgImage } from '../../../lib/images';
+import { estimateFps, targetPreset } from '../../../lib/perf';
+import Icon from '../../../components/Icon.astro';
+
+const { game: gameSlug, gpu: gpuSlug } = Astro.params;
+
+const [game, gpu] = await Promise.all([
+  getGame(Astro.locals, gameSlug!),
+  getGpu(Astro.locals, gpuSlug!)
+]);
+
+// Previously an unknown game or card produced an invented pairing with made-up
+// scores. Every typo became an indexable page of fiction; now it 404s.
+if (!game || !gpu) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
+
+const art = getGameArt(game.slug, game.name);
+const ogImage = getGameOgImage(game.slug);
+
+// Pair with a processor that will not itself be the limiting factor, so the
+// answer is about this graphics card.
+const refCpu = cpus.find(c => c.score >= game.rec_cpu_score) ?? cpus[0];
+
+const meetsMin = gpu.score >= game.min_gpu_score && gpu.vram_gb >= game.min_vram_gb;
+const meetsRec = gpu.score >= game.rec_gpu_score && gpu.vram_gb >= game.rec_vram_gb;
+const vramShort = gpu.vram_gb < game.rec_vram_gb;
+
+const fps = {
+  '1080p': estimateFps(game, gpu.score, refCpu.score, '1080p', 'high'),
+  '1440p': estimateFps(game, gpu.score, refCpu.score, '1440p', 'high'),
+  '4k': estimateFps(game, gpu.score, refCpu.score, '4k', 'high')
+};
+
+const verdict = !meetsMin
+  ? { label: 'No — below minimum', tone: 'fail', icon: 'bi-x-circle-fill' }
+  : !meetsRec
+    ? { label: 'Yes — with compromises', tone: 'warn', icon: 'bi-exclamation-circle-fill' }
+    : gpu.score >= game.rec_gpu_score * 1.35
+      ? { label: 'Yes — comfortably', tone: 'pass', icon: 'bi-check-circle-fill' }
+      : { label: 'Yes — runs well', tone: 'pass', icon: 'bi-check-circle-fill' };
+
+const bestPreset = targetPreset(fps['1080p'], 60);
+
+const summary = !meetsMin
+  ? `The ${gpu.name} falls below the minimum requirement for ${game.name}${vramShort && gpu.vram_gb < game.min_vram_gb ? `, and its ${gpu.vram_gb}GB of VRAM is under the ${game.min_vram_gb}GB the game asks for` : ''}. Expect it to run poorly or refuse to launch.`
+  : !meetsRec
+    ? `The ${gpu.name} clears the minimum bar for ${game.name} but sits under the recommended spec. It is playable at around ${fps['1080p']} FPS at 1080p on high, and you will get a smoother result on the ${bestPreset} preset${game.supports_dlss || game.supports_fsr ? ' or by enabling upscaling' : ''}.`
+    : `The ${gpu.name} handles ${game.name} comfortably — roughly ${fps['1080p']} FPS at 1080p and ${fps['1440p']} FPS at 1440p on high settings.`;
+
+// Cards immediately around this one make the most useful onward links.
+const idx = gpus.findIndex(g => g.slug === gpu.slug);
+const alternatives = gpus
+  .filter((_, i) => Math.abs(i - idx) <= 4 && i !== idx)
+  .slice(0, 6)
+  .map(g => ({
+    gpu: g,
+    fps: estimateFps(game, g.score, refCpu.score, '1080p', 'high'),
+    better: g.score > gpu.score
+  }));
+
+const year = new Date().getFullYear();
+const title = `Can a ${gpu.name} Run ${game.name}? (${year}) | PCGameFit`;
+const description = `${summary.slice(0, 150)}`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Can the ${gpu.name} run ${game.name}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": summary }
+      },
+      {
+        "@type": "Question",
+        "name": `What FPS does the ${gpu.name} get in ${game.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `On high settings with upscaling off, the ${gpu.name} is estimated at ${fps['1080p']} FPS at 1080p, ${fps['1440p']} FPS at 1440p and ${fps['4k']} FPS at 4K in ${game.name}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What settings should I use for ${game.name} on a ${gpu.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${bestPreset} preset at 1080p is the best starting point for 60 FPS on this card.${game.supports_dlss || game.supports_fsr ? ` ${game.name} also supports ${[game.supports_dlss && 'DLSS', game.supports_fsr && 'FSR'].filter(Boolean).join(' and ')}, which is worth 25-40% more frames on Quality mode.` : ''}`
+        }
+      }
+    ]
+  }
+];
+---
+<BaseLayout title={title} description={description} jsonLd={schema} ogImage={ogImage}
+  keywords={`can ${gpu.name} run ${game.name}, ${game.name} ${gpu.name} fps, ${game.name} on ${gpu.name}`}>
+  <div class="wrap">
+    <Breadcrumbs items={[
+      { name: 'Games', href: '/games' },
+      { name: game.name, href: `/game/${game.slug}` },
+      { name: gpu.name }
+    ]} />
+
+    <header class="matchup">
+      <div class="cover" data-kind={art.kind} style={art.kind !== 'cover' ? `--hue:${art.hue}` : undefined}>
+        <GameArt slug={game.slug} art={art} eager={true} sizes="(max-width: 720px) 160px, 300px"
+          className={art.kind === 'logo' ? 'logo' : art.kind === 'none' ? 'initials' : ''} />
+      </div>
+
+      <div class="m-info">
+        <h1>Can a {gpu.name} run {game.name}?</h1>
+        <div class={`verdict ${verdict.tone}`}>
+          <Icon name={verdict.icon} />
+          <span>{verdict.label}</span>
+        </div>
+        <p class="summary">{summary}</p>
+
+        <div class="fps-cards">
+          <div><b>{fps['1080p']}</b><span>FPS @ 1080p</span></div>
+          <div><b>{fps['1440p']}</b><span>FPS @ 1440p</span></div>
+          <div><b>{fps['4k']}</b><span>FPS @ 4K</span></div>
+        </div>
+        <p class="fine">High preset, upscaling off, paired with a {refCpu.name}-class processor.</p>
+      </div>
+    </header>
+
+    <section>
+      <h2>How the {gpu.name} measures up</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Requirement</th><th>{gpu.name}</th><th>Minimum</th><th>Recommended</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GPU performance score</td>
+              <td><b>{gpu.score}</b></td>
+              <td>{game.min_gpu_score}</td>
+              <td>{game.rec_gpu_score}</td>
+              <td>{gpu.score >= game.rec_gpu_score
+                ? <span class="v ok">Recommended</span>
+                : gpu.score >= game.min_gpu_score
+                  ? <span class="v warn">Minimum</span>
+                  : <span class="v bad">Below</span>}</td>
+            </tr>
+            <tr>
+              <td>Video memory</td>
+              <td><b>{gpu.vram_gb} GB</b></td>
+              <td>{game.min_vram_gb} GB</td>
+              <td>{game.rec_vram_gb} GB</td>
+              <td>{gpu.vram_gb >= game.rec_vram_gb
+                ? <span class="v ok">Recommended</span>
+                : gpu.vram_gb >= game.min_vram_gb
+                  ? <span class="v warn">Minimum</span>
+                  : <span class="v bad">Below</span>}</td>
+            </tr>
+            <tr>
+              <td>Ray tracing</td>
+              <td>{gpu.supports_ray_tracing ? '✓ Supported' : '— Not supported'}</td>
+              <td colspan="2">{game.supports_ray_tracing ? `Game supports RT${game.ray_tracing_intensity ? ` (${String(game.ray_tracing_intensity).toLowerCase()})` : ''}` : 'Game has no RT'}</td>
+              <td>{game.supports_ray_tracing && gpu.supports_ray_tracing
+                ? <span class="v ok">Available</span>
+                : <span class="v neutral">N/A</span>}</td>
+            </tr>
+            <tr>
+              <td>Upscaling</td>
+              <td>{[gpu.supports_dlss && 'DLSS', gpu.supports_fsr && 'FSR', gpu.supports_xess && 'XeSS'].filter(Boolean).join(', ') || '—'}</td>
+              <td colspan="2">{[game.supports_dlss && 'DLSS', game.supports_fsr && 'FSR'].filter(Boolean).join(', ') || 'Not supported'}</td>
+              <td>{(game.supports_dlss && gpu.supports_dlss) || (game.supports_fsr && gpu.supports_fsr)
+                ? <span class="v ok">Available</span>
+                : <span class="v neutral">N/A</span>}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Recommended settings</h2>
+      <div class="settings-grid">
+        <div>
+          <h3>For 60 FPS at 1080p</h3>
+          <p>Use the <b>{bestPreset}</b> preset. {fps['1080p'] >= 60
+            ? 'You already clear 60 FPS on high, so this leaves headroom for dips in busy scenes.'
+            : 'High settings fall short here, so drop the preset before touching resolution.'}</p>
+        </div>
+        <div>
+          <h3>At 1440p</h3>
+          <p>{fps['1440p'] >= 60
+            ? `Comfortable — around ${fps['1440p']} FPS on high.`
+            : fps['1440p'] >= 40
+              ? `Around ${fps['1440p']} FPS on high. Playable, but drop to medium or enable upscaling for a stable 60.`
+              : `Around ${fps['1440p']} FPS on high — this card is happier at 1080p for this title.`}</p>
+        </div>
+        <div>
+          <h3>At 4K</h3>
+          <p>{fps['4k'] >= 60
+            ? `Around ${fps['4k']} FPS on high — genuinely viable.`
+            : fps['4k'] >= 35
+              ? `Around ${fps['4k']} FPS. Workable with upscaling on Performance mode.`
+              : `Around ${fps['4k']} FPS — not a realistic target for this pairing.`}</p>
+        </div>
+        {(game.supports_dlss || game.supports_fsr) && (
+          <div>
+            <h3>Upscaling</h3>
+            <p>{game.name} supports {[game.supports_dlss && 'DLSS', game.supports_fsr && 'FSR'].filter(Boolean).join(' and ')}.
+            {(game.supports_dlss && gpu.supports_dlss)
+              ? ' Your card supports DLSS — Quality mode is the best first change you can make.'
+              : (game.supports_fsr && gpu.supports_fsr)
+                ? ' Your card supports FSR — Quality mode is worth 25–40% more frames.'
+                : ' Your card does not support the upscalers this game offers.'}
+            {' '}<a href="/dlss-fsr">Compare upscalers</a>.</p>
+          </div>
+        )}
+        {vramShort && (
+          <div>
+            <h3>VRAM headroom</h3>
+            <p>At {gpu.vram_gb}GB you are under the {game.rec_vram_gb}GB this game recommends. Lower the texture setting one notch first — it costs the least visual quality per gigabyte saved.</p>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section>
+      <h2>How other cards handle {game.name}</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Graphics card</th><th>Tier</th><th>1080p FPS</th><th>vs {gpu.name}</th><th></th></tr>
+          </thead>
+          <tbody>
+            {alternatives.map(a => (
+              <tr>
+                <td><a href={`/can-it-run/${game.slug}/${a.gpu.slug}`}>{a.gpu.name}</a></td>
+                <td><span class={`pill t-${a.gpu.tier}`}>{a.gpu.tier}</span></td>
+                <td><b>{a.fps}</b></td>
+                <td class={a.better ? 'up' : 'down'}>
+                  {a.better ? '▲' : '▼'} {Math.abs(a.fps - fps['1080p'])} FPS
+                </td>
+                <td><a href={`/compare-gpu?a=${gpu.slug}&b=${a.gpu.slug}`} class="cmp-link">Compare</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Can the {gpu.name} run {game.name}?</summary>
+        <p>{summary}</p>
+      </details>
+      <details>
+        <summary>What FPS will I get?</summary>
+        <p>On high settings with upscaling off: roughly {fps['1080p']} FPS at 1080p, {fps['1440p']} FPS at 1440p and {fps['4k']} FPS at 4K. These are modelled estimates — see our <a href="/editorial-standards">methodology</a>.</p>
+      </details>
+      <details>
+        <summary>What settings should I use?</summary>
+        <p>Start at the {bestPreset} preset at 1080p.{(game.supports_dlss || game.supports_fsr) ? ' Then enable upscaling on Quality mode before lowering anything further.' : ''}</p>
+      </details>
+      <details>
+        <summary>Will my processor hold this back?</summary>
+        <p>These figures assume a processor fast enough not to limit the card. If yours is older, run the <a href="/bottleneck">bottleneck calculator</a> — {game.cpu_intensive ? 'this title is unusually CPU-heavy, so it matters more than usual here.' : 'this title leans on the GPU, so a modest CPU deficit costs less.'}</p>
+      </details>
+    </section>
+
+    <div class="cta-row">
+      <a href={`/can-it-run?game=${game.slug}`} class="btn btn-primary">Check my full system</a>
+      <a href={`/game/${game.slug}`} class="btn btn-ghost">{game.name} requirements</a>
+      <a href={`/gpu/${gpu.slug}`} class="btn btn-ghost">{gpu.name} specs</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .matchup {
+    display: grid; grid-template-columns: 190px 1fr; gap: 30px; align-items: start;
+    padding: 34px 0 32px; border-bottom: 1px solid var(--line); margin-bottom: 44px;
+  }
+  .cover {
+    aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  }
+  .cover[data-kind="cover"] :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover[data-kind="logo"], .cover[data-kind="none"] {
+    background:
+      radial-gradient(70% 46% at 50% 50%, rgba(6,8,14,.90) 0%, rgba(6,8,14,.45) 62%, rgba(6,8,14,0) 100%),
+      radial-gradient(105% 62% at 50% 0%, hsl(var(--hue) 48% 19%) 0%, transparent 72%),
+      linear-gradient(160deg, #141826 0%, #0b0d16 100%);
+  }
+  .cover :global(picture) { display: contents; }
+  .cover :global(.logo) {
+    display: block; max-width: 80%; max-height: 60%; object-fit: contain;
+    filter:
+      drop-shadow(0 1px 2px rgba(0,0,0,.9))
+      drop-shadow(0 6px 22px rgba(0,0,0,.7));
+  }
+  .cover :global(.initials) { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; color: hsl(var(--hue) 70% 72%); }
+
+  .m-info h1 { font-size: clamp(24px, 4vw, 36px); margin: 0 0 16px; line-height: 1.2; }
+  .verdict {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 16px; margin-bottom: 16px;
+  }
+  .verdict.pass { background: rgba(120,255,120,.1); color: #7fe98a; border: 1px solid rgba(120,255,120,.25); }
+  .verdict.warn { background: rgba(255,200,80,.1); color: #ffc850; border: 1px solid rgba(255,200,80,.25); }
+  .verdict.fail { background: rgba(255,110,110,.1); color: #ff8080; border: 1px solid rgba(255,110,110,.25); }
+  .summary { color: var(--muted); line-height: 1.75; max-width: 64ch; margin: 0 0 22px; }
+
+  .fps-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+  .fps-cards > div {
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
+    padding: 14px 22px; text-align: center; min-width: 108px;
+  }
+  .fps-cards b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 28px; color: var(--accent); line-height: 1; }
+  .fps-cards span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .fine { color: var(--faint); font-size: 12.5px; margin: 12px 0 0; }
+  @media (max-width: 720px) { .matchup { grid-template-columns: 1fr; } .cover { max-width: 160px; } }
+
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
+  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
+  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+  .v.neutral { background: rgba(255,255,255,.06); color: var(--muted); }
+  .up { color: #7fe98a; } .down { color: #ff8080; }
+  .cmp-link { color: var(--accent) !important; font-size: 13px; }
+
+  .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .settings-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 20px; background: var(--surface); }
+  .settings-grid h3 { font-size: 15px; margin: 0 0 8px; color: var(--accent); }
+  .settings-grid p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+  .settings-grid b { color: var(--text); text-transform: capitalize; }
+  .settings-grid a { color: var(--accent); }
+
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+</style>

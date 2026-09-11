@@ -1,0 +1,59 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_URL, CONTACT_EMAIL } from '../lib/site';
+---
+<BaseLayout
+  title="About PCGameFit — Who We Are | PCGameFit"
+  description="PCGameFit builds free, independent PC gaming tools: compatibility checks, FPS estimates and hardware rankings. Here is who we are and how we work."
+  keywords="about pcgamefit, pc gaming tools, hardware rankings methodology"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About PCGameFit",
+    "url": `${SITE_URL}/about`,
+    "mainEntity": { "@id": `${SITE_URL}/#organization` }
+  }}
+>
+  <div class="about-container">
+  <Breadcrumbs items={[{ name: 'About' }]} />
+    <h1>About PC Game Fit</h1>
+    <p class="mission">Mission: We build free tools that help PC gamers make smarter hardware decisions.</p>
+    
+    <section>
+      <h2>How Accuracy Works</h2>
+      <p>Our figures are <strong>modelled estimates, not measured benchmark runs</strong>. We anchor on a simple premise — a system meeting a game’s recommended spec should reach roughly 60 FPS at 1080p on high — then scale by your hardware’s relative score, resolution and preset. That makes us good at comparing configurations, and no substitute for a review that actually ran the game.</p>
+    </section>
+
+    <section>
+      <h2>Data Sources</h2>
+      <p>We do not test hardware ourselves. Our scores aggregate publicly available benchmark results from multiple independent outlets, combined with manufacturer specifications and publisher-published system requirements. Scores are updated as new hardware launches and as patches change what games ask for. Our full method is documented in our <a href="/editorial-standards">editorial standards</a>.</p>
+    </section>
+
+    <section>
+      <h2>Editorial Standards</h2>
+      <p>Our recommendations are strictly data-driven. We are not influenced by manufacturers or publishers. Our tier lists and comparisons remain objective.</p>
+    </section>
+
+    <section>
+      <h2>Team</h2>
+      <p>We are the PCGameFit Team, a group of dedicated PC enthusiasts, hardware reviewers, and software engineers.</p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>Have questions? <a href={`mailto:${CONTACT_EMAIL}`}>Contact us</a>.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .about-container { max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--accent, #B6FF00); }
+  .mission { font-size: 1.2rem; font-style: italic; margin-bottom: 2rem; border-left: 4px solid var(--accent); padding-left: 1rem; color: #ddd; }
+  section { margin-bottom: 2rem; }
+  h2 { font-size: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+  p { line-height: 1.6; color: #ccc; }
+  a { color: var(--accent); text-decoration: none; }
+</style>

@@ -1,0 +1,187 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import GameCard from '../../components/GameCard.astro';
+import { getGames } from '../../lib/db';
+import { GAME_LISTS } from '../../lib/site-data';
+import Icon from '../../components/Icon.astro';
+import { SITE_URL } from '../../lib/site';
+
+const games = await getGames(Astro.locals);
+const q = (Astro.url.searchParams.get('q') || '').trim();
+
+const filtered = q
+  ? games.filter(g => g.name.toLowerCase().includes(q.toLowerCase()))
+  : games;
+
+const genres = [...new Set(games.map(g => g.genre).filter(Boolean))].sort();
+
+const title = q
+  ? `PC Games Matching "${q}" — System Requirements | PCGameFit`
+  : `PC Game System Requirements — ${games.length} Games | PCGameFit`;
+
+const description = q
+  ? `Search results for "${q}". Minimum and recommended PC system requirements, with an instant can-I-run-it check for every title.`
+  : `Browse minimum and recommended system requirements for ${games.length} PC games. Check any title against your own GPU, CPU and RAM in one click — free, no download.`;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "PC Game System Requirements Database",
+  "description": description,
+  "url": `${SITE_URL}/games`,
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": filtered.length,
+    "itemListElement": filtered.slice(0, 40).map((g, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "url": `${SITE_URL}/game/${g.slug}`,
+      "name": g.name
+    }))
+  }
+};
+---
+<BaseLayout
+  title={title}
+  description={description}
+  keywords="pc game system requirements, game requirements database, can i run it, minimum requirements pc games"
+  canonical=`${SITE_URL}/games`
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Games' }]} />
+
+    <header class="page-head">
+      <h1>PC Game System Requirements</h1>
+      <p class="lede">
+        Minimum and recommended specs for {games.length} PC games, each with a one-click
+        compatibility check against your own hardware. No sign-up, no download.
+      </p>
+    </header>
+
+    <form class="games-search" method="get" action="/games" role="search">
+      <Icon name="search" />
+      <input
+        type="search"
+        name="q"
+        value={q}
+        placeholder="Search games…"
+        aria-label="Search games"
+        id="game-filter"
+        autocomplete="off"
+      >
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
+
+    <div class="genre-rail" role="group" aria-label="Filter by genre">
+      <button class="chip active" data-genre="">All</button>
+      {genres.map(gen => <button class="chip" data-genre={gen}>{gen}</button>)}
+    </div>
+
+    {q && (
+      <p class="result-count">
+        <b>{filtered.length}</b> {filtered.length === 1 ? 'game' : 'games'} matching “{q}”
+        {filtered.length === 0 && <> — <a href="/games">clear search</a></>}
+      </p>
+    )}
+
+    <div class="grid-auto game-grid" id="game-grid">
+      {filtered.map((g, i) => (
+        <div class="game-slot" data-genre={g.genre} data-name={g.name.toLowerCase()}>
+          <GameCard slug={g.slug} name={g.name} genre={g.genre} year={g.release_year} eager={i < 6} />
+        </div>
+      ))}
+    </div>
+
+    <p class="empty-msg" id="empty-msg" hidden>No games match that filter.</p>
+
+    <section class="related">
+      <h2>Curated game lists</h2>
+      <ul>
+        {GAME_LISTS.map(l => (
+          <li><a href={`/game-list/${l.slug}`}>{l.title}</a></li>
+        ))}
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .games-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+  }
+  .games-search :global(.icon) { color: var(--muted); }
+  .games-search input {
+    flex: 1;
+    background: none;
+    border: 0;
+    color: var(--text);
+    font: inherit;
+    outline: none;
+    min-width: 0;
+  }
+
+  .genre-rail { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .chip {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s var(--ease);
+  }
+  .chip:hover { color: var(--text); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+  .result-count { color: var(--muted); margin-bottom: 18px; }
+  .result-count a { color: var(--accent); }
+  .game-grid { margin-bottom: 20px; }
+  .empty-msg { color: var(--muted); text-align: center; padding: 40px 0; }
+</style>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('.chip');
+  const slots = document.querySelectorAll<HTMLElement>('.game-slot');
+  const empty = document.getElementById('empty-msg');
+  const filterInput = document.getElementById('game-filter') as HTMLInputElement | null;
+
+  let genre = '';
+  let term = '';
+
+  function apply() {
+    let shown = 0;
+    slots.forEach(s => {
+      const okGenre = !genre || s.dataset.genre === genre;
+      const okTerm = !term || (s.dataset.name || '').includes(term);
+      const visible = okGenre && okTerm;
+      s.hidden = !visible;
+      if (visible) shown++;
+    });
+    if (empty) empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    genre = c.dataset.genre || '';
+    apply();
+  }));
+
+  // Live filtering on top of the server-rendered results.
+  filterInput?.addEventListener('input', () => {
+    term = filterInput.value.trim().toLowerCase();
+    apply();
+  });
+</script>

@@ -1,0 +1,230 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGpus, getCpus } from '../lib/db';
+import { SITE_URL } from '../lib/site';
+
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
+
+const HEADSETS = [
+  { name: 'Meta Quest 3 (Link)', gpu: 45, cpu: 45, ram: 8,  hz: 120, res: '2064 × 2208 per eye' },
+  { name: 'Valve Index',         gpu: 55, cpu: 50, ram: 8,  hz: 144, res: '1440 × 1600 per eye' },
+  { name: 'HTC Vive Pro 2',      gpu: 62, cpu: 52, ram: 16, hz: 120, res: '2448 × 2448 per eye' },
+  { name: 'Pimax Crystal',       gpu: 82, cpu: 65, ram: 16, hz: 120, res: '2880 × 2880 per eye' },
+  { name: 'Varjo Aero',          gpu: 78, cpu: 62, ram: 16, hz: 90,  res: '2880 × 2720 per eye' }
+];
+
+const description = 'Is your PC VR ready? Test your GPU, CPU and RAM against Quest 3 Link, Valve Index, Vive Pro 2, Pimax Crystal and Varjo Aero.';
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "VR Ready Test",
+    "url": `${SITE_URL}/vr-ready`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "description": description,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What does VR ready actually mean?",
+        "acceptedAnswer": { "@type": "Answer", "text": "VR ready means your PC can hold the headset's native refresh rate without dropping frames. That bar is much higher than flat-screen gaming because a VR headset renders two views at high refresh, and dropped frames cause discomfort rather than just looking bad." }
+      },
+      {
+        "@type": "Question",
+        "name": "What GPU do I need for VR in 2026?",
+        "acceptedAnswer": { "@type": "Answer", "text": "For entry-level headsets such as Quest 3 over Link, a card scoring around 45 in our index is the practical floor. High-resolution headsets like the Pimax Crystal or Varjo Aero realistically need an upper-tier card scoring 78 or above." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does VR need a strong CPU?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes, more than flat gaming does. VR runtimes add tracking, reprojection and compositing work on top of the game itself, so a weak processor causes judder even when the graphics card has headroom." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="VR Ready Test — Is My PC VR Ready? | PCGameFit"
+  description={description}
+  keywords="vr ready test, is my pc vr ready, vr requirements, quest 3 pc requirements, valve index requirements"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'VR Ready Test' }]} />
+
+    <header class="page-head">
+      <h1>Is My PC VR Ready?</h1>
+      <p class="lede">
+        VR asks far more of a PC than flat-screen gaming — two views, high refresh, and a hard
+        penalty for dropped frames. Pick your parts to see which headsets your machine can
+        actually drive at native refresh.
+      </p>
+    </header>
+
+    <div class="tool-panel">
+      <div class="fields">
+        <label>
+          <span>Graphics card</span>
+          <select id="gpu">
+            {gpus.map(g => <option value={`${g.score}|${g.vram_gb}`}>{g.name}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Processor</span>
+          <select id="cpu">
+            {cpus.map(c => <option value={c.score}>{c.name}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>System memory</span>
+          <select id="ram">
+            <option value="8">8 GB</option>
+            <option value="16" selected>16 GB</option>
+            <option value="32">32 GB</option>
+            <option value="64">64 GB</option>
+          </select>
+        </label>
+      </div>
+      <button id="test" class="btn btn-primary full">Test my PC</button>
+    </div>
+
+    <div id="result" class="result" hidden>
+      <h2 id="summary"></h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Headset</th><th>Resolution</th><th>Refresh</th><th>Verdict</th></tr>
+          </thead>
+          <tbody id="hs-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="reqs">
+      <h2>Headset requirements</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Headset</th><th>Per-eye resolution</th><th>Refresh</th><th>Min GPU score</th><th>Min CPU score</th><th>RAM</th></tr>
+          </thead>
+          <tbody>
+            {HEADSETS.map(h => (
+              <tr>
+                <td><b>{h.name}</b></td>
+                <td>{h.res}</td>
+                <td>{h.hz} Hz</td>
+                <td>{h.gpu}</td>
+                <td>{h.cpu}</td>
+                <td>{h.ram} GB</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What does "VR ready" actually mean?</summary>
+        <p>It means your PC can hold the headset's native refresh rate without dropping frames. That bar sits well above flat-screen gaming, because a headset renders two views at high refresh and dropped frames cause discomfort rather than just looking bad.</p>
+      </details>
+      <details>
+        <summary>What GPU do I need for VR in 2026?</summary>
+        <p>For entry-level headsets such as Quest 3 over Link, a card scoring around 45 in our index is the practical floor. High-resolution headsets like the Pimax Crystal or Varjo Aero realistically need a card scoring 78 or above.</p>
+      </details>
+      <details>
+        <summary>Does VR need a strong CPU?</summary>
+        <p>More than flat gaming does. VR runtimes add tracking, reprojection and compositing on top of the game itself, so a weak processor causes judder even when the GPU has headroom. Check yours with the <a href="/bottleneck">bottleneck calculator</a>.</p>
+      </details>
+      <details>
+        <summary>Can I use a laptop for VR?</summary>
+        <p>Yes, if it has a discrete GPU meeting the scores above and a full-size DisplayPort or USB-C with DisplayPort Alt Mode. Mobile chips typically run 10–20% behind their desktop namesakes, so aim one tier higher.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/can-it-run">Can I Run It?</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/build-suggest">Build Suggester</a></li>
+        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 26px; margin-bottom: 30px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .fields label { display: block; }
+  .fields span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .fields select { width: 100%; background: var(--bg-soft); border: 1px solid var(--line-strong); border-radius: 10px; padding: 11px 12px; color: var(--text); font: inherit; outline: none; }
+  .fields select:focus { border-color: var(--accent); }
+  .btn.full { width: 100%; }
+  .result { background: var(--surface); border: 1px solid var(--accent); border-radius: 18px; padding: 26px; margin-bottom: 44px; }
+  .result h2 { font-size: 22px; margin: 0 0 18px; }
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .v { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+
+  const HEADSETS = [
+    { name: 'Meta Quest 3 (Link)', gpu: 45, cpu: 45, ram: 8,  hz: 120, res: '2064 × 2208' },
+    { name: 'Valve Index',         gpu: 55, cpu: 50, ram: 8,  hz: 144, res: '1440 × 1600' },
+    { name: 'HTC Vive Pro 2',      gpu: 62, cpu: 52, ram: 16, hz: 120, res: '2448 × 2448' },
+    { name: 'Pimax Crystal',       gpu: 82, cpu: 65, ram: 16, hz: 120, res: '2880 × 2880' },
+    { name: 'Varjo Aero',          gpu: 78, cpu: 62, ram: 16, hz: 90,  res: '2880 × 2720' }
+  ];
+
+  $('test').addEventListener('click', () => {
+    const [gS] = ($('gpu') as HTMLSelectElement).value.split('|');
+    const gpu = +gS;
+    const cpu = +($('cpu') as HTMLSelectElement).value;
+    const ram = +($('ram') as HTMLSelectElement).value;
+
+    let ready = 0;
+    const rows = HEADSETS.map(h => {
+      const okGpu = gpu >= h.gpu, okCpu = cpu >= h.cpu, okRam = ram >= h.ram;
+      const all = okGpu && okCpu && okRam;
+      const marginal = gpu >= h.gpu * 0.85 && cpu >= h.cpu * 0.85 && okRam;
+      if (all) ready++;
+
+      const missing: string[] = [];
+      if (!okGpu) missing.push('GPU');
+      if (!okCpu) missing.push('CPU');
+      if (!okRam) missing.push('RAM');
+
+      const verdict = all
+        ? '<span class="v" style="background:rgba(120,255,120,.12);color:#7fe98a">Ready</span>'
+        : marginal
+          ? '<span class="v" style="background:rgba(255,200,80,.12);color:#ffc850">Marginal</span>'
+          : `<span class="v" style="background:rgba(255,110,110,.12);color:#ff8080">Below spec (${missing.join(', ')})</span>`;
+
+      return `<tr><td><b>${h.name}</b></td><td>${h.res}</td><td>${h.hz} Hz</td><td>${verdict}</td></tr>`;
+    });
+
+    $('summary').textContent = ready === HEADSETS.length
+      ? 'Your PC is ready for every headset we test against.'
+      : ready > 0
+        ? `Your PC is VR ready for ${ready} of ${HEADSETS.length} headsets.`
+        : 'Your PC falls below the bar for the headsets we test against.';
+
+    $('hs-body').innerHTML = rows.join('');
+    ($('result') as HTMLElement).hidden = false;
+    $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+</script>

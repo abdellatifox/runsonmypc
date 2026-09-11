@@ -1,0 +1,52 @@
+name = "pcgamefit"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# --------------------------------------------------------------------------
+# The ids below are placeholders. Deployment will fail until each is replaced
+# with a real resource id. Create them with:
+#
+#   npx wrangler d1 create pcgamefit-db
+#   npx wrangler kv namespace create PGF_KV
+#   npx wrangler kv namespace create SESSION
+#   npx wrangler r2 bucket create pcgamefit-assets
+#
+# then paste the ids each command prints into the matching field.
+#
+# The site degrades gracefully without them: src/lib/db.ts falls back to the
+# rows baked out of migrations/, so pages still render. D1 is what makes the
+# content editable without a redeploy.
+# --------------------------------------------------------------------------
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pcgamefit-db"
+database_id = "f9cf287b-051c-440c-93ee-4b468a0cf503"
+migrations_dir = "migrations"
+
+# Caches autocomplete results. Optional: the search APIs skip the cache and
+# query directly when this namespace is missing or erroring.
+[[kv_namespaces]]
+binding = "PGF_KV"
+id = "cabbc2ee9b044d52ab4a5acc184bc3d0"
+
+# Required by @astrojs/cloudflare's session support. Without it the build
+# warns "Invalid binding `SESSION`".
+[[kv_namespaces]]
+binding = "SESSION"
+id = "a9f50da3521746b79875f04e18d7bb08"
+
+# R2 is enabled on this account but deliberately unused. Game art (2,862 files,
+# 56 MB) ships as Pages static assets instead: Pages serves them from the same
+# Cloudflare edge with no egress cost and without invoking a Worker, which is
+# both faster and cheaper than proxying R2.
+#
+# Revisit when the art set approaches Pages' 20,000-file cap. At 5.9 files per
+# game that is roughly 3,300 games; the catalogue is 489 today, so there is
+# headroom for ~2,800 more. Past that, move public/art/ to R2 behind
+# cdn.pcgamefit.com and point getArtSources() at it.
+#
+# [[r2_buckets]]
+# binding = "PGF_R2"
+# bucket_name = "pcgamefit-assets"

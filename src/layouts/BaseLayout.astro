@@ -1,0 +1,265 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import { getPageCover } from '../lib/images';
+import Icon from '../components/Icon.astro';
+import IconSprite from '../components/IconSprite.astro';
+import { SITE_URL, ART_BASE } from '../lib/site';
+
+interface Props {
+  title: string;
+  description: string;
+  keywords?: string;
+  ogImage?: string;
+  canonical?: string;
+  jsonLd?: object | object[];
+  ogType?: string;
+  noindex?: boolean;
+  publishedAt?: string;
+  modifiedAt?: string;
+  author?: string;
+}
+const SITE_NAME = 'PCGameFit';
+
+const {
+  title,
+  description,
+  keywords = 'can i run it, fps calculator, bottleneck calculator, pc game check, system requirements',
+  ogImage,
+  canonical,
+  jsonLd,
+  ogType = 'website',
+  noindex = false,
+  publishedAt,
+  modifiedAt,
+  author
+} = Astro.props;
+
+const canonicalURL = canonical ?? new URL(Astro.url.pathname, Astro.site ?? SITE_URL).toString();
+
+/* A page may pass its own image (a game's cover art, a post's card); otherwise
+   it gets the card for its section rather than one generic brand image. */
+const resolvedOg = ogImage ?? getPageCover(Astro.url.pathname);
+const absOgImage = resolvedOg.startsWith('http') ? resolvedOg : SITE_URL + resolvedOg;
+
+/* Sitewide entity graph — tells Google what the brand is and enables the
+   sitelinks search box. Page-specific schema is appended after it. */
+const siteGraph = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": SITE_URL + "/#organization",
+    "name": SITE_NAME,
+    "url": SITE_URL,
+    "logo": { "@type": "ImageObject", "url": SITE_URL + "/logo-512.png" },
+    "description": "Free PC game compatibility, FPS estimation and hardware ranking tools."
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": SITE_URL + "/#website",
+    "name": SITE_NAME,
+    "url": SITE_URL,
+    "publisher": { "@id": SITE_URL + "/#organization" },
+    "inLanguage": "en",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": { "@type": "EntryPoint", "urlTemplate": SITE_URL + "/games?q={search_term_string}" },
+      "query-input": "required name=search_term_string"
+    }
+  }
+];
+
+const pageSchemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+const allSchemas = [...siteGraph, ...pageSchemas];
+
+const robotsValue = noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+
+const year = new Date().getFullYear();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <meta name="keywords" content={keywords}>
+  <link rel="canonical" href={canonicalURL}>
+  <meta name="robots" content={robotsValue}>
+  <meta name="theme-color" content="#090A0F">
+  <meta name="color-scheme" content="dark">
+  {author && <meta name="author" content={author} />}
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content={SITE_NAME}>
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:url" content={canonicalURL}>
+  <meta property="og:type" content={ogType}>
+  <meta property="og:image" content={absOgImage}>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content={title}>
+  {publishedAt && <meta property="article:published_time" content={publishedAt} />}
+  {modifiedAt && <meta property="article:modified_time" content={modifiedAt} />}
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={absOgImage}>
+
+  <!--
+    Fonts are self-hosted (scripts/fetch-fonts.mjs). The previous Google Fonts
+    <link> was render-blocking and cost two extra third-party connections
+    before any glyph could paint. Preloading the two faces the first screen
+    actually uses lets them start downloading alongside the CSS.
+  -->
+  {ART_BASE && (
+    <>
+      {/* Game art moved to R2, so the first card image now costs a second
+          connection. Warm it while the HTML is still parsing.
+
+          No `crossorigin` here: <img> loads are not CORS requests, and the
+          attribute made the browser reuse an anonymous-CORS connection for
+          them, which R2 rejects because the bucket sends no
+          Access-Control-Allow-Origin. Fonts need it; images must not have it. */}
+      <link rel="preconnect" href={ART_BASE} />
+      <link rel="dns-prefetch" href={ART_BASE} />
+    </>
+  )}
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- Every reachable game now has locally-built art (scripts/build-art.mjs),
+       so SteamGridDB is no longer on the critical path for any page. If a game
+       is ever added without running that script first, GameArt.astro's plain
+       <img> fallback still points at the remote URL — just without a warm
+       connection, which only matters for that rare, temporary case. -->
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <!-- iOS ignores SVG here, so this one has to be raster and opaque. -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <!-- Feeds -->
+  <link rel="alternate" type="application/rss+xml" title="PCGameFit Blog" href="/rss.xml">
+
+  <!-- JSON-LD -->
+  {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)}></script>)}
+</head>
+<body>
+  <IconSprite />
+  <a href="#main" class="skip-link">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="aurora" aria-hidden="true"></div>
+
+  <Navbar />
+
+  <main id="main">
+    <slot />
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-inner">
+        <div class="brand">
+          <div class="icon"><Icon name="controller" /></div>
+          <b>PCGameFit</b>
+        </div>
+      </div>
+
+      <div class="foot-cols">
+        <div>
+          <h2>Tools</h2>
+          <a href="/can-it-run">Can I Run It?</a>
+          <a href="/fps-estimator">FPS Calculator</a>
+          <a href="/bottleneck">Bottleneck Calculator</a>
+          <a href="/build-suggest">Build Suggester</a>
+          <a href="/upgrade-advisor">Upgrade Advisor</a>
+          <a href="/psu-calculator">PSU Calculator</a>
+          <a href="/pc-value">PC Value Calculator</a>
+        </div>
+        <div>
+          <h2>Hardware</h2>
+          <a href="/gpu-tier-list">GPU Tier List</a>
+          <a href="/cpu-tier-list">CPU Tier List</a>
+          <a href="/gpus">GPU Database</a>
+          <a href="/cpus">CPU Database</a>
+          <a href="/compare-gpu">Compare GPUs</a>
+          <a href="/compare-cpu">Compare CPUs</a>
+        </div>
+        <div>
+          <h2>Games</h2>
+          <a href="/games">All Games</a>
+          <a href="/game-lists">Game Lists</a>
+          <a href="/what-can-my-pc-run">What Can My PC Run?</a>
+          <a href="/vr-ready">VR Ready Test</a>
+          <a href="/ray-tracing">Ray Tracing Games</a>
+          <a href="/dlss-fsr">DLSS vs FSR</a>
+        </div>
+        <div>
+          <h2>Site</h2>
+          <a href="/about">About</a>
+          <a href="/blog">Blog</a>
+          <a href="/benchmarks">Benchmarks</a>
+          <a href="/editorial-standards">Editorial Standards</a>
+          <a href="/contact">Contact</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </div>
+      </div>
+
+      <div class="divider" style="margin: 20px 0;"></div>
+      <small>&copy; {year} PCGameFit.com. All rights reserved. Independent PC hardware &amp; game performance resource.</small>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll progress: transform only, measured once per resize, one write per frame.
+    const progress = document.querySelector('.progress') as HTMLElement | null;
+    if (progress) {
+      let range = 1;
+      let queued = false;
+      const measure = () => {
+        range = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      };
+      const paint = () => {
+        queued = false;
+        progress.style.transform = `scaleX(${Math.min(1, window.scrollY / range)})`;
+      };
+      window.addEventListener('scroll', () => {
+        if (!queued) { queued = true; requestAnimationFrame(paint); }
+      }, { passive: true });
+      window.addEventListener('resize', measure, { passive: true });
+      window.addEventListener('load', measure, { once: true });
+    }
+
+    // Reveal animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('in');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Tilt effect
+    document.querySelectorAll('.tilt').forEach(el => {
+      el.addEventListener('mousemove', (e: any) => {
+        const rect = el.getBoundingClientRect();
+        (el as HTMLElement).style.setProperty('--mx', `${e.clientX - rect.left}px`);
+        (el as HTMLElement).style.setProperty('--my', `${e.clientY - rect.top}px`);
+      });
+    });
+  </script>
+</body>
+</html>

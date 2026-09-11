@@ -1,0 +1,233 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGpus, getCpus } from '../lib/db';
+import { SITE_URL } from '../lib/site';
+
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
+
+/* Build the recommendation table on the server so it is in the HTML for
+   crawlers, then let the client pick a row instantly. */
+const BUDGETS = [
+  { key: '600',  label: '$600',  gpuMax: 45, cpuMax: 50, ram: 16, psu: 500, res: '1080p' },
+  { key: '900',  label: '$900',  gpuMax: 60, cpuMax: 62, ram: 16, psu: 650, res: '1080p' },
+  { key: '1200', label: '$1,200', gpuMax: 72, cpuMax: 72, ram: 32, psu: 750, res: '1440p' },
+  { key: '1800', label: '$1,800', gpuMax: 85, cpuMax: 85, ram: 32, psu: 850, res: '1440p' },
+  { key: '2500', label: '$2,500+', gpuMax: 100, cpuMax: 100, ram: 32, psu: 1000, res: '4K' }
+];
+
+const builds = BUDGETS.map(b => {
+  const gpu = gpus.filter(g => g.score <= b.gpuMax).sort((x, y) => y.score - x.score)[0] ?? gpus[gpus.length - 1];
+  const cpu = cpus.filter(c => c.score <= b.cpuMax).sort((x, y) => y.score - x.score)[0] ?? cpus[cpus.length - 1];
+  return { ...b, gpu, cpu };
+});
+
+const description = 'Get a complete PC parts list for your budget — matched GPU and CPU, memory, power supply and storage, sized for 1080p, 1440p or 4K gaming. Free build suggester.';
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Gaming PC Build Suggester",
+    "url": `${SITE_URL}/build-suggest`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "description": description,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does a good gaming PC cost in 2026?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Around $900 buys a solid 1080p machine at high settings. $1,200 to $1,800 is the sweet spot for 1440p gaming, and 4K at high frame rates generally starts near $2,500 once the monitor is accounted for." }
+      },
+      {
+        "@type": "Question",
+        "name": "How much should I spend on the GPU versus the CPU?",
+        "acceptedAnswer": { "@type": "Answer", "text": "For a gaming-first build, roughly 40-50% of the total goes to the graphics card and 15-20% to the processor. Overspending on the CPU while under-buying the GPU is the most common mistake in first builds." }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need 32GB of RAM for gaming?",
+        "acceptedAnswer": { "@type": "Answer", "text": "16GB is enough for gaming alone. 32GB is worth it from roughly the $1,200 tier upward, or sooner if you stream, keep many browser tabs open, or work with large files on the same machine." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="Gaming PC Build Suggester by Budget | PCGameFit"
+  description={description}
+  keywords="gaming pc build, pc parts list, build a gaming pc, pc builder by budget, 1440p gaming pc build"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Build Suggester' }]} />
+
+    <header class="page-head">
+      <h1>Gaming PC Build Suggester</h1>
+      <p class="lede">
+        Pick a budget and get a balanced parts list — a graphics card and processor matched to
+        each other so neither one is wasted, plus the memory, power supply and storage to go
+        with them.
+      </p>
+    </header>
+
+    <div class="budget-switch" role="group" aria-label="Select budget">
+      {builds.map((b, i) => (
+        <button class={`bbtn ${i === 2 ? 'active' : ''}`} data-budget={b.key}>{b.label}</button>
+      ))}
+    </div>
+
+    {builds.map((b, i) => (
+      <div class="build" data-build={b.key} hidden={i !== 2}>
+        <div class="build-head">
+          <div>
+            <span class="eyebrow">{b.label} build · targets {b.res}</span>
+            <h2>Balanced {b.res} gaming PC</h2>
+          </div>
+          <div class="tgt">
+            <b>{b.res}</b>
+            <span>target resolution</span>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>Component</th><th>Recommendation</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Graphics card</td>
+                <td><a href={`/gpu/${b.gpu.slug}`}>{b.gpu.name}</a> <span class={`pill t-${b.gpu.tier}`}>{b.gpu.tier}</span></td>
+                <td class="why">{b.gpu.vram_gb}GB VRAM, {b.gpu.tdp_watts}W — the strongest card that fits this budget without starving the rest of the build.</td>
+              </tr>
+              <tr>
+                <td>Processor</td>
+                <td><a href={`/cpu/${b.cpu.slug}`}>{b.cpu.name}</a> <span class={`pill t-${b.cpu.tier}`}>{b.cpu.tier}</span></td>
+                <td class="why">{b.cpu.cores} cores / {b.cpu.threads} threads at up to {b.cpu.boost_ghz}GHz — matched to the GPU so neither bottlenecks the other.</td>
+              </tr>
+              <tr>
+                <td>Memory</td>
+                <td>{b.ram}GB DDR5 (2 × {b.ram / 2}GB)</td>
+                <td class="why">Always two matched sticks for dual-channel. A single stick costs real frame rate.</td>
+              </tr>
+              <tr>
+                <td>Storage</td>
+                <td>{b.key === '600' ? '1TB' : '2TB'} NVMe SSD</td>
+                <td class="why">Modern installs run 70–150GB each. NVMe removes traversal stutter in open-world games.</td>
+              </tr>
+              <tr>
+                <td>Power supply</td>
+                <td>{b.psu}W 80+ Gold</td>
+                <td class="why">Leaves headroom for transient spikes. Verify with the <a href="/psu-calculator">PSU calculator</a>.</td>
+              </tr>
+              <tr>
+                <td>Cooling</td>
+                <td>{b.cpu.tdp_watts >= 125 ? '240mm AIO or premium air tower' : 'Quality air tower'}</td>
+                <td class="why">Sized to the {b.cpu.tdp_watts}W processor TDP.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="cta-row">
+          <a href={`/compare-gpu?a=${b.gpu.slug}`} class="btn btn-ghost">Compare this GPU</a>
+          <a href="/bottleneck" class="btn btn-ghost">Verify the pairing</a>
+          <a href="/psu-calculator" class="btn btn-ghost">Size the PSU</a>
+        </div>
+      </div>
+    ))}
+
+    <section class="split-guide">
+      <h2>How to split a gaming PC budget</h2>
+      <div class="split-grid">
+        <div><b>40–50%</b><span>Graphics card</span><p>The single biggest lever on frame rate in almost every game.</p></div>
+        <div><b>15–20%</b><span>Processor</span><p>Enough to keep the GPU fed without overspending.</p></div>
+        <div><b>10%</b><span>Memory</span><p>16GB minimum, 32GB from the mid tier upward.</p></div>
+        <div><b>10%</b><span>Storage</span><p>NVMe over capacity — you can always add a second drive.</p></div>
+        <div><b>10%</b><span>PSU &amp; case</span><p>Never the place to cut corners; a bad PSU takes parts with it.</p></div>
+        <div><b>5%</b><span>Cooling</span><p>Scale to the processor's power draw, not to looks.</p></div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>How much does a good gaming PC cost in 2026?</summary>
+        <p>Around $900 buys a solid 1080p machine at high settings. $1,200–$1,800 is the sweet spot for 1440p, and 4K at high frame rates generally starts near $2,500 once you account for the monitor.</p>
+      </details>
+      <details>
+        <summary>How much should I spend on the GPU versus the CPU?</summary>
+        <p>For a gaming-first build, roughly 40–50% of the total goes to the graphics card and 15–20% to the processor. Overspending on the CPU while under-buying the GPU is the most common mistake in first builds.</p>
+      </details>
+      <details>
+        <summary>Do I need 32GB of RAM?</summary>
+        <p>16GB is enough for gaming alone. 32GB is worth it from about the $1,200 tier upward, or sooner if you stream or keep heavy apps open while you play.</p>
+      </details>
+      <details>
+        <summary>Should I buy last generation to save money?</summary>
+        <p>Often yes. A previous-generation card one tier up frequently beats a current-generation card one tier down at the same price. Compare them directly on the <a href="/compare-gpu">GPU comparison tool</a>.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/psu-calculator">PSU Calculator</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/cpu-tier-list">CPU Tier List</a></li>
+        <li><a href="/benchmarks">Benchmarks</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .budget-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
+  .bbtn {
+    background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
+    padding: 10px 20px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer;
+    transition: all .2s var(--ease);
+  }
+  .bbtn:hover { color: var(--text); }
+  .bbtn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+  .build { margin-bottom: 40px; }
+  .build-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .build-head h2 { font-size: 24px; margin: 8px 0 0; }
+  .tgt { text-align: right; }
+  .tgt b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 26px; color: var(--accent); }
+  .tgt span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .why { color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .why a { color: var(--accent); }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+  .split-guide { margin-top: 56px; }
+  .split-guide h2 { font-size: 22px; margin-bottom: 18px; }
+  .split-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .split-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--surface); }
+  .split-grid b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 26px; color: var(--accent); line-height: 1; }
+  .split-grid span { display: block; font-size: 13px; font-weight: 600; margin: 8px 0 6px; }
+  .split-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+</style>
+
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('.bbtn');
+  const builds = document.querySelectorAll<HTMLElement>('.build');
+  btns.forEach(b => b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    builds.forEach(el => { el.hidden = el.dataset.build !== b.dataset.budget; });
+  }));
+</script>

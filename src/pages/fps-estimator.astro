@@ -1,0 +1,202 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Autocomplete from '../components/Autocomplete.astro';
+import Icon from '../components/Icon.astro';
+import { SITE_URL } from '../lib/site';
+
+const RES_OPTIONS = [
+  { label: '1080p (1920 × 1080)', value: '1080p' },
+  { label: '1440p (2560 × 1440)', value: '1440p' },
+  { label: '4K (3840 × 2160)', value: '4k' }
+];
+const PRESET_OPTIONS = [
+  { label: 'Low', value: 'low' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'High', value: 'high' },
+  { label: 'Ultra', value: 'ultra' }
+];
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "FPS Calculator",
+    "url": `${SITE_URL}/fps-estimator`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How accurate is an FPS estimate?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It is a model, not a measurement. We anchor on the publisher's own recommended specification — a system that exactly meets it should reach roughly 60 FPS at 1080p on high — then scale by your hardware's relative performance, the resolution and the preset. Expect the real figure to land within a reasonable band of the estimate, not on it exactly." }
+      },
+      {
+        "@type": "Question",
+        "name": "Why does 4K cost so much performance?",
+        "acceptedAnswer": { "@type": "Answer", "text": "4K renders roughly four times the pixels of 1080p. In GPU-bound games that typically costs 55-65% of your frame rate, which is why upscaling matters most at that resolution." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does the processor affect frame rate?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It sets a ceiling the graphics card cannot exceed, and that ceiling barely moves with resolution. That is why a weak processor shows up hardest at 1080p and matters much less at 4K." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="FPS Calculator — Estimate Your Frame Rate | PCGameFit"
+  description="Estimate the frame rate your PC will reach in any game at 1080p, 1440p or 4K, based on the publisher's own stated requirements."
+  keywords="fps calculator, frame rate estimator, how many fps will i get, calculate frame rate, fps predictor"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'FPS Calculator' }]} />
+
+    <header class="page-head">
+      <h1>FPS Calculator</h1>
+      <p class="lede">
+        How many FPS will I get? Calculate the frame rate your parts will reach in a specific game. The model is
+        anchored to the publisher's own recommended specification, so it moves with the
+        real requirements rather than a generic curve.
+      </p>
+    </header>
+
+    <section class="tool">
+      <form class="panel" id="fps-form" novalidate>
+        <Autocomplete id="game" label="Game" placeholder="Start typing a game name…" endpoint="/api/games/search" hint="Not listed? Keep typing — we search Steam live." required />
+        <Autocomplete id="gpu" label="Graphics card" placeholder="e.g. RTX 4070…" endpoint="/api/gpus/search" required />
+        <Autocomplete id="cpu" label="Processor" placeholder="e.g. Ryzen 5 5600…" endpoint="/api/cpus/search" hint="Optional, but it sets the frame-rate ceiling." />
+        <Autocomplete id="res" label="Resolution" placeholder="Pick a resolution" endpoint="" options={RES_OPTIONS} value="1080p (1920 × 1080)" required />
+        <Autocomplete id="preset" label="Graphics preset" placeholder="Pick a preset" endpoint="" options={PRESET_OPTIONS} value="High" required />
+        <button type="submit" class="btn btn-primary submit">Estimate frame rate &rarr;</button>
+        <p class="err" id="fps-err" role="alert" hidden></p>
+      </form>
+
+      <div class="results" id="fps-results" aria-live="polite">
+        <div class="placeholder">
+          <Icon name="speedometer2" />
+          <h2>Pick a game and your parts</h2>
+          <p>We estimate across every resolution so you can compare.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>How accurate is this?</summary>
+        <p>It is a model, not a measurement. We anchor on the publisher's recommended spec — a system that exactly meets it should reach roughly 60 FPS at 1080p on high — then scale by your hardware, the resolution and the preset. Expect a band, not a precise number.</p>
+      </details>
+      <details>
+        <summary>Why does 4K cost so much?</summary>
+        <p>It renders roughly four times the pixels of 1080p. In GPU-bound games that typically costs 55–65% of your frame rate, which is why <a href="/dlss-fsr">upscaling</a> matters most there.</p>
+      </details>
+      <details>
+        <summary>Does the processor affect frame rate?</summary>
+        <p>It sets a ceiling the graphics card cannot exceed, and that ceiling barely moves with resolution — so a weak processor shows up hardest at 1080p. Check yours with the <a href="/bottleneck">bottleneck calculator</a>.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/can-it-run">Can I Run It?</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/benchmarks">Benchmarks</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; gap: 24px; align-items: start; margin-bottom: 52px; }
+  @media (max-width: 900px) { .tool { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 22px; display: grid; gap: 16px; }
+  .submit { width: 100%; margin-top: 4px; }
+  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+
+  .results { min-height: 300px; }
+  .placeholder {
+    min-height: 300px; display: grid; place-content: center; justify-items: center; gap: 10px;
+    text-align: center; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; padding: 40px 24px;
+  }
+  .placeholder :global(.icon) { font-size: 38px; color: var(--faint); }
+  .placeholder h2 { font-size: 18px; margin: 0; }
+  .placeholder p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  :global(.fps-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 26px; }
+  :global(.fps-hero) { text-align: center; margin-bottom: 24px; }
+  :global(.fps-big) { font-family: 'Space Grotesk', sans-serif; font-size: clamp(46px, 10vw, 72px); font-weight: 700; line-height: 1; color: var(--accent); }
+  :global(.fps-big small) { font-size: 18px; color: var(--faint); font-weight: 500; margin-left: 6px; }
+  :global(.fps-band) { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+  :global(.fps-ctx) { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  :global(.fps-ctx b) { color: var(--text); }
+  :global(.fps-limit) {
+    display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 600;
+    padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--muted);
+  }
+  :global(.fps-note) { color: var(--faint); font-size: 12.5px; line-height: 1.6; margin-top: 16px; }
+  :global(.fps-note a) { color: var(--accent); }
+</style>
+
+<script>
+  const form = document.getElementById('fps-form') as HTMLFormElement;
+  const out = document.getElementById('fps-results')!;
+  const err = document.getElementById('fps-err') as HTMLElement;
+
+  const val = (id: string) => (document.getElementById(`${id}-value`) as HTMLInputElement)?.value?.trim() || '';
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true;
+
+    const game = val('game'), gpu = val('gpu'), cpu = val('cpu');
+    const resolution = val('res') || '1080p';
+    const preset = val('preset') || 'high';
+
+    if (!game) { err.textContent = 'Pick a game from the suggestions.'; err.hidden = false; return; }
+    if (!gpu) { err.textContent = 'Pick your graphics card from the suggestions.'; err.hidden = false; return; }
+
+    const r = await fetch('/api/tools/fps-estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game, gpu, cpu, resolution, preset })
+    });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error || 'Could not estimate that.'; err.hidden = false; return; }
+
+    const rows = d.table.map((t: any) => `
+      <tr${t.current ? ' style="color:var(--accent)"' : ''}>
+        <td>${esc(t.resolution)}</td>
+        <td>${t.low}–${t.high}</td>
+        <td><b>${t.fps}</b></td>
+      </tr>`).join('');
+
+    out.innerHTML = `
+      <div class="fps-card">
+        <div class="fps-hero">
+          <div class="fps-big">${d.fps}<small>FPS</small></div>
+          <p class="fps-band">Likely range ${d.low}–${d.high} FPS</p>
+          <p class="fps-ctx"><b>${esc(d.game.name)}</b> · ${esc(d.resolution)} · ${esc(d.preset)} preset</p>
+          <span class="fps-limit">${esc(d.limitedBy)}</span>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Resolution</th><th>Range</th><th>Estimate</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p class="fps-note">${d.note}</p>
+      </div>`;
+  });
+</script>

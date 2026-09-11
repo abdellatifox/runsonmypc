@@ -1,0 +1,61 @@
+---
+import Icon from './Icon.astro';
+import { SITE_NAME } from '../lib/site';
+import brand from '../lib/brand-meta.json';
+const currentPath = Astro.url.pathname;
+---
+<header class="nav">
+  <div class="nav-inner">
+    <a href="/" class="brand">
+      <picture>
+        <source type="image/avif" srcset={brand.logo.avif} />
+        <source type="image/webp" srcset={brand.logo.webp} />
+        <img src={brand.logo.png} alt={SITE_NAME} width={brand.logoWidth} height={brand.logoHeight} decoding="async" />
+      </picture>
+    </a>
+    
+    <nav class="nav-links">
+      <a href="/games" class={currentPath.startsWith('/games') ? 'active' : ''}>Games</a>
+      <a href="/tools" class={currentPath.startsWith('/tools') ? 'active' : ''}>Tools</a>
+      <a href="/gpu-tier-list" class={currentPath.startsWith('/gpu-tier-list') ? 'active' : ''}>GPU Tier List</a>
+      <a href="/blog" class={currentPath.startsWith('/blog') ? 'active' : ''}>Blog</a>
+      <a href="/benchmarks" class={currentPath.startsWith('/benchmarks') ? 'active' : ''}>Benchmarks</a>
+    </nav>
+    
+    <div class="nav-cta">
+      <a href="/can-it-run" class="btn btn-primary">Check My PC</a>
+      <button class="menu-btn" aria-label="Toggle menu">
+        <Icon name="list" />
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  const menuBtn = document.querySelector('.menu-btn');
+  const navLinks = document.querySelector('.nav-links');
+  
+  if (menuBtn && navLinks) {
+    menuBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('show-mobile');
+    });
+  }
+</script>
+
+<style>
+  @media (max-width: 1024px) {
+    .nav-links.show-mobile {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 1rem;
+      right: 1rem;
+      background: var(--surface);
+      padding: 1rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      margin-top: 0.5rem;
+    }
+  }
+</style>

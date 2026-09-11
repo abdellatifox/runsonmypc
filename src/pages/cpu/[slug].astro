@@ -1,0 +1,275 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getCpu, getCpus, getGames } from '../../lib/db';
+import { SITE_URL } from '../../lib/site';
+
+const { slug } = Astro.params;
+const cpu = await getCpu(Astro.locals, slug!);
+
+// A missing part must be a real 404, not a redirect — redirecting soft-404s to
+// the homepage is what gets these pages dropped from the index.
+if (!cpu) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [allCpus, games] = await Promise.all([
+  getCpus(Astro.locals),
+  getGames(Astro.locals)
+]);
+
+const rank = allCpus.findIndex(c => c.slug === cpu.slug) + 1;
+const faster = allCpus.filter(c => c.score > cpu.score).length;
+const pctFaster = Math.round(((allCpus.length - faster) / allCpus.length) * 100);
+
+// Nearest neighbours by score make natural comparison links.
+const rivals = allCpus
+  .filter(c => c.slug !== cpu.slug)
+  .sort((a, b) => Math.abs(a.score - cpu.score) - Math.abs(b.score - cpu.score))
+  .slice(0, 6);
+
+const handles = games.filter(g => g.rec_cpu_score <= cpu.score).length;
+const minimumOnly = games.filter(g => g.min_cpu_score <= cpu.score && g.rec_cpu_score > cpu.score).length;
+const struggles = games.filter(g => g.min_cpu_score > cpu.score);
+
+const demanding = games
+  .filter(g => g.cpu_intensive === 1)
+  .sort((a, b) => b.rec_cpu_score - a.rec_cpu_score)
+  .slice(0, 8);
+
+const verdict =
+  cpu.score >= 85 ? 'a flagship-class gaming processor that will not hold back any current graphics card'
+  : cpu.score >= 70 ? 'a strong gaming processor that pairs well with upper-mid-range and high-end GPUs'
+  : cpu.score >= 55 ? 'a capable mid-range gaming processor, best matched with mid-tier graphics cards'
+  : cpu.score >= 40 ? 'an entry-level gaming processor that will bottleneck faster GPUs in CPU-heavy titles'
+  : 'a dated processor that limits performance in most modern titles';
+
+const title = `${cpu.name} — Gaming Benchmarks & Specs | PCGameFit`;
+const description = `${cpu.name} review and specs: ${cpu.cores} cores, ${cpu.threads} threads, up to ${cpu.boost_ghz} GHz. Performance score ${cpu.score}/100, tier ${cpu.tier}. See which games it runs and what GPU to pair it with.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": cpu.name,
+    "url": `${SITE_URL}/cpu/${cpu.slug}`,
+    "brand": { "@type": "Brand", "name": cpu.brand },
+    "category": "Computer Processor",
+    "description": description,
+    "releaseDate": String(cpu.release_year),
+    "additionalProperty": [
+      { "@type": "PropertyValue", "name": "Cores", "value": cpu.cores },
+      { "@type": "PropertyValue", "name": "Threads", "value": cpu.threads },
+      { "@type": "PropertyValue", "name": "Base clock", "value": `${cpu.base_ghz} GHz` },
+      { "@type": "PropertyValue", "name": "Boost clock", "value": `${cpu.boost_ghz} GHz` },
+      { "@type": "PropertyValue", "name": "TDP", "value": `${cpu.tdp_watts} W` },
+      { "@type": "PropertyValue", "name": "Performance tier", "value": cpu.tier }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Is the ${cpu.name} good for gaming?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${cpu.name} scores ${cpu.score}/100 in our gaming index, placing it in tier ${cpu.tier} and ahead of roughly ${pctFaster}% of the processors we track. It is ${verdict}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `How many games can the ${cpu.name} run?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Of the ${games.length} games in our database, the ${cpu.name} meets or exceeds the recommended CPU requirement for ${handles} of them and the minimum requirement for a further ${minimumOnly}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What GPU should I pair with the ${cpu.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Aim for a graphics card with a performance score close to ${cpu.score}. Pairing a much faster GPU with this processor will leave the GPU idle in CPU-bound games; use our bottleneck calculator to check a specific combination.`
+        }
+      }
+    ]
+  }
+];
+---
+<BaseLayout title={title} description={description} jsonLd={schema}
+  keywords={`${cpu.name}, ${cpu.name} gaming, ${cpu.name} benchmark, ${cpu.name} specs, ${cpu.name} bottleneck`}>
+  <div class="wrap">
+    <Breadcrumbs items={[
+      { name: 'CPU Database', href: '/cpus' },
+      { name: cpu.name }
+    ]} />
+
+    <header class="part-head">
+      <div>
+        <span class="eyebrow">{cpu.brand} · {cpu.release_year}</span>
+        <h1>{cpu.name}</h1>
+        <p class="lede">
+          Ranked <b>#{rank}</b> of {allCpus.length} processors we track — faster than about
+          <b>{pctFaster}%</b> of them. This is {verdict}.
+        </p>
+      </div>
+      <div class="score-box">
+        <span class={`pill t-${cpu.tier}`}>Tier {cpu.tier}</span>
+        <div class="score-num">{cpu.score}<small>/100</small></div>
+        <div class="score-track"><div class="score-fill" style={`width:${cpu.score}%`}></div></div>
+        <span class="score-label">Gaming performance index</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Specifications</h2>
+      <div class="table-scroll">
+        <table class="data-table spec">
+          <tbody>
+            <tr><td>Manufacturer</td><td>{cpu.brand}</td></tr>
+            <tr><td>Cores</td><td>{cpu.cores}</td></tr>
+            <tr><td>Threads</td><td>{cpu.threads}</td></tr>
+            <tr><td>Base clock</td><td>{cpu.base_ghz} GHz</td></tr>
+            <tr><td>Boost clock</td><td>{cpu.boost_ghz} GHz</td></tr>
+            <tr><td>TDP</td><td>{cpu.tdp_watts} W</td></tr>
+            <tr><td>Release year</td><td>{cpu.release_year}</td></tr>
+            <tr><td>Performance tier</td><td><span class={`pill t-${cpu.tier}`}>{cpu.tier}</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>What the {cpu.name} can run</h2>
+      <div class="stat-row">
+        <div class="stat">
+          <b>{handles}</b>
+          <span>games at or above the recommended CPU spec</span>
+        </div>
+        <div class="stat">
+          <b>{minimumOnly}</b>
+          <span>games it meets the minimum spec for</span>
+        </div>
+        <div class="stat">
+          <b>{struggles.length}</b>
+          <span>games below the minimum requirement</span>
+        </div>
+      </div>
+      <p class="note">
+        Counts are against the {games.length} titles in our
+        <a href="/games">game requirements database</a>. CPU requirements are only half the
+        picture — run a <a href="/can-it-run">full compatibility check</a> to factor in your
+        graphics card and memory.
+      </p>
+    </section>
+
+    <section>
+      <h2>Most demanding games for this CPU</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Game</th><th>Recommended CPU score</th><th>Verdict</th></tr>
+          </thead>
+          <tbody>
+            {demanding.map(g => (
+              <tr>
+                <td><a href={`/game/${g.slug}`}>{g.name}</a></td>
+                <td>{g.rec_cpu_score}</td>
+                <td>
+                  {cpu.score >= g.rec_cpu_score
+                    ? <span class="v ok">Comfortable</span>
+                    : cpu.score >= g.min_cpu_score
+                      ? <span class="v warn">Playable</span>
+                      : <span class="v bad">Below minimum</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Compare the {cpu.name}</h2>
+      <ul class="rival-list">
+        {rivals.map(r => (
+          <li>
+            <a href={`/compare-cpu?a=${cpu.slug}&b=${r.slug}`}>
+              <span>{cpu.name} vs {r.name}</span>
+              <em>{r.score > cpu.score ? `+${r.score - cpu.score}` : `${r.score - cpu.score}`}</em>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/cpu-tier-list">CPU Tier List 2026</a></li>
+        <li><a href="/cpus">All processors</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+        <li><a href="/psu-calculator">PSU Calculator</a></li>
+        <li><a href="/game-list/cpu-intensive-games">CPU-intensive games</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .part-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: start;
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .part-head h1 { font-size: clamp(28px, 4.5vw, 42px); margin: 8px 0 14px; }
+  .part-head .lede { color: var(--muted); max-width: 60ch; line-height: 1.65; margin: 0; }
+  .score-box {
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    padding: 20px 24px;
+    min-width: 220px;
+    text-align: center;
+  }
+  .score-num { font-family: 'Space Grotesk', sans-serif; font-size: 44px; font-weight: 700; line-height: 1; margin: 12px 0 10px; }
+  .score-num small { font-size: 16px; color: var(--faint); font-weight: 500; }
+  .score-track { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .score-fill { height: 100%; background: var(--accent); border-radius: 99px; }
+  .score-label { display: block; margin-top: 10px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  @media (max-width: 760px) { .part-head { grid-template-columns: 1fr; } }
+
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .spec td:first-child { color: var(--muted); width: 220px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .stat b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 32px; color: var(--accent); line-height: 1; margin-bottom: 8px; }
+  .stat span { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  .note { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin-top: 16px; }
+  .note a { color: var(--accent); }
+
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; }
+  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
+  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
+  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+
+  .rival-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .rival-list a {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
+    color: var(--text); text-decoration: none; font-size: 14px;
+    transition: border-color .2s var(--ease);
+  }
+  .rival-list a:hover { border-color: var(--accent); }
+  .rival-list em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>

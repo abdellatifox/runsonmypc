@@ -1,0 +1,141 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPost, getPosts } from '../../lib/db';
+import { getPostCover } from '../../lib/images';
+import Icon from '../../components/Icon.astro';
+import { SITE_URL } from '../../lib/site';
+
+const { slug } = Astro.params;
+const post = await getPost(Astro.locals, slug!);
+
+// This page used to synthesise a generic article for any unknown slug, so
+// every bad link returned 200 with filler text. That both hid broken links and
+// fed the index pages of nothing. Unknown posts are now a real 404.
+if (!post) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+// View counting is best-effort and must never break the render.
+const db = (Astro.locals as any).runtime?.env?.DB;
+if (db) {
+  try {
+    await db.prepare('UPDATE blog_posts SET view_count = view_count + 1 WHERE slug = ?').bind(slug).run();
+  } catch { /* non-fatal */ }
+}
+
+const allPosts = await getPosts(Astro.locals);
+const related = allPosts
+  .filter(p => p.slug !== post.slug)
+  .sort((a, b) => (a.category === post.category ? -1 : 0) - (b.category === post.category ? -1 : 0))
+  .slice(0, 3);
+
+// The seeded image_url points at a CDN that does not exist; use our own cover.
+const cover = getPostCover(post.slug);
+const heroImg = cover.thumb;
+const shareImg = `${SITE_URL}${cover.png}`;
+
+const published = post.published_at || new Date().toISOString();
+const readTime = typeof post.read_time === 'number' ? `${post.read_time} min read` : (post.read_time || '5 min read');
+
+const description = post.excerpt || `${post.title} — a guide from PCGameFit.`;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": post.title,
+  "description": description,
+  "image": shareImg,
+  "url": `${SITE_URL}/blog/${post.slug}`,
+  "mainEntityOfPage": { "@type": "WebPage", "@id": `${SITE_URL}/blog/${post.slug}` },
+  "articleSection": post.category,
+  "author": { "@type": "Organization", "name": post.author || "PCGameFit Team", "url": `${SITE_URL}/about` },
+  "publisher": { "@id": `${SITE_URL}/#organization` },
+  "datePublished": published,
+  "dateModified": published
+};
+---
+<BaseLayout
+  title={`${post.title} | PCGameFit`}
+  description={description}
+  ogImage={shareImg}
+  ogType="article"
+  jsonLd={schema}
+  publishedAt={published}
+  modifiedAt={published}
+  author={post.author || 'PCGameFit Team'}
+  keywords={`${post.category?.toLowerCase() || 'pc gaming'}, ${post.title.toLowerCase()}`}
+>
+  <main>
+    <div class="breadcrumb">
+      <a href="/blog">Blog</a> &gt; <span>{post.category}</span> &gt; <span class="current">{post.title}</span>
+    </div>
+
+    <article>
+      <header class="article-header">
+        <span class="badge">{post.category}</span>
+        <h1>{post.title}</h1>
+        <div class="meta">
+          <span>By {post.author || 'PCGameFit Team'}</span> &bull;
+          <span>{new Date(post.published_at).toLocaleDateString()}</span> &bull;
+          <span>{readTime}</span>
+        </div>
+      </header>
+
+      <div class="hero-image-wrap">
+        <img src={heroImg} alt="" class="hero-image" width="1200" height="420" loading="eager" decoding="async" />
+      </div>
+
+      <div class="content" set:html={post.content}></div>
+
+      <div class="share-section">
+        <h3>Share this article</h3>
+        <button class="btn-ghost" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!')">
+          <Icon name="link-45deg" /> Copy Link
+        </button>
+      </div>
+    </article>
+
+    <section class="related">
+      <h2>Related Articles</h2>
+      <div class="related-grid">
+        {related.map(r => (
+          <a href={`/blog/${r.slug}`} class="related-card">
+            <h4>{r.title}</h4>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+
+
+<style>
+  main { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+  .breadcrumb { color: #a0aabf; font-size: 0.9rem; margin-bottom: 2rem; }
+  .breadcrumb a { color: var(--accent); text-decoration: none; }
+  .breadcrumb .current { color: white; }
+  
+  .article-header { margin-bottom: 2rem; }
+  .badge { background: rgba(182, 255, 0, 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
+  h1 { font-size: 2.5rem; margin: 1rem 0; line-height: 1.2; }
+  .meta { color: #a0aabf; font-size: 0.9rem; }
+  
+  .hero-image-wrap { width: 100%; aspect-ratio: 16 / 9; max-height: 440px; overflow: hidden; border-radius: 12px; margin-bottom: 3rem; background: var(--surface-2); border: 1px solid rgba(182,255,0,0.1); }
+  .hero-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+  
+  .content { line-height: 1.8; font-size: 1.1rem; color: #d0d8e8; margin-bottom: 4rem; }
+  .content :global(h2) { color: white; margin: 2rem 0 1rem; }
+  .content :global(p) { margin-bottom: 1.5rem; }
+  .content :global(a) { color: var(--accent); }
+  
+  .share-section { padding: 2rem; background: var(--surface-2); border-radius: 12px; text-align: center; margin-bottom: 4rem; border: 1px solid rgba(255,255,255,0.05); }
+  .btn-ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+  
+  .related h2 { margin-bottom: 1.5rem; }
+  .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .related-card { background: var(--surface-2); padding: 1.5rem; border-radius: 8px; text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
+  .related-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .related-card h4 { margin: 0; }
+</style>

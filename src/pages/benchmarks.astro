@@ -1,0 +1,265 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGpus, getCpus, getGames } from '../lib/db';
+import { estimateFps } from '../lib/perf';
+import { SITE_URL } from '../lib/site';
+
+const [gpus, cpus, games] = await Promise.all([
+  getGpus(Astro.locals),
+  getCpus(Astro.locals),
+  getGames(Astro.locals)
+]);
+
+// A representative slice: the cards people actually search benchmarks for.
+const benchGpus = gpus.slice(0, 18);
+
+// Demanding, widely benchmarked titles make the most useful columns.
+/*
+ * Pick the heaviest titles by their rank within the catalogue, not by an
+ * absolute score. Requirements name the cards current at each game's release,
+ * so on a scale anchored to today's flagship the maximum recommended score is
+ * about 40 — the old `>= 55` cut selected nothing and the page rendered
+ * "across 0 demanding games".
+ */
+const benchGames = games
+  .filter(g => g.demandPercentile != null)
+  .sort((a, b) => (b.demandPercentile ?? 0) - (a.demandPercentile ?? 0))
+  .slice(0, 8);
+
+// Hold the CPU constant so the table isolates graphics performance.
+const refCpu = cpus[0];
+
+const rows = benchGpus.map(gpu => ({
+  gpu,
+  results: benchGames.map(game => ({
+    game,
+    fps1080: estimateFps(game, gpu.score, refCpu.score, '1080p', 'high'),
+    fps1440: estimateFps(game, gpu.score, refCpu.score, '1440p', 'high'),
+    fps4k: estimateFps(game, gpu.score, refCpu.score, '4k', 'high')
+  }))
+}));
+
+const description = `PC gaming benchmarks: estimated average FPS for ${benchGpus.length} graphics cards across ${benchGames.length} demanding games at 1080p, 1440p and 4K on high settings.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "name": "PC Gaming FPS Benchmarks",
+    "description": description,
+    "url": `${SITE_URL}/benchmarks`,
+    "creator": { "@id": `${SITE_URL}/#organization` },
+    "license": `${SITE_URL}/terms`,
+    "variableMeasured": ["Average frames per second", "Resolution", "Graphics preset"]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How are these benchmark numbers produced?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Each figure is modelled from the graphics card's performance index against the game's recommended GPU requirement, scaled for resolution and preset, with a CPU ceiling applied. All rows hold the processor constant at the ${refCpu.name} so the table isolates graphics performance.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are these real measured frame rates?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "They are modelled estimates, not captured runs. Use them to compare hardware against hardware rather than as an exact prediction of your own frame rate, which also depends on drivers, memory speed, thermals and the specific game patch."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why does 4K drop performance so much?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "4K renders roughly four times the pixels of 1080p. In GPU-bound games that typically costs 55–65% of your frame rate, which is why upscaling such as DLSS or FSR matters most at that resolution."
+        }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="PC Gaming Benchmarks — GPU FPS Charts | PCGameFit"
+  description={description}
+  keywords="gpu benchmarks, gaming fps benchmarks, 1440p benchmarks, 4k gaming benchmarks, graphics card fps comparison"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Benchmarks' }]} />
+
+    <header class="page-head">
+      <h1>PC Gaming Benchmarks</h1>
+      <p class="lede">
+        Estimated average frame rates for {benchGpus.length} graphics cards across
+        {' '}{benchGames.length} demanding games. Every row is paired with the same
+        <a href={`/cpu/${refCpu.slug}`}> {refCpu.name}</a> so the numbers isolate graphics
+        performance rather than the rest of the system.
+      </p>
+    </header>
+
+    <div class="res-switch" role="group" aria-label="Select resolution">
+      <button class="rbtn active" data-res="1080">1080p</button>
+      <button class="rbtn" data-res="1440">1440p</button>
+      <button class="rbtn" data-res="4k">4K</button>
+      <span class="preset-note">High preset · upscaling off</span>
+    </div>
+
+    <div class="table-scroll">
+      <table class="data-table bench">
+        <thead>
+          <tr>
+            <th class="sticky-col">Graphics card</th>
+            {benchGames.map(g => (
+              <th><a href={`/game/${g.slug}`} class="ghead">{g.name}</a></th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr>
+              <td class="sticky-col">
+                <a href={`/gpu/${r.gpu.slug}`}>{r.gpu.name}</a>
+                <span class={`pill t-${r.gpu.tier}`}>{r.gpu.tier}</span>
+              </td>
+              {r.results.map(res => (
+                <td
+                  class="fps-cell"
+                  data-fps1080={res.fps1080}
+                  data-fps1440={res.fps1440}
+                  data-fps4k={res.fps4k}
+                >
+                  <span class="fps">{res.fps1080}</span>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="disclaimer">
+      Figures are modelled estimates for comparison between parts, not captured benchmark runs.
+      Your own results will vary with drivers, memory speed, thermals, background load and the
+      specific version of each game. Run a
+      <a href="/can-it-run"> full compatibility check</a> for a verdict on your exact system.
+    </p>
+
+    <section class="legend">
+      <h2>Reading the numbers</h2>
+      <div class="legend-grid">
+        <div><span class="dot d-great"></span><b>90+ FPS</b><p>Comfortable on a high-refresh monitor.</p></div>
+        <div><span class="dot d-good"></span><b>60–89 FPS</b><p>The smooth-play target for most people.</p></div>
+        <div><span class="dot d-ok"></span><b>30–59 FPS</b><p>Playable; drop the preset or enable upscaling.</p></div>
+        <div><span class="dot d-bad"></span><b>Under 30 FPS</b><p>Below a comfortable experience.</p></div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>How are these benchmark numbers produced?</summary>
+        <p>Each figure is modelled from the graphics card's performance index against the game's recommended GPU requirement, scaled for resolution and preset, with a CPU ceiling applied on top. All rows hold the processor constant at the {refCpu.name}.</p>
+      </details>
+      <details>
+        <summary>Are these real measured frame rates?</summary>
+        <p>No — they are modelled estimates. Use them to compare one card against another rather than as an exact prediction of your own frame rate.</p>
+      </details>
+      <details>
+        <summary>Why does 4K cost so much performance?</summary>
+        <p>4K renders roughly four times the pixels of 1080p. In GPU-bound games that typically costs 55–65% of your frame rate, which is why <a href="/dlss-fsr">DLSS and FSR</a> matter most at that resolution.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/fps-estimator">FPS Calculator</a></li>
+        <li><a href="/compare-gpu">Compare GPUs</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/gpus">GPU Database</a></li>
+        <li><a href="/game-list/most-demanding-pc-games">Most demanding games</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head .lede a { color: var(--accent); }
+  .res-switch { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .rbtn {
+    background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
+    padding: 8px 18px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+    transition: all .2s var(--ease);
+  }
+  .rbtn:hover { color: var(--text); }
+  .rbtn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+  .preset-note { color: var(--faint); font-size: 12.5px; margin-left: 6px; }
+
+  .bench th, .bench td { white-space: nowrap; }
+  .sticky-col {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--bg);
+    display: flex; align-items: center; gap: 8px;
+  }
+  thead .sticky-col { background: var(--bg); }
+  .ghead { color: var(--muted) !important; font-size: 11px; }
+  .ghead:hover { color: var(--accent) !important; }
+  .fps-cell { text-align: center; font-variant-numeric: tabular-nums; }
+  .fps { font-weight: 600; }
+  .fps[data-band="great"] { color: #7fe98a; }
+  .fps[data-band="good"] { color: #b6ff00; }
+  .fps[data-band="ok"] { color: #ffc850; }
+  .fps[data-band="bad"] { color: #ff8080; }
+
+  .disclaimer { color: var(--faint); font-size: 13px; line-height: 1.7; margin-top: 18px; max-width: 80ch; }
+  .disclaimer a { color: var(--accent); }
+
+  .legend { margin-top: 52px; }
+  .legend h2 { font-size: 20px; margin-bottom: 16px; }
+  .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .legend-grid > div { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .legend-grid b { display: block; margin: 8px 0 4px; font-size: 14px; }
+  .legend-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; }
+  .d-great { background: #7fe98a; } .d-good { background: #b6ff00; }
+  .d-ok { background: #ffc850; } .d-bad { background: #ff8080; }
+</style>
+
+<script>
+  const cells = document.querySelectorAll<HTMLTableCellElement>('.fps-cell');
+  const btns = document.querySelectorAll<HTMLButtonElement>('.rbtn');
+
+  function band(v: number) {
+    if (v >= 90) return 'great';
+    if (v >= 60) return 'good';
+    if (v >= 30) return 'ok';
+    return 'bad';
+  }
+
+  function render(res: string) {
+    cells.forEach(c => {
+      const key = res === '1080' ? 'fps1080' : res === '1440' ? 'fps1440' : 'fps4k';
+      const v = parseInt(c.dataset[key] || '0', 10);
+      const span = c.querySelector('.fps') as HTMLElement;
+      span.textContent = String(v);
+      span.dataset.band = band(v);
+    });
+  }
+
+  btns.forEach(b => b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    render(b.dataset.res || '1080');
+  }));
+
+  render('1080');
+</script>

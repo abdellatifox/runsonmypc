@@ -1,0 +1,218 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGames, getGpus } from '../lib/db';
+import { SITE_URL } from '../lib/site';
+
+const [games, gpus] = await Promise.all([getGames(Astro.locals), getGpus(Astro.locals)]);
+
+const dlssGames = games.filter(g => g.supports_dlss === 1);
+const fsrGames = games.filter(g => g.supports_fsr === 1);
+const bothGames = games.filter(g => g.supports_dlss === 1 && g.supports_fsr === 1);
+const upscalerGames = games
+  .filter(g => g.supports_dlss === 1 || g.supports_fsr === 1)
+  .sort((a, b) => (b.release_year ?? 0) - (a.release_year ?? 0));
+
+// Same caveat as the ray-tracing page: Steam states no upscaling support, so
+// this covers only what we have verified by hand.
+const verifiedCount = games.filter(g => g.supports_dlss !== null).length;
+
+const description = `DLSS vs FSR compared: which upscaler your graphics card supports, what each quality mode costs in image sharpness, and which games support them.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "DLSS vs FSR: Which Upscaler Should You Use?",
+    "description": description,
+    "author": { "@id": `${SITE_URL}/#organization` },
+    "publisher": { "@id": `${SITE_URL}/#organization` },
+    "mainEntityOfPage": `${SITE_URL}/dlss-fsr`
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is DLSS better than FSR?",
+        "acceptedAnswer": { "@type": "Answer", "text": "In image quality terms DLSS generally holds an edge, particularly on fine detail and in motion, because it runs on dedicated hardware and uses a trained model. FSR's advantage is compatibility: it runs on virtually any modern graphics card including NVIDIA, AMD and Intel. If you own an RTX card and the game offers both, DLSS is usually the better choice." }
+      },
+      {
+        "@type": "Question",
+        "name": "Which DLSS or FSR quality mode should I use?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Quality mode is the sensible default and typically gives a 25-40% frame-rate uplift with very little visible loss. Balanced and Performance modes give bigger gains but become noticeable at 1080p. At 4K even Performance mode holds up well because the source resolution is still high." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does upscaling reduce input lag?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Upscaling raises frame rate, which lowers latency. Frame generation is different: it inserts generated frames and adds a small amount of latency, so it is best used when your base frame rate is already reasonable rather than to rescue an unplayable one." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="DLSS vs FSR — Which Upscaler Should You Use? | PCGameFit"
+  description={description}
+  keywords="dlss vs fsr, dlss or fsr, upscaling comparison, fsr quality mode, dlss performance uplift"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'DLSS vs FSR' }]} />
+
+    <header class="page-head">
+      <h1>DLSS vs FSR: Which Upscaler Should You Use?</h1>
+      <p class="lede">
+        Upscaling renders the game below your monitor's resolution and reconstructs the rest.
+        It is the single largest free frame-rate gain available on modern hardware — the only
+        question is which one your card supports and how hard to push it.
+      </p>
+    </header>
+
+    <div class="versus">
+      <div class="vs-card">
+        <h2>NVIDIA DLSS</h2>
+        <ul>
+          <li><b>Hardware:</b> RTX 20-series and newer only</li>
+          <li><b>Image quality:</b> Best in class, especially in motion</li>
+          <li><b>Frame generation:</b> RTX 40-series and newer</li>
+          <li><b>Availability:</b> {dlssGames.length} games in our database</li>
+        </ul>
+        <p>Runs a trained model on dedicated hardware. If you own an RTX card and the game offers DLSS, it is almost always the right pick.</p>
+      </div>
+      <div class="vs-card">
+        <h2>AMD FSR</h2>
+        <ul>
+          <li><b>Hardware:</b> Runs on virtually any modern GPU</li>
+          <li><b>Image quality:</b> Very good; slightly behind DLSS on fine detail</li>
+          <li><b>Frame generation:</b> FSR 3 and newer, broadly compatible</li>
+          <li><b>Availability:</b> {fsrGames.length} games in our database</li>
+        </ul>
+        <p>Open and vendor-agnostic. The right choice on AMD, Intel Arc and GTX cards, and a solid fallback when a game lacks DLSS.</p>
+      </div>
+    </div>
+
+    <section>
+      <h2>What each quality mode gives you</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Mode</th><th>Render scale</th><th>Typical FPS uplift</th><th>Best used at</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Quality</td><td>67%</td><td>+25 to +40%</td><td>Any resolution — the safe default</td></tr>
+            <tr><td>Balanced</td><td>58%</td><td>+40 to +55%</td><td>1440p and 4K</td></tr>
+            <tr><td>Performance</td><td>50%</td><td>+55 to +80%</td><td>4K, where the source is still 1080p</td></tr>
+            <tr><td>Ultra Performance</td><td>33%</td><td>+90% and up</td><td>4K only, and only when desperate</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        Uplift figures assume you are GPU-bound. If your processor is the limit, upscaling gains
+        far less — check with the <a href="/bottleneck">bottleneck calculator</a> first.
+      </p>
+    </section>
+
+    <section>
+      <h2>Which upscaler does your graphics card support?</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Graphics card</th><th>Tier</th><th>DLSS</th><th>FSR</th><th>XeSS</th><th>Recommended</th></tr>
+          </thead>
+          <tbody>
+            {gpus.map(g => (
+              <tr>
+                <td><a href={`/gpu/${g.slug}`}>{g.name}</a></td>
+                <td><span class={`pill t-${g.tier}`}>{g.tier}</span></td>
+                <td>{g.supports_dlss ? '✓' : '—'}</td>
+                <td>{g.supports_fsr ? '✓' : '—'}</td>
+                <td>{g.supports_xess ? '✓' : '—'}</td>
+                <td class="rec">
+                  {g.supports_dlss ? 'DLSS' : g.supports_xess ? 'XeSS, then FSR' : g.supports_fsr ? 'FSR' : 'None available'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Games with upscaling support</h2>
+      <p class="sub">
+        {bothGames.length} of these support both, so you can pick whichever suits your card.
+        This covers the {verifiedCount} titles whose features we have verified — Steam
+        publishes no upscaling field, so the rest are unconfirmed rather than unsupported.
+      </p>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Game</th><th>Year</th><th>DLSS</th><th>FSR</th><th>Ray tracing</th></tr>
+          </thead>
+          <tbody>
+            {upscalerGames.map(g => (
+              <tr>
+                <td><a href={`/game/${g.slug}`}>{g.name}</a></td>
+                <td>{g.release_year}</td>
+                <td>{g.supports_dlss ? '✓' : '—'}</td>
+                <td>{g.supports_fsr ? '✓' : '—'}</td>
+                <td>{g.supports_ray_tracing ? '✓' : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Is DLSS better than FSR?</summary>
+        <p>On image quality, generally yes — particularly on fine detail and in motion, because DLSS runs on dedicated hardware with a trained model. FSR's advantage is compatibility: it works on nearly any modern card. If you own an RTX card and the game offers both, take DLSS.</p>
+      </details>
+      <details>
+        <summary>Which quality mode should I use?</summary>
+        <p>Quality mode is the sensible default: roughly a 25–40% uplift with very little visible loss. Performance mode holds up well at 4K because the source resolution is still 1080p, but becomes obvious at 1080p.</p>
+      </details>
+      <details>
+        <summary>Does upscaling reduce input lag?</summary>
+        <p>Upscaling raises frame rate, which lowers latency. Frame <em>generation</em> is different — it inserts generated frames and adds a little latency, so use it when your base frame rate is already reasonable, not to rescue an unplayable one.</p>
+      </details>
+      <details>
+        <summary>Should I use upscaling at 1080p?</summary>
+        <p>Only if you need to. At 1080p the source render is already low, so artefacts are more visible. Quality mode is usually fine; below that, consider lowering a setting instead.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ray-tracing">Ray tracing games and GPUs</a></li>
+        <li><a href="/game-list/dlss-games">All DLSS games</a></li>
+        <li><a href="/fps-estimator">FPS Calculator</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/benchmarks">Benchmarks</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  section { margin-bottom: 48px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .versus { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 48px; }
+  .vs-card { border: 1px solid var(--line-strong); border-radius: 16px; padding: 24px; background: var(--surface); }
+  .vs-card h2 { font-size: 20px; margin: 0 0 16px; color: var(--accent); }
+  .vs-card ul { list-style: none; padding: 0; margin: 0 0 16px; }
+  .vs-card li { color: var(--muted); font-size: 14px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .vs-card li b { color: var(--text); font-weight: 600; }
+  .vs-card p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0; }
+  .note, .sub { color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .note { margin-top: 14px; }
+  .sub { margin: -8px 0 16px; }
+  .note a { color: var(--accent); }
+  .rec { color: var(--accent); font-weight: 600; }
+</style>

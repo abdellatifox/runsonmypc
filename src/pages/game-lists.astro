@@ -1,0 +1,88 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGames } from '../lib/db';
+import { GAME_LISTS } from '../lib/site-data';
+import Icon from '../components/Icon.astro';
+import { SITE_URL } from '../lib/site';
+
+const all = await getGames(Astro.locals);
+const lists = GAME_LISTS.map(l => ({ ...l, count: all.filter(l.filter).length }));
+
+const description = 'Curated PC game lists by hardware requirement — best games for low-end PCs, the most demanding titles, ray tracing and DLSS support, CPU-heavy games and more.';
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "PC Game Lists",
+  "description": description,
+  "url": `${SITE_URL}/game-lists`,
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": lists.length,
+    "itemListElement": lists.map((l, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "url": `${SITE_URL}/game-list/${l.slug}`,
+      "name": l.title
+    }))
+  }
+};
+---
+<BaseLayout
+  title="PC Game Lists by Hardware Requirement | PCGameFit"
+  description={description}
+  keywords="pc game lists, best games for low end pc, most demanding pc games, ray tracing games, dlss games"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Games', href: '/games' }, { name: 'Game Lists' }]} />
+
+    <header class="page-head">
+      <h1>PC Game Lists</h1>
+      <p class="lede">
+        Games grouped by what they actually ask of your hardware, built from the same
+        requirements database that powers our compatibility checker.
+      </p>
+    </header>
+
+    <div class="list-grid">
+      {lists.map(l => (
+        <a href={`/game-list/${l.slug}`} class="list-card">
+          <div class="ic"><Icon name={l.icon} /></div>
+          <h2>{l.title}</h2>
+          <p>{l.blurb}</p>
+          <span class="cnt">{l.count} games</span>
+        </a>
+      ))}
+    </div>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/games">All games</a></li>
+        <li><a href="/can-it-run">Can I Run It?</a></li>
+        <li><a href="/what-can-my-pc-run">What can my PC run?</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .list-card {
+    display: block; padding: 24px; border: 1px solid var(--line); border-radius: 16px;
+    background: var(--surface); text-decoration: none; color: inherit;
+    transition: transform .25s var(--ease), border-color .25s var(--ease);
+  }
+  .list-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .list-card .ic {
+    width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px;
+    background: rgba(182,255,0,.1); color: var(--accent); font-size: 20px; margin-bottom: 16px;
+  }
+  .list-card h2 { font-size: 17px; margin: 0 0 8px; }
+  .list-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+  .list-card .cnt { color: var(--accent); font-size: 13px; font-weight: 600; }
+</style>

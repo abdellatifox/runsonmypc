@@ -1,0 +1,809 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { staticGames, staticPosts, staticGpus, staticCpus } from '../lib/db';
+import { getGameArt, getPostCover } from '../lib/images';
+import Icon from '../components/Icon.astro';
+import Autocomplete from '../components/Autocomplete.astro';
+import GameArt from '../components/GameArt.astro';
+
+const HERO_RAM_OPTIONS = [4, 8, 16, 32, 64].map(n => ({ label: `${n} GB`, value: String(n) }));
+
+/* Featured content is derived from the real catalogue rather than a hand-kept
+   list. The previous hardcoded array had drifted out of sync and was linking to
+   a blog slug that does not exist. */
+const FEATURED_SLUGS = [
+  'cyberpunk-2077', 'elden-ring', 'red-dead-redemption-2', 'baldurs-gate-3',
+  'fortnite', 'valorant', 'counter-strike-2', 'hogwarts-legacy',
+  'black-myth-wukong', 'stray', 'helldivers-2', 'palworld'
+];
+
+const allGames = staticGames();
+const gameCount = allGames.length;
+const gpuCount = staticGpus().length;
+const cpuCount = staticCpus().length;
+const featuredGames = FEATURED_SLUGS
+  .map(slug => allGames.find(g => g.slug === slug))
+  .filter(Boolean)
+  .map(g => ({
+    name: g!.name,
+    genre: g!.genre,
+    slug: g!.slug,
+    art: getGameArt(g!.slug, g!.name)
+  }));
+
+const featuredPosts = staticPosts()
+  .slice(0, 6)
+  .map(p => ({
+    title: p.title,
+    category: p.category,
+    slug: p.slug,
+    readTime: typeof p.read_time === 'number' ? `${p.read_time} min read` : (p.read_time || '5 min read'),
+    image: getPostCover(p.slug).thumb
+  }));
+
+const homeFaqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Can my PC run it?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Pick the game plus your GPU, CPU and RAM in the checker above, and we compare them directly against the requirements the publisher listed on Steam — no download, no account." }
+    },
+    {
+      "@type": "Question",
+      "name": "Will my PC run this game before I buy it?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes — run the check first. You get a pass/fail verdict against both the minimum and recommended tiers, so you know which settings to expect before you spend a cent." }
+    },
+    {
+      "@type": "Question",
+      "name": "What if my PC doesn't meet the requirements?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The verdict tells you exactly which part falls short — GPU, CPU or RAM — and the Upgrade Advisor and Bottleneck Calculator can point you to the cheapest fix." }
+    },
+    {
+      "@type": "Question",
+      "name": "How is this different from other system requirement checkers?",
+      "acceptedAnswer": { "@type": "Answer", "text": "We show the publisher's exact published wording next to the verdict and link back to the Steam page, so you can verify it yourself instead of trusting a black box." }
+    }
+  ]
+};
+---
+<BaseLayout
+  title="Can I Run It? Free PC Game Requirements Checker | PCGameFit"
+  description="Check if your PC can run any game instantly. Free FPS calculator, bottleneck checker, GPU tier list & more. No download needed — 100% browser-based tools."
+  keywords="can i run it, can my pc run it, will it run, will my pc run this game, pc game requirements, fps calculator, bottleneck calculator, gpu tier list, can my pc run this game"
+  jsonLd={homeFaqSchema}
+>
+  <main>
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-content">
+        <span class="eyebrow"><Icon name="lightning-charge-fill" /> Free • Instant • No Download</span>
+        <h1>Check If Your PC Can <span class="g">Run Any Game</span></h1>
+        <p class="lead">Wondering "can my PC run it" or "will it run"? Get an instant compatibility verdict, FPS estimates, and PC optimization tools — all free, no download, no login.</p>
+        <div class="cta-group">
+          <a href="/can-it-run" class="btn-primary">Check My PC &rarr;</a>
+          <a href="/gpu-tier-list" class="btn-ghost">GPU Tier List</a>
+        </div>
+        <div class="stats-bar">
+          <span><b>{gameCount}</b> Games</span> &middot;
+          <span><b>{gpuCount}</b> GPUs</span> &middot;
+          <span><b>{cpuCount}</b> CPUs</span> &middot;
+          <span><b>Free</b> Forever</span>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="card-header">
+          <h2 class="qc-title">Quick Check</h2>
+        </div>
+        <div class="card-body">
+          <Autocomplete
+            id="hero-game"
+            label="Game"
+            placeholder="Search for a game…"
+            endpoint="/api/games/search"
+          />
+          <Autocomplete
+            id="hero-gpu"
+            label="GPU"
+            placeholder="Your GPU…"
+            endpoint="/api/gpus/search"
+          />
+          <Autocomplete
+            id="hero-ram"
+            label="RAM"
+            placeholder="e.g. 16 GB"
+            endpoint=""
+            options={HERO_RAM_OPTIONS}
+            freeText
+          />
+          <button id="hero-check-btn" class="btn-primary full-width">Check Now &rarr;</button>
+          <div id="hero-verdict" style="display: none;" class="verdict-box"></div>
+          <p class="hero-err" id="hero-err" style="display:none;"></p>
+          <p class="tiny-footer">Powered by PC Game Fit</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS SECTION -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <p class="g stat-num heading-like">{gameCount}</p>
+        <p>Games with publisher requirements</p>
+      </div>
+      <div class="stat-card">
+        <p class="g stat-num heading-like">{gpuCount}</p>
+        <p>GPUs Indexed</p>
+      </div>
+      <div class="stat-card">
+        <p class="g stat-num heading-like">{cpuCount}</p>
+        <p>CPUs Benchmarked</p>
+      </div>
+      <div class="stat-card">
+        <p class="g stat-num heading-like">Free</p>
+        <p>Forever</p>
+      </div>
+    </section>
+
+    <!-- TOOLS BENTO GRID -->
+    <section id="tools" class="tools-section">
+      <div class="section-header">
+        <span class="eyebrow">Everything you need</span>
+        <h2>All the Tools You Need</h2>
+      </div>
+      <div class="bento">
+        <a href="/can-it-run" class="tool feat">
+          <div class="tool-content">
+            <Icon name="joystick" />
+            <h3>Can I Run It</h3>
+            <p>The #1 Tool for PC Gamers</p>
+          </div>
+        </a>
+        <a href="/fps-estimator" class="tool">
+          <Icon name="speedometer2" />
+          <h3>FPS Estimator</h3>
+          <p>Predict your FPS before buying</p>
+        </a>
+        <a href="/bottleneck" class="tool">
+          <Icon name="cpu" />
+          <h3>Bottleneck Calculator</h3>
+          <p>Find your CPU-GPU mismatch</p>
+        </a>
+        <a href="/gpu-tier-list" class="tool">
+          <Icon name="bar-chart-line-fill" />
+          <h3>GPU Tier List</h3>
+          <p>Every GPU ranked S to F</p>
+        </a>
+        <a href="/cpu-tier-list" class="tool">
+          <Icon name="cpu-fill" />
+          <h3>CPU Tier List</h3>
+          <p>Every CPU ranked for gaming</p>
+        </a>
+        <a href="/compare-gpu" class="tool">
+          <Icon name="arrows-expand" />
+          <h3>GPU Comparison</h3>
+          <p>Head-to-head GPU benchmarks</p>
+        </a>
+        <a href="/compare-cpu" class="tool">
+          <Icon name="arrows-expand" />
+          <h3>CPU Comparison</h3>
+          <p>Head-to-head CPU benchmarks</p>
+        </a>
+        <a href="/psu-calculator" class="tool">
+          <Icon name="lightning" />
+          <h3>PSU Calculator</h3>
+          <p>Find your power supply needs</p>
+        </a>
+        <a href="/build-suggest" class="tool">
+          <Icon name="pc-display" />
+          <h3>Build Suggester</h3>
+          <p>Get a full parts list for your budget</p>
+        </a>
+        <a href="/what-can-my-pc-run" class="tool">
+          <Icon name="joystick" />
+          <h3>What Can My PC Run</h3>
+          <p>Discover compatible games</p>
+        </a>
+        <a href="/dlss-fsr" class="tool">
+          <Icon name="magic" />
+          <h3>DLSS vs FSR</h3>
+          <p>Pick the right upscaler for your GPU</p>
+        </a>
+        <a href="/upgrade-advisor" class="tool">
+          <Icon name="arrow-up-circle" />
+          <h3>Upgrade Advisor</h3>
+          <p>Know what to upgrade next</p>
+        </a>
+        <a href="/vr-ready" class="tool">
+          <Icon name="badge-vr" />
+          <h3>VR Ready Test</h3>
+          <p>Check your PC against VR headsets</p>
+        </a>
+        <a href="/blog" class="tool wide">
+          <div class="tool-content">
+            <Icon name="journal-text" />
+            <h3>Blog & Guides</h3>
+            <p>Read the latest in PC gaming hardware, optimization, and news.</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- FEATURED GAMES -->
+    <section class="games-section">
+      <div class="section-header">
+        <h2>Popular Game Requirements</h2>
+        <p>Click any game to check if your PC can run it</p>
+      </div>
+      <div class="games-grid">
+        {featuredGames.map((game, i) => (
+          <div class="game-card">
+            <a href={`/game/${game.slug}`} class="game-img-wrap" data-kind={game.art.kind}
+               style={game.art.kind !== 'cover' ? `--hue:${game.art.hue}` : undefined}>
+              <GameArt slug={game.slug} art={game.art}
+                sizes="(max-width: 640px) 36vw, 172px"
+                className={game.art.kind === 'cover' ? 'game-img' : game.art.kind === 'logo' ? 'game-logo' : 'game-initials'} />
+            </a>
+            <div class="game-info">
+              <h3><a href={`/game/${game.slug}`}>{game.name}</a></h3>
+              <span class="badge">{game.genre}</span>
+              <a href={`/can-it-run?game=${game.slug}`} class="btn-sm mt-2">Check &rarr;</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- BLOG SECTION -->
+    <section class="blog-section">
+      <div class="section-header">
+        <h2>PC Gaming Guides & Benchmarks</h2>
+      </div>
+      <div class="blog-grid">
+        {featuredPosts.map(post => (
+          <a href={`/blog/${post.slug}`} class="blog-card">
+            <div class="blog-img-wrap">
+              <img src={post.image} alt="" class="blog-img" width="1200" height="420" loading="lazy" decoding="async" />
+            </div>
+            <div class="blog-info">
+              <span class="badge">{post.category}</span>
+              <h3>{post.title}</h3>
+              <span class="read-time">{post.readTime}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div class="text-center mt-4">
+        <a href="/blog" class="btn-ghost">View All Articles &rarr;</a>
+      </div>
+    </section>
+
+    <!-- CTA BAND -->
+    <section class="cta-band">
+      <h2>Ready to Check Your PC?</h2>
+      <p>Check any game against your own parts using the publisher's stated requirements. Free, instant, no login.</p>
+      <a href="/can-it-run" class="btn-primary">Start Checking &rarr;</a>
+    </section>
+
+    <!-- SEO PROSE SECTION -->
+    <section class="seo-prose">
+      <h2>The Most Comprehensive Free PC Game Checker</h2>
+      <p>PC Game Fit is the ultimate destination for PC gamers looking to optimize their setup and ensure they can run the latest titles. Our browser-based suite of tools lets you instantly check game requirements without the need to download any sketchy executables or sign up for an account.</p>
+      <p>Our database holds {gameCount} games with requirements taken from the publisher's own Steam listing, plus {gpuCount} graphics cards and {cpuCount} processors. We calculate accurate performance estimations by comparing relative hardware scores, letting you know exactly if your rig meets the minimum or recommended specs.</p>
+      <p>Whether you're asking "can my PC run it" for the newest release, trying to find out if your CPU is bottlenecking your brand new RTX GPU, or simply want to browse the definitive GPU tier list, we have the tools you need.</p>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Can my PC run it?</summary>
+        <p>Pick the game plus your GPU, CPU and RAM in the checker above, and we compare them directly against the requirements the publisher listed on Steam — no download, no account.</p>
+      </details>
+      <details>
+        <summary>Will my PC run this game before I buy it?</summary>
+        <p>Yes — run the check first. You get a pass/fail verdict against both the minimum and recommended tiers, so you know which settings to expect before you spend a cent.</p>
+      </details>
+      <details>
+        <summary>What if my PC doesn't meet the requirements?</summary>
+        <p>The verdict tells you exactly which part falls short — GPU, CPU or RAM — and the Upgrade Advisor and Bottleneck Calculator can point you to the cheapest fix.</p>
+      </details>
+      <details>
+        <summary>How is this different from other system requirement checkers?</summary>
+        <p>We show the publisher's exact published wording next to the verdict and link back to the Steam page, so you can verify it yourself instead of trusting a black box.</p>
+      </details>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  // Mouse-move parallax for bento grid items
+  document.querySelectorAll('.tool').forEach(tool => {
+    tool.addEventListener('mousemove', e => {
+      const rect = tool.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      (tool as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+      (tool as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+    });
+  });
+
+  // Real "Quick Check" — calls the same endpoint as /can-it-run.
+  function heroVal(id: string) {
+    return (document.getElementById(`${id}-value`) as HTMLInputElement | null)?.value?.trim() || '';
+  }
+  function escHero(s: unknown) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  }
+
+  document.getElementById('hero-check-btn')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('hero-err') as HTMLElement;
+    const verdict = document.getElementById('hero-verdict') as HTMLElement;
+    const btn = document.getElementById('hero-check-btn') as HTMLButtonElement;
+    errEl.style.display = 'none';
+
+    const game = heroVal('hero-game');
+    const gpu = heroVal('hero-gpu');
+    const ram = parseInt(heroVal('hero-ram') || '0', 10);
+
+    if (!game) { errEl.textContent = 'Pick a game from the suggestions.'; errEl.style.display = 'block'; return; }
+    if (!gpu) { errEl.textContent = 'Pick your graphics card from the suggestions.'; errEl.style.display = 'block'; return; }
+    if (!ram) { errEl.textContent = 'Choose how much system memory you have.'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true;
+    const originalLabel = btn.innerHTML;
+    btn.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/tools/can-it-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game, gpu, ram })
+      });
+      const d = await r.json();
+      verdict.style.display = 'block';
+      if (!r.ok) {
+        verdict.innerHTML = `<p>${escHero(d.error || 'That check could not be completed.')}</p>`;
+      } else {
+        const icon = d.tone === 'pass' ? '✅' : d.tone === 'warn' ? '⚠️' : '❌';
+        verdict.innerHTML = `
+          <h3 style="color: var(--accent);">${icon} ${escHero(d.verdict)}</h3>
+          <p>${escHero(d.detail)}</p>
+          <a href="/can-it-run?game=${encodeURIComponent(game)}" class="hero-full-link">See full breakdown &rarr;</a>`;
+      }
+    } catch {
+      verdict.style.display = 'block';
+      verdict.innerHTML = `<p>Network error — please try again.</p>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalLabel;
+    }
+  });
+</script>
+
+<style>
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+  }
+  .hero {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .hero-content {
+    flex: 1;
+  }
+  .hero-card {
+    width: 350px;
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .eyebrow {
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 1rem;
+  }
+  .g {
+    color: var(--accent);
+  }
+  .lead {
+    font-size: 1.2rem;
+    color: #a0aabf;
+    margin: 1.5rem 0;
+  }
+  .cta-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .btn-primary, .btn-ghost {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.2s ease;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  .stats-bar {
+    font-size: 0.9rem;
+    color: #a0aabf;
+  }
+  .stats-bar b {
+    color: white;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+    position: relative;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #a0aabf;
+  }
+  input, select {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 6px;
+  }
+  .full-width {
+    width: 100%;
+    border: none;
+    cursor: pointer;
+  }
+  .tiny-footer {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1rem;
+  }
+  .hero-err { color: #ff8080; font-size: 0.85rem; margin: 0.5rem 0 0; text-align: center; }
+  .hero-full-link { display: inline-block; margin-top: 0.6rem; color: var(--accent); font-size: 0.85rem; }
+  .stats-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    text-align: center;
+  }
+  .stat-card {
+    background: var(--surface-2);
+    padding: 2rem;
+    border-radius: 12px;
+  }
+  .stat-card .stat-num {
+    font-size: 2.5rem;
+    margin: 0;
+  }
+  /* Tags changed for heading order; these pin the sizes they rendered at. */
+  .card-header .qc-title { font-size: 1.17rem; }
+  .game-info h3, .blog-info h3 { font-size: 1rem; }
+  .verdict-box :global(h3) { font-size: 1rem; }
+  .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .tool {
+    background: var(--surface-2);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .tool::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle 100px at var(--mouse-x, 0) var(--mouse-y, 0), rgba(182, 255, 0, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .tool:hover::before {
+    opacity: 1;
+  }
+  .tool :global(.icon) {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #a0aabf;
+  }
+  .tool.feat {
+    grid-column: span 2;
+    grid-row: span 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface));
+  }
+  .tool.feat :global(.icon) {
+    font-size: 3rem;
+    color: var(--accent);
+  }
+  .tool.wide {
+    grid-column: span 2;
+  }
+  .games-grid, .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .game-card, .blog-card {
+    background: var(--surface-2);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: 0.3s;
+    border: 1px solid transparent;
+  }
+  .game-card:hover, .blog-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+  }
+  .game-img-wrap {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .game-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+  .game-card:hover .game-img {
+    transform: scale(1.05);
+  }
+  .blog-img-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .blog-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+  .blog-card:hover .blog-img {
+    transform: scale(1.05);
+  }
+  .game-info, .blog-info {
+    padding: 1rem;
+  }
+  .badge {
+    background: rgba(182, 255, 0, 0.1);
+    color: var(--accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+  .cta-band {
+    text-align: center;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface));
+    padding: 4rem 2rem;
+    border-radius: 12px;
+    border: 1px solid rgba(182, 255, 0, 0.2);
+  }
+  .cta-band p {
+    max-width: 600px;
+    margin: 1rem auto 2rem;
+    color: #a0aabf;
+  }
+  .seo-prose p {
+    color: #a0aabf;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 10;
+    border-radius: 6px;
+  }
+  .ac-item {
+    padding: 0.5rem;
+    cursor: pointer;
+  }
+  .ac-item:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  .verdict-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(182, 255, 0, 0.1);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  /* ====================================================================
+     RESPONSIVE — must live inside this same <style> block.
+
+     These rules were first added as a second <style> block appended to the
+     file. Astro emitted that block BEFORE the original one, so the base
+     `.stats-section { grid-template-columns: repeat(4, 1fr) }` won on source
+     order and the stats band stayed four columns wide on a phone — one
+     letter per line. Same specificity means source order decides, so the
+     overrides have to follow the rules they override.
+     ==================================================================== */
+  /* Artwork tiles on the homepage share the GameCard presentation: covers are
+     full-bleed, logos and generated tiles sit on a deterministic gradient. */
+  .game-img-wrap { display: flex; align-items: center; justify-content: center; }
+  .game-img-wrap[data-kind="logo"], .game-img-wrap[data-kind="none"] {
+    background:
+      radial-gradient(70% 46% at 50% 50%, rgba(6,8,14,.90) 0%, rgba(6,8,14,.45) 62%, rgba(6,8,14,0) 100%),
+      radial-gradient(105% 62% at 50% 0%, hsl(var(--hue) 48% 19%) 0%, transparent 72%),
+      linear-gradient(160deg, #141826 0%, #0b0d16 100%);
+  }
+  .game-logo {
+    display: block;
+    max-width: 78%;
+    max-height: 58%;
+    object-fit: contain;
+    filter:
+      drop-shadow(0 1px 2px rgba(0,0,0,.9))
+      drop-shadow(0 6px 22px rgba(0,0,0,.7));
+  }
+  .game-initials {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: hsl(var(--hue) 70% 72%);
+  }
+  .game-info h3 a { color: inherit; text-decoration: none; }
+  .game-info h3 a:hover { color: var(--accent); }
+  /* --------------------------------------------------------------------------
+     Homepage responsive layer.
+
+     The hero was a `display:flex` row with a hard `width:350px` card and no
+     breakpoint at all, so on a 375px phone the card was crushed to 138px, ran
+     off the right edge and pushed the page into horizontal scroll. The two
+     `repeat(4, 1fr)` grids had the same problem in miniature.
+     -------------------------------------------------------------------------- */
+
+  /* Tablet: drop the four-across grids to two before they get cramped. */
+  @media (max-width: 900px) {
+    .stats-section,
+    .bento {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .tool.wide {
+      grid-column: span 2;
+    }
+  }
+
+  /* Stack the hero from tablet down: at 768px a 350px card leaves the heading
+     only ~370px, which reads worse than simply stacking. */
+  @media (max-width: 860px) {
+    .hero {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2.25rem;
+      padding: 56px 0 40px;
+    }
+    /* The card must stop being 350px wide and simply fill the column. */
+    .hero-card {
+      width: auto;
+      max-width: 100%;
+    }
+    .hero-content {
+      flex: none;
+    }
+    .cta-group {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    .cta-group .btn-primary,
+    .cta-group .btn-ghost {
+      width: 100%;
+      text-align: center;
+    }
+    .stats-bar {
+      font-size: 0.85rem;
+      line-height: 2;
+    }
+    .games-grid,
+    .blog-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    .stat-card {
+      padding: 1.25rem;
+    }
+    .stat-card .stat-num {
+      font-size: 1.9rem;
+    }
+    .card-header .qc-title { font-size: clamp(17px, 4vw, 22px); }
+  }
+
+  /* Card links were 21px tall and the "Check" button 34px — both under the
+     44px thumb minimum, on the densest grid of tap targets on the site. */
+  @media (pointer: coarse) {
+    .game-card .game-info h3 a,
+    .blog-card .blog-info h3 a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+    }
+    .game-card .btn-sm,
+    .blog-card .btn-sm {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .blog-img-wrap { aspect-ratio: 24 / 7; }
+  }
+
+  @media (max-width: 480px) {
+    .stats-section {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .bento {
+      grid-template-columns: 1fr;
+    }
+    .tool.wide,
+    .tool.feat {
+      grid-column: span 1;
+    }
+    .tool.feat :global(.icon) {
+      font-size: 2.25rem;
+    }
+    .games-grid,
+    .blog-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+  }
+</style>
+

@@ -1,0 +1,45 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_URL } from '../lib/site';
+---
+<BaseLayout
+  title="Privacy Policy | PCGameFit"
+  description="How PCGameFit handles your data: what we collect, what we do not, how the hardware specs you enter are processed, and your rights over any of it."
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Privacy Policy",
+    "url": `${SITE_URL}/privacy`
+  }}
+>
+  <div class="legal-container">
+  <Breadcrumbs items={[{ name: 'Privacy Policy' }]} />
+    <h1>Privacy Policy</h1>
+    <p>Last updated: September 2026</p>
+
+    <section>
+      <h2>1. Information We Collect</h2>
+      <p>We collect information you provide directly to us, such as when you use our forms. We also collect anonymous usage data to improve our tools.</p>
+    </section>
+
+    <section>
+      <h2>2. How We Use Your Information</h2>
+      <p>We use the hardware specifications you submit to calculate compatibility results. This data is not linked to your identity.</p>
+    </section>
+
+    <section>
+      <h2>3. Cookies</h2>
+      <p>We use standard cookies for site functionality and analytics.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .legal-container { max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  section { margin-bottom: 2rem; margin-top: 2rem; }
+  h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  p { line-height: 1.6; color: #ccc; }
+</style>

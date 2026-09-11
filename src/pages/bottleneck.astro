@@ -1,0 +1,238 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Autocomplete from '../components/Autocomplete.astro';
+import Icon from '../components/Icon.astro';
+import { SITE_URL } from '../lib/site';
+
+const RES_OPTIONS = [
+  { label: '1080p (1920 × 1080)', value: '1080p', meta: 'CPU matters most here' },
+  { label: '1440p (2560 × 1440)', value: '1440p', meta: 'The common sweet spot' },
+  { label: '4K (3840 × 2160)', value: '4k', meta: 'GPU-bound in almost every game' }
+];
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Bottleneck Calculator",
+    "url": `${SITE_URL}/bottleneck`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is a CPU or GPU bottleneck?",
+        "acceptedAnswer": { "@type": "Answer", "text": "A bottleneck is simply the component that runs out of headroom first. If your processor cannot prepare frames as fast as your graphics card can draw them, the graphics card idles and you are CPU-bottlenecked; the reverse is a GPU bottleneck. Some imbalance is normal and unavoidable." }
+      },
+      {
+        "@type": "Question",
+        "name": "Is a GPU bottleneck bad?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No — being GPU-bound is the healthy state for gaming. It means your graphics card is fully used and your frame rate scales with settings and resolution. A CPU bottleneck is the one worth fixing, because lowering graphics settings will not raise your frame rate." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does resolution change the bottleneck?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Substantially. Raising resolution adds work for the graphics card but almost none for the processor, so the same pair of parts can be CPU-bottlenecked at 1080p and GPU-bottlenecked at 4K." }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title="Bottleneck Calculator — CPU vs GPU Balance | PCGameFit"
+  description="Find out whether your processor or graphics card is the limiting part, and by how much, at 1080p, 1440p or 4K. Free and instant."
+  keywords="bottleneck calculator, cpu bottleneck, gpu bottleneck, cpu gpu balance"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Bottleneck Calculator' }]} />
+
+    <header class="page-head">
+      <h1>Bottleneck Calculator</h1>
+      <p class="lede">
+        Pick your processor and graphics card to see which one runs out of headroom first,
+        and by roughly how much. The answer changes with resolution, so set that too.
+      </p>
+    </header>
+
+    <section class="tool">
+      <form class="panel" id="bn-form" novalidate>
+        <Autocomplete id="cpu" label="Processor" placeholder="e.g. Ryzen 5 5600, i5-12400…" endpoint="/api/cpus/search" required />
+        <Autocomplete id="gpu" label="Graphics card" placeholder="e.g. RTX 4070, RX 6700 XT…" endpoint="/api/gpus/search" required />
+        <Autocomplete id="res" label="Resolution" placeholder="Pick a resolution" endpoint="" options={RES_OPTIONS} value="1440p (2560 × 1440)" required />
+        <button type="submit" class="btn btn-primary submit">Calculate balance &rarr;</button>
+        <p class="err" id="bn-err" role="alert" hidden></p>
+      </form>
+
+      <div class="results" id="bn-results" aria-live="polite">
+        <div class="placeholder">
+          <Icon name="diagram-3" />
+          <h2>Pick your parts to see the balance</h2>
+          <p>We compare the two against each other at your target resolution.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="method">
+      <h2>How this is calculated</h2>
+      <p>
+        Both parts carry a relative performance index on this site. A processor and graphics
+        card are balanced when the processor can keep the card fed — and how much processor
+        that takes falls as resolution rises, because extra pixels are work for the GPU alone.
+        We compare your two indices against the balance point for your resolution and report
+        the gap.
+      </p>
+      <p class="fine">
+        This is a model, not a measurement. Real bottlenecking is per-game: a strategy or
+        simulation title leans on the processor far harder than a corridor shooter at the same
+        resolution. Treat the result as a guide to which upgrade matters, not a precise number.
+      </p>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What is a CPU or GPU bottleneck?</summary>
+        <p>It is simply whichever component runs out of headroom first. If the processor cannot prepare frames as fast as the card can draw them, the card idles — that is a CPU bottleneck. Some imbalance is normal and unavoidable.</p>
+      </details>
+      <details>
+        <summary>Is a GPU bottleneck bad?</summary>
+        <p>No — being GPU-bound is the healthy state for gaming. It means the card is fully used and your frame rate responds to settings. A CPU bottleneck is the one worth fixing, because lowering graphics settings will not help.</p>
+      </details>
+      <details>
+        <summary>Does resolution change the answer?</summary>
+        <p>Substantially. Higher resolution adds work for the graphics card but almost none for the processor, so the same pair can be CPU-bound at 1080p and GPU-bound at 4K.</p>
+      </details>
+      <details>
+        <summary>What counts as an acceptable gap?</summary>
+        <p>Under about 10% is noise. 10–25% is worth knowing about but rarely worth spending money on. Above 25% you are leaving real performance on the table.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+        <li><a href="/can-it-run">Can I Run It?</a></li>
+        <li><a href="/compare-gpu">Compare GPUs</a></li>
+        <li><a href="/compare-cpu">Compare CPUs</a></li>
+        <li><a href="/build-suggest">Build Suggester</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; gap: 24px; align-items: start; margin-bottom: 52px; }
+  @media (max-width: 900px) { .tool { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 22px; display: grid; gap: 16px; }
+  .submit { width: 100%; margin-top: 4px; }
+  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+
+  .results { min-height: 300px; }
+  .placeholder {
+    min-height: 300px; display: grid; place-content: center; justify-items: center; gap: 10px;
+    text-align: center; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; padding: 40px 24px;
+  }
+  .placeholder :global(.icon) { font-size: 38px; color: var(--faint); }
+  .placeholder h2 { font-size: 18px; margin: 0; }
+  .placeholder p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  :global(.bn-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 26px; }
+  :global(.bn-verdict) { display: inline-flex; align-items: center; gap: 9px; padding: 8px 16px; border-radius: 999px; font-weight: 600; font-size: 15px; margin-bottom: 14px; }
+  :global(.bn-verdict.ok) { background: rgba(120,255,120,.1); color: #7fe98a; border: 1px solid rgba(120,255,120,.25); }
+  :global(.bn-verdict.mild) { background: rgba(255,200,80,.1); color: #ffc850; border: 1px solid rgba(255,200,80,.25); }
+  :global(.bn-verdict.bad) { background: rgba(255,110,110,.1); color: #ff8080; border: 1px solid rgba(255,110,110,.25); }
+  :global(.bn-detail) { color: var(--muted); line-height: 1.75; margin: 0 0 24px; max-width: 62ch; }
+  :global(.bn-detail b) { color: var(--text); }
+
+  :global(.bn-bars) { display: grid; gap: 12px; margin-bottom: 22px; }
+  :global(.bn-row) { display: grid; grid-template-columns: 108px 1fr 58px; align-items: center; gap: 12px; }
+  :global(.bn-row span.lbl) { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :global(.bn-row b) { font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  :global(.bn-track) { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  :global(.bn-fill) { height: 100%; border-radius: 99px; transition: width .5s var(--ease); }
+  :global(.bn-fill.cpu) { background: #8ab8ff; }
+  :global(.bn-fill.gpu) { background: var(--accent); }
+
+  :global(.bn-advice) { margin: 0; padding-left: 20px; }
+  :global(.bn-advice li) { color: var(--muted); line-height: 1.7; margin-bottom: 9px; }
+  :global(.bn-advice a) { color: var(--accent); }
+  :global(.bn-note) { color: var(--faint); font-size: 12.5px; line-height: 1.6; margin-top: 16px; }
+
+  .method { margin-bottom: 48px; }
+  .method h2 { font-size: 22px; margin-bottom: 14px; }
+  .method p { color: var(--muted); line-height: 1.75; max-width: 74ch; }
+  .method .fine { color: var(--faint); font-size: 13.5px; }
+</style>
+
+<script>
+  const form = document.getElementById('bn-form') as HTMLFormElement;
+  const out = document.getElementById('bn-results')!;
+  const err = document.getElementById('bn-err') as HTMLElement;
+
+  const val = (id: string) => (document.getElementById(`${id}-value`) as HTMLInputElement)?.value?.trim() || '';
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  /**
+   * How much processor a given graphics card needs to stay fed. Extra pixels
+   * are work for the GPU only, so the processor requirement falls as resolution
+   * rises — which is why the same pair flips from CPU- to GPU-bound at 4K.
+   */
+  const BALANCE: Record<string, number> = { '1080p': 1.0, '1440p': 0.8, '4k': 0.6 };
+
+  async function part(kind: 'cpus' | 'gpus', slug: string) {
+    const r = await fetch(`/api/${kind}/search?q=${encodeURIComponent(slug.replace(/-/g, ' '))}`);
+    const j = await r.json();
+    return (j.data || []).find((d: any) => d.value === slug) || null;
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true;
+
+    const cpuSlug = val('cpu'), gpuSlug = val('gpu'), res = val('res') || '1440p';
+    if (!cpuSlug || !gpuSlug) {
+      err.textContent = 'Pick both a processor and a graphics card from the suggestions.';
+      err.hidden = false;
+      return;
+    }
+
+    const r = await fetch('/api/tools/bottleneck', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cpu: cpuSlug, gpu: gpuSlug, resolution: res })
+    });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error || 'Could not calculate that.'; err.hidden = false; return; }
+
+    out.innerHTML = `
+      <div class="bn-card">
+        <div class="bn-verdict ${d.severity}">${esc(d.headline)}</div>
+        <p class="bn-detail">${d.detail}</p>
+        <div class="bn-bars">
+          <div class="bn-row">
+            <span class="lbl">${esc(d.cpu.name)}</span>
+            <div class="bn-track"><div class="bn-fill cpu" style="width:${d.cpuBar}%"></div></div>
+            <b>${d.cpu.score}</b>
+          </div>
+          <div class="bn-row">
+            <span class="lbl">${esc(d.gpu.name)}</span>
+            <div class="bn-track"><div class="bn-fill gpu" style="width:${d.gpuBar}%"></div></div>
+            <b>${d.gpu.score}</b>
+          </div>
+        </div>
+        <ul class="bn-advice">${d.advice.map((a: string) => `<li>${a}</li>`).join('')}</ul>
+        <p class="bn-note">${esc(d.note)}</p>
+      </div>`;
+  });
+</script>

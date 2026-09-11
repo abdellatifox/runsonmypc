@@ -1,0 +1,119 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { TOOLS } from '../lib/site-data';
+import Icon from '../components/Icon.astro';
+import { SITE_URL } from '../lib/site';
+
+const description = `All ${TOOLS.length} PCGameFit tools in one place — compatibility checks, FPS estimates, bottleneck analysis, tier lists and PSU sizing. Free, no download.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "PC Gaming Tools",
+    "description": description,
+    "url": `${SITE_URL}/tools`,
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": TOOLS.length,
+      "itemListElement": TOOLS.map((t, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "url": `${SITE_URL}${t.href}`,
+        "name": t.name
+      }))
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PCGameFit PC Toolkit",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "url": `${SITE_URL}/tools`,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+];
+---
+<BaseLayout
+  title="Free PC Gaming Tools & Calculators | PCGameFit"
+  description={description}
+  keywords="pc gaming tools, fps calculator, bottleneck calculator, psu calculator, gpu tier list, build suggester"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools' }]} />
+
+    <header class="page-head">
+      <h1>The PC Gaming Toolkit</h1>
+      <p class="lede">
+        Every calculator and database we run, free and in your browser. Nothing to install,
+        no account to create, and your specs never leave the page.
+      </p>
+    </header>
+
+    <div class="tool-grid">
+      {TOOLS.map(t => (
+        <a href={t.href} class="tool-item">
+          <div class="ic"><Icon name={t.icon} /></div>
+          <h2>{t.name}</h2>
+          <p>{t.blurb}</p>
+          <span class="go">Open <Icon name="arrow-right" /></span>
+        </a>
+      ))}
+    </div>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Are these tools really free?</summary>
+        <p>Yes — every tool on this page is free with no account, no trial and no download. We do not gate results behind a sign-up.</p>
+      </details>
+      <details>
+        <summary>Do I need to install anything to check my PC?</summary>
+        <p>No. Everything runs in the browser. You pick your GPU, CPU and memory from a list, and the calculation happens on the page.</p>
+      </details>
+      <details>
+        <summary>How accurate are the FPS estimates?</summary>
+        <p>Estimates are modelled from aggregated benchmark data for each GPU and CPU at a given resolution and preset. Treat them as a close guide rather than a guarantee — drivers, background load, thermals and specific game patches all move the real number.</p>
+      </details>
+      <details>
+        <summary>Which tool should I start with?</summary>
+        <p>If you have a specific game in mind, start with <a href="/can-it-run">Can I Run It?</a>. If you are planning an upgrade instead, start with the <a href="/bottleneck">Bottleneck Calculator</a> and then the <a href="/upgrade-advisor">Upgrade Advisor</a>.</p>
+      </details>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .tool-item {
+    display: block;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    text-decoration: none;
+    color: inherit;
+    transition: transform .25s var(--ease), border-color .25s var(--ease);
+  }
+  .tool-item:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .tool-item .ic {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    background: rgba(182,255,0,.1);
+    color: var(--accent);
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+  .tool-item h2 { font-size: 17px; margin: 0 0 8px; }
+  .tool-item p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+  .tool-item .go { color: var(--accent); font-size: 13px; font-weight: 600; }
+</style>

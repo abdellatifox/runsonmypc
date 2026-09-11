@@ -1,0 +1,235 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getCpus } from '../lib/db';
+import { SITE_URL } from '../lib/site';
+
+/* Reads the same table as /cpus and /cpu/[slug]; the page used to keep its own
+   hardcoded list of chip names with no scores behind them. */
+const cpus = await getCpus(Astro.locals);
+
+const TIER_ORDER = ['S', 'A', 'B', 'C', 'D', 'F'];
+const TIER_BLURB: Record<string, string> = {
+  S: 'Top of the stack. Will not bottleneck any current graphics card, in any game.',
+  A: 'High end. Pairs comfortably with flagship GPUs at 1440p and above.',
+  B: 'Strong mid-range. The sensible pairing for upper-mid-range graphics cards.',
+  C: 'Mid-range. Fine for 1080p and 1440p gaming with a matched GPU.',
+  D: 'Entry level. Will limit faster graphics cards in CPU-heavy titles.',
+  F: 'Legacy. Below the 6-core baseline most current releases assume.'
+};
+
+const tiers = TIER_ORDER
+  .map(t => ({ tier: t, chips: cpus.filter(c => c.tier === t) }))
+  .filter(t => t.chips.length > 0);
+
+const year = new Date().getFullYear();
+const best = cpus[0];
+const bestValue = [...cpus].filter(c => c.score >= 60).sort((a, b) => b.score - a.score)[Math.min(3, cpus.length - 1)];
+const amdBest = cpus.find(c => c.brand === 'AMD');
+const intelBest = cpus.find(c => c.brand === 'Intel');
+
+const description = `Every gaming processor ranked S through F for ${year}. ${cpus.length} CPUs scored on gaming performance, with cores, threads, clocks and power draw for each.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `CPU Tier List ${year}`,
+    "description": description,
+    "url": `${SITE_URL}/cpu-tier-list`,
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": cpus.length,
+      "itemListOrder": "https://schema.org/ItemListOrderDescending",
+      "itemListElement": cpus.slice(0, 40).map((c, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "url": `${SITE_URL}/cpu/${c.slug}`,
+        "name": c.name
+      }))
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What is the best gaming CPU in ${year}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": `The ${best.name} leads our gaming ranking at ${best.score}/100, with ${best.cores} cores and ${best.threads} threads boosting to ${best.boost_ghz} GHz.` }
+      },
+      {
+        "@type": "Question",
+        "name": "How many CPU cores do I need for gaming?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Six cores is the practical baseline for current releases and eight is the comfortable target. Beyond that, extra cores help with streaming, compiling and background work more than with frame rate itself." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does the CPU matter for gaming?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It sets a ceiling your graphics card cannot exceed. That ceiling bites hardest at 1080p and in simulation and strategy games; at 4K the GPU is usually the limit instead. Pair parts of similar standing rather than overspending on either." }
+      },
+      {
+        "@type": "Question",
+        "name": "AMD or Intel for gaming?",
+        "acceptedAnswer": { "@type": "Answer", "text": `Both are competitive. In our ranking the strongest AMD chip is the ${amdBest?.name ?? 'n/a'} and the strongest Intel chip is the ${intelBest?.name ?? 'n/a'}. AMD's 3D V-Cache parts tend to lead specifically in gaming, while Intel is often stronger in mixed productivity workloads.` }
+      }
+    ]
+  }
+];
+---
+<BaseLayout
+  title={`CPU Tier List ${year} — ${cpus.length} Gaming CPUs Ranked | PCGameFit`}
+  description={description}
+  keywords="cpu tier list, top rated cpus, best gaming cpu 2026, processor ranking, cpu hierarchy, amd vs intel gaming"
+  jsonLd={schema}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'CPU Tier List' }]} />
+
+    <header class="page-head">
+      <h1>CPU Tier List {year}</h1>
+      <p class="lede">
+        The top rated CPUs for gaming — all {cpus.length} processors we track, ranked S through F. Scores weight gaming
+        workloads specifically rather than synthetic or productivity benchmarks, because a chip
+        that wins at rendering does not always win at frame rate.
+      </p>
+    </header>
+
+    <div class="picks">
+      <div class="pick">
+        <span>Fastest for gaming</span>
+        <a href={`/cpu/${best.slug}`}>{best.name}</a>
+        <em>{best.score}/100 · {best.cores}C/{best.threads}T</em>
+      </div>
+      {amdBest && (
+        <div class="pick">
+          <span>Best AMD</span>
+          <a href={`/cpu/${amdBest.slug}`}>{amdBest.name}</a>
+          <em>{amdBest.score}/100 · {amdBest.cores} cores</em>
+        </div>
+      )}
+      {intelBest && (
+        <div class="pick">
+          <span>Best Intel</span>
+          <a href={`/cpu/${intelBest.slug}`}>{intelBest.name}</a>
+          <em>{intelBest.score}/100 · {intelBest.cores} cores</em>
+        </div>
+      )}
+    </div>
+
+    {tiers.map(({ tier, chips }) => (
+      <section class="tier-block">
+        <div class="tier-head">
+          <div class={`tier-badge t-${tier}`}>{tier}</div>
+          <div>
+            <h2>Tier {tier}</h2>
+            <p>{TIER_BLURB[tier]}</p>
+          </div>
+        </div>
+        <div class="card-rail">
+          {chips.map(c => (
+            <a href={`/cpu/${c.slug}`} class="cpu-chip">
+              <b>{c.name}</b>
+              <span class="chip-meta">{c.score} · {c.cores}C/{c.threads}T · {c.boost_ghz}GHz</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <section class="full-table">
+      <h2>Full ranking</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>#</th><th>Processor</th><th>Tier</th><th>Score</th><th>Cores</th><th>Threads</th><th>Boost</th><th>TDP</th><th>Year</th></tr>
+          </thead>
+          <tbody>
+            {cpus.map((c, i) => (
+              <tr>
+                <td class="rank">{i + 1}</td>
+                <td><a href={`/cpu/${c.slug}`}>{c.name}</a></td>
+                <td><span class={`pill t-${c.tier}`}>{c.tier}</span></td>
+                <td><b>{c.score}</b></td>
+                <td>{c.cores}</td>
+                <td>{c.threads}</td>
+                <td>{c.boost_ghz} GHz</td>
+                <td>{c.tdp_watts} W</td>
+                <td>{c.release_year}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What is the best gaming CPU in {year}?</summary>
+        <p>The <a href={`/cpu/${best.slug}`}>{best.name}</a> leads at {best.score}/100, with {best.cores} cores and {best.threads} threads boosting to {best.boost_ghz} GHz.</p>
+      </details>
+      <details>
+        <summary>How many cores do I need for gaming?</summary>
+        <p>Six is the practical baseline for current releases; eight is the comfortable target. Beyond that, extra cores help with streaming, compiling and background work more than with frame rate itself.</p>
+      </details>
+      <details>
+        <summary>Does the CPU really matter for gaming?</summary>
+        <p>It sets a ceiling your graphics card cannot exceed. That bites hardest at 1080p and in simulation and strategy titles; at 4K the GPU is usually the limit. Check a specific pairing with the <a href="/bottleneck">bottleneck calculator</a>.</p>
+      </details>
+      <details>
+        <summary>AMD or Intel?</summary>
+        <p>Both are competitive. AMD's 3D V-Cache parts tend to lead specifically in gaming; Intel is often stronger in mixed productivity work. Put two side by side on the <a href="/compare-cpu">CPU comparison tool</a>.</p>
+      </details>
+    </section>
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/cpus">CPU Database</a></li>
+        <li><a href="/compare-cpu">Compare CPUs</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/build-suggest">Build Suggester</a></li>
+        <li><a href="/game-list/cpu-intensive-games">CPU-intensive games</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 44px; }
+  .pick { border: 1px solid var(--line-strong); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
+  .pick span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
+  .pick a { display: block; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 16px; margin-bottom: 5px; }
+  .pick a:hover { text-decoration: underline; }
+  .pick em { font-style: normal; color: var(--faint); font-size: 12.5px; }
+
+  .tier-block { margin-bottom: 40px; }
+  .tier-head { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .tier-badge {
+    width: 52px; height: 52px; flex: none; display: grid; place-items: center;
+    border-radius: 12px; font-family: 'Space Grotesk', sans-serif; font-size: 24px;
+    font-weight: 700; color: #000;
+  }
+  .tier-badge.t-S { background: #ff7f7f; } .tier-badge.t-A { background: #ffbf7f; }
+  .tier-badge.t-B { background: #ffff7f; } .tier-badge.t-C { background: #7fff7f; }
+  .tier-badge.t-D { background: #7fbfff; } .tier-badge.t-F { background: #bfbfbf; }
+  .tier-head h2 { font-size: 19px; margin: 0 0 5px; }
+  .tier-head p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; max-width: 70ch; }
+
+  .card-rail { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .cpu-chip {
+    display: block; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); text-decoration: none; color: var(--text);
+    transition: border-color .2s var(--ease), transform .2s var(--ease);
+  }
+  .cpu-chip:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .cpu-chip b { display: block; font-size: 14px; margin-bottom: 5px; }
+  .chip-meta { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .full-table { margin-top: 52px; }
+  .full-table h2 { font-size: 22px; margin-bottom: 18px; }
+  .rank { color: var(--faint); font-variant-numeric: tabular-nums; }
+</style>

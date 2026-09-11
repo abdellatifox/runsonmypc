@@ -1,0 +1,137 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import GameCard from '../../components/GameCard.astro';
+import { getGames } from '../../lib/db';
+import { GAME_LISTS } from '../../lib/site-data';
+import Icon from '../../components/Icon.astro';
+import { SITE_URL } from '../../lib/site';
+
+const { slug } = Astro.params;
+const list = GAME_LISTS.find(l => l.slug === slug);
+if (!list) return new Response(null, { status: 404, statusText: 'Not Found' });
+
+const all = await getGames(Astro.locals);
+let games = list.appids
+  ? all.filter(g => g.steam_id != null && list.appids!.includes(g.steam_id))
+  : all.filter(list.filter);
+if (list.sort) games = games.sort(list.sort);
+
+/*
+ * Say what the list is drawn from. A feature list can only cover the titles
+ * whose DLSS/FSR/ray-tracing support we have actually verified — Steam
+ * publishes no such field — and silently showing eleven games implies the
+ * other four hundred lack the feature.
+ */
+const verified = all.filter(g => g.supports_ray_tracing !== null).length;
+const coverage = list.featureBased
+  ? `Covers the ${verified} titles whose graphics features we have verified. Steam publishes no DLSS, FSR or ray-tracing field, so support for the rest is unconfirmed rather than absent.`
+  : list.appids
+    ? 'Membership in this list is curated rather than derived from a published field.'
+    : null;
+
+const others = GAME_LISTS.filter(l => l.slug !== slug);
+
+const title = `${list.h1} | PCGameFit`;
+const description = `${list.blurb.slice(0, 155).trim()}`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": list.h1,
+    "description": list.blurb,
+    "url": `${SITE_URL}/game-list/${list.slug}`,
+    "mainEntity": {
+      "@type": "ItemList",
+      "name": list.title,
+      "numberOfItems": games.length,
+      "itemListElement": games.map((g, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "url": `${SITE_URL}/game/${g.slug}`,
+        "name": g.name
+      }))
+    }
+  }
+];
+---
+<BaseLayout title={title} description={description} jsonLd={schema}
+  keywords={`${list.title.toLowerCase()}, pc games, system requirements, ${list.slug.replace(/-/g, ' ')}`}>
+  <div class="wrap">
+    <Breadcrumbs items={[
+      { name: 'Games', href: '/games' },
+      { name: 'Game Lists', href: '/game-lists' },
+      { name: list.title }
+    ]} />
+
+    <header class="page-head">
+      <h1><Icon name={list.icon} /> {list.h1}</h1>
+      <p class="lede">{list.blurb}</p>
+      <p class="count"><b>{games.length}</b> games in this list · updated {new Date().getFullYear()}</p>
+      {coverage && <p class="coverage">{coverage}</p>}
+    </header>
+
+    {games.length === 0 ? (
+      <p class="empty">No games currently match this list. <a href="/games">Browse all games</a>.</p>
+    ) : (
+      <>
+        <div class="grid-auto">
+          {games.map((g, i) => (
+            <GameCard slug={g.slug} name={g.name} genre={g.genre} year={g.release_year} eager={i < 6} />
+          ))}
+        </div>
+
+        <section class="req-table">
+          <h2>System requirements at a glance</h2>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Game</th><th>Year</th><th>Genre</th>
+                  <th>Min RAM</th><th>Rec RAM</th><th>Min VRAM</th><th>Storage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {games.map(g => (
+                  <tr>
+                    <td><a href={`/game/${g.slug}`}>{g.name}</a></td>
+                    <td>{g.release_year}</td>
+                    <td>{g.genre}</td>
+                    <td>{g.min_ram_gb} GB</td>
+                    <td>{g.rec_ram_gb} GB</td>
+                    <td>{g.min_vram_gb} GB</td>
+                    <td>{g.min_storage_gb} GB</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </>
+    )}
+
+    <section class="related">
+      <h2>More game lists</h2>
+      <ul>
+        {others.map(l => <li><a href={`/game-list/${l.slug}`}>{l.title}</a></li>)}
+        <li><a href="/can-it-run">Check a game against your PC</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head h1 :global(.icon) { color: var(--accent); margin-right: 8px; }
+  .count { color: var(--muted); font-size: 14px; margin-top: 14px; }
+  .count b { color: var(--accent); }
+  .coverage {
+    color: var(--faint); font-size: 13px; line-height: 1.6;
+    max-width: 72ch; margin-top: 8px;
+  }
+  .empty { color: var(--muted); padding: 40px 0; }
+  .empty a { color: var(--accent); }
+  .req-table { margin-top: 56px; }
+  .req-table h2 { font-size: 22px; margin-bottom: 18px; }
+</style>

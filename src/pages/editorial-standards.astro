@@ -1,0 +1,61 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_URL } from '../lib/site';
+---
+<BaseLayout
+  title="Editorial Standards — How We Score Hardware | PCGameFit"
+  description="How PCGameFit builds its performance index, where our data comes from, how we handle corrections, and our policy on sponsorship and affiliate relationships."
+  keywords="editorial standards, methodology, how we test, gpu scoring methodology"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Editorial Standards",
+    "url": `${SITE_URL}/editorial-standards`,
+    "publisher": { "@id": `${SITE_URL}/#organization` }
+  }}
+>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Editorial Standards' }]} />
+
+    <header class="page-head">
+      <h1>Editorial Standards</h1>
+      <p class="lede">
+        How our numbers are produced, what they can and cannot tell you, and how we correct
+        them when they are wrong.
+      </p>
+    </header>
+
+    <div class="prose">
+      <h2>Our performance index</h2>
+      <p>Every graphics card and processor on this site carries a score from 0 to 100. The scale is relative: the fastest consumer part we track anchors the top, and everything else is placed against it using aggregated benchmark data from public sources, normalised for gaming workloads specifically rather than synthetic or productivity tests.</p>
+      <p>Scores are recalibrated when a new flagship launches. That means a card's absolute number can move down over time even though its real performance has not changed — the ruler got longer, not the card slower.</p>
+
+      <h2>How estimates are calculated</h2>
+      <p>Frame-rate estimates anchor on a simple premise: a system that exactly meets a game's <em>recommended</em> requirement should reach roughly 60 FPS at 1080p on high settings. From that anchor we scale by the ratio of your hardware's score to the requirement, then apply resolution and preset multipliers, then apply a CPU-imposed ceiling.</p>
+      <p>This is a model, not a measurement. It is good at telling you whether a pairing is sensible and how two configurations compare. It is not a substitute for a review that actually ran the game.</p>
+
+      <h2>Where our data comes from</h2>
+      <ul>
+        <li><strong>System requirements</strong> — publisher-published minimum and recommended specs, as listed on storefronts and official sites.</li>
+        <li><strong>Hardware specifications</strong> — manufacturer datasheets for core counts, clocks, memory and power figures.</li>
+        <li><strong>Performance data</strong> — aggregated from publicly available benchmark results across multiple independent outlets, rather than any single source.</li>
+        <li><strong>Game artwork</strong> — SteamGridDB, with rights remaining with the respective publishers.</li>
+      </ul>
+
+      <h2>What we label clearly</h2>
+      <p>Anywhere we show a modelled figure, we say so on the page. We do not present estimates as captured benchmark runs, and we do not publish a number we cannot explain the derivation of. Where a figure is a judgement call — tier boundaries, for instance — we say that too.</p>
+
+      <h2>Corrections</h2>
+      <p>Hardware data and game requirements change: patches shift requirements, manufacturers revise specifications, and we make mistakes. When we find an error, we fix the underlying data rather than patching the symptom, so every tool that reads it is corrected at once.</p>
+      <p>If you spot something wrong, tell us through the <a href="/contact">contact page</a> with the page URL and what you believe the correct value to be. Reports that identify a specific, checkable error get fixed fastest.</p>
+
+      <h2>Independence</h2>
+      <p>We are not affiliated with any hardware manufacturer, game developer or publisher. No manufacturer pays for placement, a tier position or a score, and no score has ever been changed at a third party's request. If that ever changes, this page changes with it — and any sponsored placement will be labelled as such on the page it appears on.</p>
+
+      <h2>Scope and limits</h2>
+      <p>We cover desktop and laptop gaming hardware and PC game requirements. We do not test hardware ourselves, we do not review games, and we do not provide investment, financial or purchasing advice. Our tools are a starting point for a decision, not the decision itself.</p>
+    </div>
+  </div>
+</BaseLayout>

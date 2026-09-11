@@ -1,0 +1,454 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import GameCard from '../../components/GameCard.astro';
+import { getGame, getGames, getGpus, getCpus } from '../../lib/db';
+import { demandLabelFor } from '../../lib/games';
+import GameArt from '../../components/GameArt.astro';
+import { getGameArt, getGameOgImage } from '../../lib/images';
+import { estimateFps } from '../../lib/perf';
+import { SITE_URL } from '../../lib/site';
+
+const { slug } = Astro.params;
+const game = await getGame(Astro.locals, slug!);
+
+// Previously this page invented a placeholder game for any unknown slug, which
+// meant every typo returned a 200 full of fabricated requirements. That is a
+// soft-404 and it poisons the index — an unknown game is now a real 404.
+if (!game) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [allGames, gpus, cpus] = await Promise.all([
+  getGames(Astro.locals),
+  getGpus(Astro.locals),
+  getCpus(Astro.locals)
+]);
+
+const art = getGameArt(game.slug, game.name);
+const ogImage = getGameOgImage(game.slug);
+
+// Cards people actually own, spread across the range rather than the top only.
+const showcaseGpus = gpus.filter(g => g.score <= 92).slice(0, 10);
+// With no stated CPU requirement there is nothing to match against, so fall
+// back to a mid-range part rather than the fastest chip we track.
+const refCpu = (game.rec_cpu_score != null
+  ? cpus.find(c => c.score >= game.rec_cpu_score!)
+  : null) ?? cpus[Math.floor(cpus.length / 3)];
+
+const perf = showcaseGpus.map(g => ({
+  gpu: g,
+  fps1080: estimateFps(game, g.score, refCpu.score, '1080p', 'high'),
+  fps1440: estimateFps(game, g.score, refCpu.score, '1440p', 'high'),
+  fps4k: estimateFps(game, g.score, refCpu.score, '4k', 'high')
+}));
+
+/*
+ * What the publisher wrote is the requirement; anything we derive is commentary.
+ * This page used to display the weakest card in our database that cleared the
+ * score, which for Cyberpunk 2077 rendered "GTX 770" against a listing that
+ * actually reads "GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380".
+ * The stated text is shown first now, with an equivalent only as a footnote.
+ */
+const equivalent = (list: any[], score: number | null) =>
+  score == null ? null : list.filter(x => x.score >= score).sort((a, b) => a.score - b.score)[0] ?? null;
+
+const minGpu = equivalent(gpus, game.min_gpu_score);
+const recGpu = equivalent(gpus, game.rec_gpu_score);
+const minCpu = equivalent(cpus, game.min_cpu_score);
+const recCpu = equivalent(cpus, game.rec_cpu_score);
+
+/** Render a requirement cell: publisher's words, with our match beneath. */
+const NOT_STATED = 'Not stated by the publisher';
+
+const similar = allGames
+  .filter(g => g.slug !== game.slug && g.genre === game.genre)
+  .sort((a, b) => {
+    // NaN from a null score sorts unpredictably; unscored games go last.
+    const base = game.rec_gpu_score;
+    if (base == null) return (b.release_year ?? 0) - (a.release_year ?? 0);
+    const d = (x: any) => x.rec_gpu_score == null ? Infinity : Math.abs(x.rec_gpu_score - base);
+    return d(a) - d(b);
+  })
+  .slice(0, 6);
+
+const features = [
+  game.supports_ray_tracing && 'Ray tracing',
+  game.supports_dlss && 'DLSS',
+  game.supports_fsr && 'FSR'
+].filter(Boolean) as string[];
+
+const demandLabel = demandLabelFor(game);
+
+/** Feature flags are null when unverified, which is not the same as "no". */
+const boundLabel =
+  game.gpu_intensive == null ? null
+  : game.gpu_intensive === 1 ? 'on your graphics card' : 'on your processor';
+
+const gbOrDash = (n: number | null) => n != null ? `${n}GB` : null;
+
+const title = `${game.name} System Requirements (2026) | PCGameFit`;
+const specBits = [
+  game.min_ram_gb != null && `${game.min_ram_gb}GB RAM`,
+  game.min_vram_gb != null && `${game.min_vram_gb}GB VRAM`,
+  game.min_storage_gb != null && `${game.min_storage_gb}GB storage`
+].filter(Boolean).join(', ');
+const description = specBits
+  ? `Can you run ${game.name}? Minimum: ${specBits}. Publisher-stated requirements plus estimated FPS on ${showcaseGpus.length} graphics cards.`
+  : `${game.name} PC system requirements as published, with estimated performance on ${showcaseGpus.length} graphics cards.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": game.name,
+    "url": `${SITE_URL}/game/${game.slug}`,
+    "gamePlatform": "PC",
+    "genre": game.genre,
+    "applicationCategory": "Game",
+    ...(ogImage ? { "image": ogImage } : {}),
+    ...(game.developer ? { "author": { "@type": "Organization", "name": game.developer } } : {}),
+    ...(game.publisher ? { "publisher": { "@type": "Organization", "name": game.publisher } } : {}),
+    ...(game.release_year ? { "datePublished": String(game.release_year) } : {}),
+    "operatingSystem": game.min_os || 'Windows 10',
+    ...(game.min_cpu_text ? { "processorRequirements": game.min_cpu_text } : {}),
+    ...(game.min_ram_gb != null ? { "memoryRequirements": `${game.min_ram_gb} GB` } : {}),
+    ...(game.min_storage_gb != null ? { "storageRequirements": `${game.min_storage_gb} GB` } : {})
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What are the minimum requirements for ${game.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `${game.name} states: ${game.min_cpu_text ?? 'no processor requirement'}; ${game.min_gpu_text ?? 'no graphics requirement'}${specBits ? `; ${specBits}` : ''}. Operating system: ${game.min_os || 'Windows 10'}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What are the recommended specs for ${game.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `${game.name} recommends: ${game.rec_cpu_text ?? 'no processor stated'}; ${game.rec_gpu_text ?? 'no graphics card stated'}${game.rec_ram_gb != null ? `; ${game.rec_ram_gb}GB of memory` : ''}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Is ${game.name} demanding on PC?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": demandLabel ? `${game.name} is ${demandLabel} by 2026 standards, with a recommended GPU score of ${game.rec_gpu_score} out of 100.${boundLabel ? ` It leans ${boundLabel}.` : ''}` : `${game.name} does not name a graphics card in its published requirements, so we do not rate how demanding it is.`
+        }
+      },
+      ...(game.supports_dlss || game.supports_fsr ? [{
+        "@type": "Question",
+        "name": `Does ${game.name} support DLSS or FSR?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `${game.name} supports ${[game.supports_dlss && 'NVIDIA DLSS', game.supports_fsr && 'AMD FSR'].filter(Boolean).join(' and ')}. Enabling upscaling on Quality mode typically returns 25-40% more frames with very little visible loss.`
+        }
+      }] : [])
+    ]
+  }
+];
+---
+<BaseLayout title={title} description={description} jsonLd={schema} ogImage={ogImage}
+  keywords={`${game.name} system requirements, can i run ${game.name}, ${game.name} pc requirements, ${game.name} fps`}>
+  <div class="wrap">
+    <Breadcrumbs items={[
+      { name: 'Games', href: '/games' },
+      { name: game.name }
+    ]} />
+
+    <header class="game-hero">
+      <div class="cover" data-kind={art.kind} style={art.kind !== 'cover' ? `--hue:${art.hue}` : undefined}>
+        <GameArt slug={game.slug} art={art} eager={true} sizes="(max-width: 720px) 180px, 300px"
+          className={art.kind === 'logo' ? 'logo' : art.kind === 'none' ? 'initials' : ''} />
+      </div>
+      <div class="hero-info">
+        <span class="eyebrow">{game.genre} · {game.release_year}{game.developer ? ` · ${game.developer}` : ''}</span>
+        <h1>{game.name} System Requirements</h1>
+        <p class="lede">
+          {demandLabel
+            ? <>{game.name} is <b>{demandLabel}</b> by 2026 standards. </>
+            : <>{game.name}'s listing does not name a graphics card we can measure against, so we do not rate how demanding it is. </>}
+          {boundLabel && <>It leans <b>{boundLabel}</b>. </>}
+          {game.rec_ram_gb != null && <>It wants <b>{gbOrDash(game.rec_ram_gb)} of memory</b>{game.rec_vram_gb != null && <> and <b>{gbOrDash(game.rec_vram_gb)} of VRAM</b></>} for a comfortable experience. </>}
+          {game.min_storage_gb != null && <>Set aside <b>{gbOrDash(game.min_storage_gb)}</b> of free space.</>}
+        </p>
+        {features.length > 0 && (
+          <div class="feat-row">
+            {features.map(f => <span class="tag">{f}</span>)}
+          </div>
+        )}
+        <a href={`/can-it-run?game=${game.slug}`} class="btn btn-primary">Check my PC against this game</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Full system requirements</h2>
+      <div class="table-scroll">
+        <table class="data-table req">
+          <thead>
+            <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Operating system</td>
+              <td>{game.min_os || 'Windows 10 64-bit'}</td>
+              <td>{game.min_os || 'Windows 10 64-bit'}</td>
+            </tr>
+            <tr>
+              <td>DirectX</td>
+              <td>{game.min_directx ?? <em class="none">—</em>}</td>
+              <td>{game.min_directx ?? <em class="none">—</em>}</td>
+            </tr>
+            <tr>
+              <td>Processor</td>
+              <td>
+                {game.min_cpu_text
+                  ? <><span class="stated">{game.min_cpu_text}</span>{minCpu && <a class="equiv" href={`/cpu/${minCpu.slug}`}>≈ {minCpu.name}</a>}</>
+                  : <em class="none">{NOT_STATED}</em>}
+              </td>
+              <td>
+                {game.rec_cpu_text
+                  ? <><span class="stated">{game.rec_cpu_text}</span>{recCpu && <a class="equiv" href={`/cpu/${recCpu.slug}`}>≈ {recCpu.name}</a>}</>
+                  : <em class="none">{NOT_STATED}</em>}
+              </td>
+            </tr>
+            <tr>
+              <td>Graphics card</td>
+              <td>
+                {game.min_gpu_text
+                  ? <><span class="stated">{game.min_gpu_text}</span>{minGpu && <a class="equiv" href={`/gpu/${minGpu.slug}`}>≈ {minGpu.name}</a>}</>
+                  : <em class="none">{NOT_STATED}</em>}
+              </td>
+              <td>
+                {game.rec_gpu_text
+                  ? <><span class="stated">{game.rec_gpu_text}</span>{recGpu && <a class="equiv" href={`/gpu/${recGpu.slug}`}>≈ {recGpu.name}</a>}</>
+                  : <em class="none">{NOT_STATED}</em>}
+              </td>
+            </tr>
+            <tr>
+              <td>Video memory</td>
+              <td>{game.min_vram_gb != null ? `${game.min_vram_gb} GB` : <em class="none">—</em>}</td>
+              <td>{game.rec_vram_gb != null ? `${game.rec_vram_gb} GB` : <em class="none">—</em>}</td>
+            </tr>
+            <tr>
+              <td>System memory</td>
+              <td>{game.min_ram_gb != null ? `${game.min_ram_gb} GB` : <em class="none">—</em>}</td>
+              <td>{game.rec_ram_gb != null ? `${game.rec_ram_gb} GB` : <em class="none">—</em>}</td>
+            </tr>
+            <tr>
+              <td>Storage</td>
+              <td>{game.min_storage_gb != null ? `${game.min_storage_gb} GB` : <em class="none">—</em>}</td>
+              <td>{game.rec_storage_gb != null ? `${game.rec_storage_gb} GB${game.rec_storage_gb >= 70 ? ' (SSD recommended)' : ''}` : <em class="none">—</em>}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {game.notes && <p class="note"><b>Note:</b> {game.notes}</p>}
+    </section>
+
+    <section>
+      <h2>Estimated performance by graphics card</h2>
+      <p class="sub">
+        High preset, upscaling off, paired with a {refCpu.name}-class processor.
+      </p>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr><th>Graphics card</th><th>Tier</th><th>1080p</th><th>1440p</th><th>4K</th><th>Verdict</th></tr>
+          </thead>
+          <tbody>
+            {perf.map(p => (
+              <tr>
+                <td><a href={`/can-it-run/${game.slug}/${p.gpu.slug}`}>{p.gpu.name}</a></td>
+                <td><span class={`pill t-${p.gpu.tier}`}>{p.gpu.tier}</span></td>
+                <td class="fps" data-v={p.fps1080}>{p.fps1080}</td>
+                <td class="fps" data-v={p.fps1440}>{p.fps1440}</td>
+                <td class="fps" data-v={p.fps4k}>{p.fps4k}</td>
+                <td>
+                  {p.gpu.score >= game.rec_gpu_score
+                    ? <span class="v ok">Recommended spec</span>
+                    : p.gpu.score >= game.min_gpu_score
+                      ? <span class="v warn">Above minimum</span>
+                      : <span class="v bad">Below minimum</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer">
+        Modelled estimates rather than captured runs — see our
+        <a href="/editorial-standards"> methodology</a>.
+      </p>
+    </section>
+
+    {features.length > 0 && (
+      <section>
+        <h2>Graphics features</h2>
+        <div class="feat-grid">
+          {game.supports_ray_tracing === 1 && (
+            <div>
+              <h3>Ray tracing</h3>
+              <p>
+                {game.name} supports hardware ray tracing
+                {game.ray_tracing_intensity ? ` at ${String(game.ray_tracing_intensity).toLowerCase()} intensity` : ''}.
+                Expect a meaningful frame-rate cost — see <a href="/ray-tracing">what ray tracing costs</a>.
+              </p>
+            </div>
+          )}
+          {(game.supports_dlss === 1 || game.supports_fsr === 1) && (
+            <div>
+              <h3>Upscaling</h3>
+              <p>
+                Supports {[game.supports_dlss && 'NVIDIA DLSS', game.supports_fsr && 'AMD FSR'].filter(Boolean).join(' and ')}.
+                Quality mode typically returns 25–40% more frames — compare them on our
+                <a href="/dlss-fsr"> DLSS vs FSR page</a>.
+              </p>
+            </div>
+          )}
+          <div>
+            <h3>What limits performance</h3>
+            <p>
+              This title is primarily <b>{game.gpu_intensive ? 'GPU-bound' : 'CPU-bound'}</b>
+              {game.cpu_intensive === 1 ? ', and it is unusually hard on the processor — a weak CPU will cap your frame rate even with a strong graphics card.' : '. A faster graphics card is the most direct route to more frames.'}
+            </p>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section class="faq">
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What are the minimum requirements for {game.name}?</summary>
+        <p>At least {game.min_ram_gb}GB of system memory, a graphics card with {game.min_vram_gb}GB of VRAM{minGpu ? ` (roughly a ${minGpu.name} or better)` : ''}, {game.min_storage_gb}GB of free storage, {game.min_os || 'Windows 10'} and {game.min_directx}.</p>
+      </details>
+      <details>
+        <summary>What are the recommended specs?</summary>
+        <p>For a comfortable experience: {game.rec_ram_gb}GB of memory and a card with {game.rec_vram_gb}GB of VRAM{recGpu ? ` — around a ${recGpu.name}` : ''}{recCpu ? `, paired with a ${recCpu.name} or equivalent` : ''}.</p>
+      </details>
+      <details>
+        <summary>Is {game.name} demanding on PC?</summary>
+        <p>It is {demandLabel} by 2026 standards, with a recommended GPU score of {game.rec_gpu_score}/100. It is primarily {game.gpu_intensive ? 'GPU-bound' : 'CPU-bound'}.</p>
+      </details>
+      {(game.supports_dlss === 1 || game.supports_fsr === 1) && (
+        <details>
+          <summary>Does {game.name} support DLSS or FSR?</summary>
+          <p>It supports {[game.supports_dlss && 'NVIDIA DLSS', game.supports_fsr && 'AMD FSR'].filter(Boolean).join(' and ')}. On Quality mode that is typically worth 25–40% more frames with very little visible loss.</p>
+        </details>
+      )}
+    </section>
+
+    {similar.length > 0 && (
+      <section>
+        <h2>Similar {game.genre} games</h2>
+        <div class="grid-auto">
+          {similar.map(g => (
+            <GameCard slug={g.slug} name={g.name} genre={g.genre} year={g.release_year} />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="related">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/can-it-run">Can I Run It?</a></li>
+        <li><a href="/fps-estimator">FPS Calculator</a></li>
+        <li><a href="/games">All games</a></li>
+        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href={`/game-list/${game.rec_gpu_score >= 70 ? 'most-demanding-pc-games' : 'low-end-pc-games'}`}>
+          {game.rec_gpu_score >= 70 ? 'Most demanding games' : 'Games for low-end PCs'}
+        </a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .game-hero {
+    display: grid; grid-template-columns: 210px 1fr; gap: 32px; align-items: start;
+    padding: 36px 0 34px; border-bottom: 1px solid var(--line); margin-bottom: 44px;
+  }
+  .cover {
+    aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  }
+  .cover[data-kind="cover"] :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover[data-kind="logo"], .cover[data-kind="none"] {
+    background:
+      radial-gradient(70% 46% at 50% 50%, rgba(6,8,14,.90) 0%, rgba(6,8,14,.45) 62%, rgba(6,8,14,0) 100%),
+      radial-gradient(105% 62% at 50% 0%, hsl(var(--hue) 48% 19%) 0%, transparent 72%),
+      linear-gradient(160deg, #141826 0%, #0b0d16 100%);
+  }
+  .cover :global(picture) { display: contents; }
+  .cover :global(.logo) {
+    display: block; max-width: 80%; max-height: 60%; object-fit: contain;
+    filter:
+      drop-shadow(0 1px 2px rgba(0,0,0,.9))
+      drop-shadow(0 6px 22px rgba(0,0,0,.7));
+  }
+  .cover :global(.initials) { font-family: 'Space Grotesk', sans-serif; font-size: 54px; font-weight: 700; color: hsl(var(--hue) 70% 72%); }
+
+  .hero-info h1 { font-size: clamp(26px, 4.2vw, 40px); margin: 10px 0 14px; line-height: 1.15; }
+  .hero-info .lede { color: var(--muted); line-height: 1.75; max-width: 62ch; margin: 0 0 18px; }
+  .hero-info .lede b { color: var(--text); }
+  .feat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 4px 11px;
+    border-radius: 99px; background: rgba(182,255,0,.12); color: var(--accent);
+  }
+  @media (max-width: 720px) {
+    .game-hero { grid-template-columns: 1fr; }
+    .cover { max-width: 180px; }
+  }
+
+  section { margin-bottom: 52px; }
+  section h2 { font-size: 22px; margin-bottom: 18px; }
+  .sub { color: var(--muted); font-size: 14px; margin: -8px 0 16px; }
+  .req td:first-child { color: var(--muted); }
+  .req a { color: var(--text); }
+  .req a:hover { color: var(--accent); }
+  .fps { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
+  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
+  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+  .note, .disclaimer { color: var(--muted); font-size: 14px; line-height: 1.7; margin-top: 16px; }
+  .disclaimer { color: var(--faint); font-size: 13px; }
+  .note a, .disclaimer a { color: var(--accent); }
+
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .feat-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 20px; background: var(--surface); }
+  .feat-grid h3 { font-size: 15px; margin: 0 0 8px; color: var(--accent); }
+  .feat-grid p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+  .feat-grid a { color: var(--accent); }
+  .feat-grid b { color: var(--text); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.fps').forEach(el => {
+    const v = parseInt(el.dataset.v || '0', 10);
+    el.style.color = v >= 90 ? '#7fe98a' : v >= 60 ? '#b6ff00' : v >= 30 ? '#ffc850' : '#ff8080';
+  });
+</script>
+
+<style>
+  .stated { display: block; color: var(--text); line-height: 1.45; }
+  .equiv {
+    display: block; margin-top: 4px; font-size: 12px;
+    color: var(--muted) !important; text-decoration: none;
+  }
+  .equiv:hover { color: var(--accent) !important; }
+  .none { color: var(--faint); font-style: italic; font-size: 13px; }
+</style>

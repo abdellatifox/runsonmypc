@@ -1,0 +1,14 @@
+{
+  "name": "PCGameFit — PC Game Compatibility Checker",
+  "short_name": "PCGameFit",
+  "description": "Check if your PC can run any game. Free FPS, bottleneck and hardware tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090A0F",
+  "theme_color": "#090A0F",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
