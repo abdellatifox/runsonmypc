@@ -1,5 +1,5 @@
 /**
- * Self-hosts the two brand typefaces.
+ * Self-hosts the brand typefaces.
  *
  * Google Fonts was loaded with a plain <link rel="stylesheet">, which is
  * render-blocking *and* third-party: the browser had to resolve DNS, connect
@@ -26,8 +26,12 @@ const CSS_OUT = path.join(ROOT, 'src', 'styles', 'fonts.css');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const FAMILIES = [
-  { name: 'Inter', spec: 'Inter:wght@400;500;600' },
-  { name: 'Space Grotesk', spec: 'Space+Grotesk:wght@500;600;700' }
+  // Body copy. Variable, so one file covers every weight.
+  { name: 'Manrope', spec: 'Manrope:wght@400;500;600;700' },
+  // Headings and the wordmark: squared, instrument-panel letterforms.
+  { name: 'Chakra Petch', spec: 'Chakra+Petch:wght@600;700' },
+  // Numbers and specs (FPS, scores, VRAM), so digits line up in readouts.
+  { name: 'JetBrains Mono', spec: 'JetBrains+Mono:wght@400;500;600' }
 ];
 
 /** The latin block; anything else Google offers is unused here. */
@@ -45,7 +49,7 @@ for (const fam of FAMILIES) {
   // Each @font-face carries its own unicode-range; keep the latin ones.
   const faces = [...css.matchAll(/@font-face\s*\{([\s\S]*?)\}/g)].map(m => m[1]);
 
-  /* Both families are variable fonts, so Google answers every weight in the
+  /* Variable families (Manrope, JetBrains Mono) make Google answers every weight in the
      request with the *same* file. Writing one file per weight shipped three
      byte-identical copies of Inter under different URLs, and the browser
      downloaded each separately. Group by source file instead and declare the

@@ -113,16 +113,16 @@ const schema = {
 
 <style>
   main { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
-  .breadcrumb { color: #a0aabf; font-size: 0.9rem; margin-bottom: 2rem; }
+  .breadcrumb { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
   .breadcrumb a { color: var(--accent); text-decoration: none; }
   .breadcrumb .current { color: white; }
   
   .article-header { margin-bottom: 2rem; }
-  .badge { background: rgba(182, 255, 0, 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
+  .badge { background: rgb(var(--accent-rgb) / 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
   h1 { font-size: 2.5rem; margin: 1rem 0; line-height: 1.2; }
-  .meta { color: #a0aabf; font-size: 0.9rem; }
+  .meta { color: var(--muted); font-size: 0.9rem; }
   
-  .hero-image-wrap { width: 100%; aspect-ratio: 16 / 9; max-height: 440px; overflow: hidden; border-radius: 12px; margin-bottom: 3rem; background: var(--surface-2); border: 1px solid rgba(182,255,0,0.1); }
+  .hero-image-wrap { width: 100%; aspect-ratio: 16 / 9; max-height: 440px; overflow: hidden; border-radius: var(--radius); margin-bottom: 3rem; background: var(--surface-2); border: 1px solid rgb(var(--accent-rgb) / 0.1); }
   .hero-image { width: 100%; height: 100%; object-fit: cover; display: block; }
   
   .content { line-height: 1.8; font-size: 1.1rem; color: #d0d8e8; margin-bottom: 4rem; }
@@ -130,7 +130,7 @@ const schema = {
   .content :global(p) { margin-bottom: 1.5rem; }
   .content :global(a) { color: var(--accent); }
   
-  .share-section { padding: 2rem; background: var(--surface-2); border-radius: 12px; text-align: center; margin-bottom: 4rem; border: 1px solid rgba(255,255,255,0.05); }
+  .share-section { padding: 2rem; background: var(--surface-2); border-radius: var(--radius); text-align: center; margin-bottom: 4rem; border: 1px solid rgba(255,255,255,0.05); }
   .btn-ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; }
   
   .related h2 { margin-bottom: 1.5rem; }

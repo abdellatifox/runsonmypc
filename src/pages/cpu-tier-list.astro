@@ -200,7 +200,7 @@ const schema = [
 
 <style>
   .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 44px; }
-  .pick { border: 1px solid var(--line-strong); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
+  .pick { border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 18px 20px; background: var(--surface); }
   .pick span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
   .pick a { display: block; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 16px; margin-bottom: 5px; }
   .pick a:hover { text-decoration: underline; }
@@ -210,18 +210,18 @@ const schema = [
   .tier-head { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
   .tier-badge {
     width: 52px; height: 52px; flex: none; display: grid; place-items: center;
-    border-radius: 12px; font-family: 'Space Grotesk', sans-serif; font-size: 24px;
+    border-radius: var(--radius); font-family: var(--font-display); font-size: 24px;
     font-weight: 700; color: #000;
   }
-  .tier-badge.t-S { background: #ff7f7f; } .tier-badge.t-A { background: #ffbf7f; }
-  .tier-badge.t-B { background: #ffff7f; } .tier-badge.t-C { background: #7fff7f; }
-  .tier-badge.t-D { background: #7fbfff; } .tier-badge.t-F { background: #bfbfbf; }
+  .tier-badge.t-S { background: #B7A9FF; } .tier-badge.t-A { background: #7FA6FF; }
+  .tier-badge.t-B { background: #45C9FF; } .tier-badge.t-C { background: #3DDC97; }
+  .tier-badge.t-D { background: #FBBF24; } .tier-badge.t-F { background: #9AA3C0; }
   .tier-head h2 { font-size: 19px; margin: 0 0 5px; }
   .tier-head p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; max-width: 70ch; }
 
   .card-rail { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .cpu-chip {
-    display: block; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px;
+    display: block; padding: 13px 15px; border: 1px solid var(--line); border-radius: var(--radius);
     background: var(--surface); text-decoration: none; color: var(--text);
     transition: border-color .2s var(--ease), transform .2s var(--ease);
   }

@@ -49,7 +49,7 @@ const popular = TOOLS.slice(0, 6);
 <style>
   .nf { text-align: center; padding: 60px 0 80px; max-width: 760px; }
   .nf-code {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(76px, 16vw, 140px);
     font-weight: 700;
     line-height: 1;
@@ -63,7 +63,7 @@ const popular = TOOLS.slice(0, 6);
   .nf-search {
     display: flex; align-items: center; gap: 10px;
     background: var(--surface); border: 1px solid var(--line-strong);
-    border-radius: 12px; padding: 10px 14px; margin: 0 auto 34px; max-width: 460px;
+    border-radius: var(--radius); padding: 10px 14px; margin: 0 auto 34px; max-width: 460px;
   }
   .nf-search :global(.icon) { color: var(--muted); }
   .nf-search input { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; min-width: 0; }
@@ -71,7 +71,7 @@ const popular = TOOLS.slice(0, 6);
   .nf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 34px; }
   .nf-card {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
-    padding: 20px 14px; border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 14px; border: 1px solid var(--line); border-radius: var(--radius);
     background: var(--surface); color: var(--text); text-decoration: none; font-size: 13.5px;
     transition: border-color .2s var(--ease), transform .2s var(--ease);
   }

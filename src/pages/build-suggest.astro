@@ -194,7 +194,7 @@ const schema = [
   .budget-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
   .bbtn {
     background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
-    padding: 10px 20px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer;
+    padding: 10px 20px; border-radius: 3px; font: inherit; font-size: 14px; cursor: pointer;
     transition: all .2s var(--ease);
   }
   .bbtn:hover { color: var(--text); }
@@ -207,7 +207,7 @@ const schema = [
   }
   .build-head h2 { font-size: 24px; margin: 8px 0 0; }
   .tgt { text-align: right; }
-  .tgt b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 26px; color: var(--accent); }
+  .tgt b { display: block; font-family: var(--font-display); font-size: 26px; color: var(--accent); }
   .tgt span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .why { color: var(--muted); font-size: 13px; line-height: 1.55; }
   .why a { color: var(--accent); }
@@ -216,8 +216,8 @@ const schema = [
   .split-guide { margin-top: 56px; }
   .split-guide h2 { font-size: 22px; margin-bottom: 18px; }
   .split-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
-  .split-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--surface); }
-  .split-grid b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 26px; color: var(--accent); line-height: 1; }
+  .split-grid > div { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: var(--surface); }
+  .split-grid b { display: block; font-family: var(--font-display); font-size: 26px; color: var(--accent); line-height: 1; }
   .split-grid span { display: block; font-size: 13px; font-weight: 600; margin: 8px 0 6px; }
   .split-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 </style>

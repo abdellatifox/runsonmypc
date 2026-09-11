@@ -196,24 +196,24 @@ const schema = [
   section { margin-bottom: 48px; }
   section h2 { font-size: 22px; margin-bottom: 18px; }
   .cost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-  .cost-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--surface); }
+  .cost-grid > div { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: var(--surface); }
   .lvl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-  .cost-grid b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 22px; color: var(--accent); margin: 8px 0 8px; }
+  .cost-grid b { display: block; font-family: var(--font-display); font-size: 22px; color: var(--accent); margin: 8px 0 8px; }
   .cost-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 
-  .rt { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; text-transform: capitalize; }
-  .rt-light { background: rgba(120,255,120,.12); color: #7fe98a; }
-  .rt-medium { background: rgba(255,200,80,.12); color: #ffc850; }
+  .rt { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 3px; text-transform: capitalize; }
+  .rt-light { background: rgba(120,255,120,.12); color: var(--ok); }
+  .rt-medium { background: rgba(255,200,80,.12); color: var(--warn); }
   .rt-heavy { background: rgba(255,140,80,.14); color: #ff9d5c; }
-  .rt-path { background: rgba(255,110,110,.14); color: #ff8080; }
+  .rt-path { background: rgba(255,110,110,.14); color: var(--bad); }
 
-  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
-  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
-  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
-  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 3px; white-space: nowrap; }
+  .v.ok { background: rgba(120,255,120,.12); color: var(--ok); }
+  .v.warn { background: rgba(255,200,80,.12); color: var(--warn); }
+  .v.bad { background: rgba(255,110,110,.12); color: var(--bad); }
 
   .heavy-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-  .heavy-list li { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .heavy-list li { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
   .heavy-list a { color: var(--text); text-decoration: none; font-weight: 600; display: block; margin-bottom: 4px; }
   .heavy-list a:hover { color: var(--accent); }
   .heavy-list span { color: var(--muted); font-size: 12.5px; }

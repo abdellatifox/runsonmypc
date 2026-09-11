@@ -87,14 +87,14 @@ const schema = {
   main { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
   .page-header { text-align: center; margin-bottom: 3rem; }
   .g { color: var(--accent); }
-  .lead { font-size: 1.1rem; color: #a0aabf; }
+  .lead { font-size: 1.1rem; color: var(--muted); }
   
   .category-tabs { display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap; }
-  .tab { padding: 0.5rem 1rem; border-radius: 20px; background: var(--surface-2); color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.1); }
+  .tab { padding: 0.5rem 1rem; border-radius: var(--radius); background: var(--surface-2); color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.1); }
   .tab.active, .tab:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   
   .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
-  .blog-card { background: var(--surface-2); border-radius: 12px; overflow: hidden; text-decoration: none; color: white; transition: 0.3s; border: 1px solid transparent; display: flex; flex-direction: column; }
+  .blog-card { background: var(--surface-2); border-radius: var(--radius); overflow: hidden; text-decoration: none; color: white; transition: 0.3s; border: 1px solid transparent; display: flex; flex-direction: column; }
   .blog-card:hover { transform: translateY(-5px); border-color: var(--accent); }
   .blog-img-wrap { width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--surface); }
 
@@ -109,8 +109,8 @@ const schema = {
   .blog-card:hover .blog-img { transform: scale(1.05); }
   .blog-info { padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column; }
   .blog-info h4 { margin: 1rem 0; font-size: 1.25rem; line-height: 1.4; }
-  .badge { background: rgba(182, 255, 0, 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; align-self: flex-start; }
-  .read-time { color: #a0aabf; font-size: 0.85rem; margin-top: auto; }
+  .badge { background: rgb(var(--accent-rgb) / 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; align-self: flex-start; }
+  .read-time { color: var(--muted); font-size: 0.85rem; margin-top: auto; }
   
   .pagination { display: flex; justify-content: center; gap: 1rem; }
   .btn-ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
@@ -134,7 +134,7 @@ const schema = {
     border: 1px solid var(--line-strong);
     color: var(--muted);
     padding: 7px 16px;
-    border-radius: 999px;
+    border-radius: 3px;
     font: inherit;
     font-size: 13px;
     cursor: pointer;

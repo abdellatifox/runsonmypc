@@ -107,7 +107,7 @@ const schema = {
     flex: 1 1 240px;
     background: var(--surface);
     border: 1px solid var(--line-strong);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
     color: var(--text);
     font: inherit;
@@ -117,7 +117,7 @@ const schema = {
   .brand-chips { display: flex; gap: 8px; flex-wrap: wrap; }
   .chip {
     background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
-    padding: 6px 14px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+    padding: 6px 14px; border-radius: 3px; font: inherit; font-size: 13px; cursor: pointer;
     transition: all .2s var(--ease);
   }
   .chip:hover { color: var(--text); }

@@ -1,38 +1,69 @@
 @import './fonts.css';
 /* ==========================================================================
    RUNSONMYPC - GLOBAL STYLESHEET
-   Comprehensive stylesheet covering layout, typography, animations, and UI
+
+   Visual language: an instrument panel. Deep navy ground with a faint
+   measurement grid, electric violet for actions, cyan for readouts (numbers
+   the tools calculate), squared Chakra Petch headings, mono digits, sharp
+   corners with a chamfer on primary actions.
+
+   Every colour below is a token. Pages must use the tokens (or
+   rgb(var(--accent-rgb) / a) for tints) — never a literal — so the palette
+   stays changeable in one place.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Section 1 - Custom Properties
+   Section 1 - Tokens
+   Contrast on --bg / --surface-2: text 16.3/14.1, muted 7.9/6.8,
+   faint 5.7/4.9, accent 6.2/5.3, readout 10.4/9.0 — all AA for body text.
    -------------------------------------------------------------------------- */
 :root {
-  /* Colors - Gaming Dark + Neon Lime Green */
-  --bg: #090A0F;
-  --bg-soft: #0D0F16;
-  --surface: #111420;
-  --surface-2: #181C2A;
-  
-  /* Borders and Lines */
-  --line: rgba(182, 255, 0, 0.08);
-  --line-strong: rgba(182, 255, 0, 0.18);
-  
-  /* Typography Colors */
-  --text: #E8ECF2;
-  --muted: #8A9099;
-  /* 5.47:1 on the ground, 4.69:1 on --surface-2 — it was 3.15 and 2.70. */
-  --faint: #808794;
-  
-  /* Accents */
-  --accent: #B6FF00;
-  --accent-deep: #8BCC00;
-  --accent-glow: rgba(182, 255, 0, 0.35);
-  
-  /* Shared Values */
-  --radius: 16px;
+  /* Ground and surfaces */
+  --bg: #070A12;
+  --bg-soft: #0A0E19;
+  --surface: #0F1424;
+  --surface-2: #151B30;
+  --surface-3: #1B2340;
+
+  /* Lines */
+  --line: rgba(140, 155, 230, 0.10);
+  --line-strong: rgba(140, 155, 230, 0.22);
+
+  /* Text */
+  --text: #E6E9F5;
+  --muted: #9AA3C0;
+  --faint: #8089A8;
+
+  /* Brand: violet for actions and links */
+  --accent: #8E7DFF;
+  --accent-rgb: 142 125 255;
+  --accent-deep: #6C58F5;
+  --accent-ink: #0B0724;           /* text on an --accent fill: 6.1:1 */
+  --accent-glow: rgb(142 125 255 / 0.35);
+
+  /* Readouts: cyan for calculated numbers */
+  --readout: #45C9FF;
+  --readout-rgb: 69 201 255;
+
+  /* Verdicts */
+  --ok: #3DDC97;
+  --ok-rgb: 61 220 151;
+  --warn: #FBBF24;
+  --warn-rgb: 251 191 36;
+  --bad: #FF7A7A;
+  --bad-rgb: 255 122 122;
+
+  /* Type */
+  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Chakra Petch', 'Manrope', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  /* Shape */
+  --radius: 8px;
+  --radius-sm: 5px;
+  --chamfer: 10px;
   --maxw: 1200px;
-  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* --------------------------------------------------------------------------
@@ -51,51 +82,47 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.62;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
-  opacity: 0.04;
+::selection {
+  background: rgb(var(--accent-rgb) / 0.35);
+  color: #fff;
 }
 
 /* --------------------------------------------------------------------------
-   Section 3 - Aurora Background (Animated)
+   Section 3 - Backdrop
+   A measurement grid that fades out down the page, with one violet wash at
+   the top and a cyan one to the right. Static gradients: one paint, no
+   animation, no blur filter.
    -------------------------------------------------------------------------- */
-.aurora {
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  max-width: 100vw;
+  background:
+    radial-gradient(ellipse 900px 420px at 50% -80px, rgb(var(--accent-rgb) / 0.20), transparent 70%),
+    radial-gradient(circle 420px at calc(100% + 60px) 260px, rgb(var(--readout-rgb) / 0.08), transparent 70%);
 }
 
-/* The glows used to be three discs up to 600px wide under filter: blur(100px),
-   each on an infinite transform animation. Rasterising that blur was the single
-   most expensive thing on every page. The same falloff drawn as radial
-   gradients costs one paint and never repaints. Stops approximate a solid disc
-   at 0.4 opacity blurred by 100px: flat through the core, half strength at the
-   disc's edge, gone ~150px beyond it. */
-.aurora {
-  background:
-    radial-gradient(circle 450px at 200px 200px,
-      rgba(182, 255, 0, 0.36) 0%, rgba(182, 255, 0, 0.28) 45%,
-      rgba(182, 255, 0, 0.14) 67%, rgba(182, 255, 0, 0) 100%),
-    radial-gradient(circle 350px at calc(100% - 150px) 150px,
-      rgba(139, 204, 0, 0.34) 0%, rgba(139, 204, 0, 0.18) 57%,
-      rgba(139, 204, 0, 0) 100%),
-    radial-gradient(circle 400px at 50% calc(100% - 100px),
-      rgba(182, 255, 0, 0.08) 0%, rgba(182, 255, 0, 0.04) 62%,
-      rgba(182, 255, 0, 0) 100%);
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(140 155 230 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(140 155 230 / 0.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.5) 45%, transparent 85%);
+  mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.5) 45%, transparent 85%);
 }
 
 /* --------------------------------------------------------------------------
@@ -111,20 +138,21 @@ body::after {
   transform-origin: 0 50%;
   will-change: transform;
   z-index: 60;
-  background: linear-gradient(90deg, var(--accent), var(--accent-deep));
-  box-shadow: 0 0 14px var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--readout));
 }
 
 /* --------------------------------------------------------------------------
    Section 5 - Typography
    -------------------------------------------------------------------------- */
 h1, h2, h3, h4, .heading-like {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.022em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  line-height: 1.12;
   margin: 0;
 }
+
+h1 { font-weight: 700; }
 
 p {
   margin: 0;
@@ -135,42 +163,56 @@ a {
   text-decoration: none;
 }
 
+/* Numbers the tools compute or count. */
+.mono, .readout, code, kbd {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout { color: var(--readout); }
+
 .g-text {
-  background: linear-gradient(115deg, var(--accent), #D9FF66, #E8ECF2, var(--accent));
-  background-size: 200% 100%;
+  background: linear-gradient(100deg, var(--accent) 0%, #B7A9FF 45%, var(--readout) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+/* Small caps label above a heading, set in mono with a status square. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--readout);
+  margin-bottom: 0.6rem;
 }
 
-.eyebrow {
-  display: inline-block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--readout);
+  box-shadow: 0 0 10px rgb(var(--readout-rgb) / 0.8);
+  flex: 0 0 auto;
 }
 
 .live-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
+  background: var(--ok);
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(182, 255, 0, 0.7); transform: scale(0.95); }
-  70% { box-shadow: 0 0 0 10px rgba(182, 255, 0, 0); transform: scale(1); }
-  100% { box-shadow: 0 0 0 0 rgba(182, 255, 0, 0); transform: scale(0.95); }
+  0% { box-shadow: 0 0 0 0 rgb(var(--ok-rgb) / 0.7); }
+  70% { box-shadow: 0 0 0 9px rgb(var(--ok-rgb) / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--ok-rgb) / 0); }
 }
 
 /* --------------------------------------------------------------------------
@@ -197,11 +239,17 @@ section {
 
 /* --------------------------------------------------------------------------
    Section 7 - Navigation
+   A full-width bar pinned to the top edge, not a floating pill. The active
+   link is marked by a bar under it rather than a tinted background.
    -------------------------------------------------------------------------- */
 header.nav {
   position: sticky;
   top: 0;
   z-index: 50;
+  /* Opaque enough to read over anything, so no backdrop-filter: blurring the
+     page behind a sticky bar is redone on every scrolled frame. */
+  background: rgb(7 10 18 / 0.94);
+  border-bottom: 1px solid var(--line-strong);
 }
 
 .nav-inner {
@@ -209,59 +257,68 @@ header.nav {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  margin: 14px auto;
-  max-width: 1200px;
-  padding: 0.55rem 0.7rem 0.55rem 1rem;
-  /* Opaque enough to read over anything, so no backdrop-filter: blurring the
-     page behind a sticky bar is redone on every scrolled frame. */
-  background: rgba(9, 10, 15, 0.92);
-  border: 1px solid var(--line-strong);
-  border-radius: 17px;
-  box-shadow: 0 20px 50px -25px rgba(0, 0, 0, 0.9);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.12rem;
+  font-size: 1.2rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  white-space: nowrap;
 }
 
-/* The lockup is a fixed-ratio image, so height drives it and width follows.
-   Both attributes are on the tag as well, so it reserves space before it
-   loads and never shifts the header. */
-.brand img {
-  height: 32px;
-  width: auto;
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
   display: block;
 }
 
+.brand-word b { font-weight: 700; color: var(--text); }
+.brand-word span { color: var(--accent); }
+
 .nav-links {
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  align-self: stretch;
   gap: 0.25rem;
 }
 
 .nav-links a {
-  padding: 0.5rem 0.9rem;
-  border-radius: 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
   color: var(--muted);
-  font-weight: 500;
-  font-size: 0.92rem;
-  transition: color 0.2s, background 0.2s;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: color 0.2s;
 }
 
-.nav-links a:hover {
-  color: var(--text);
-  background: rgba(182, 255, 0, 0.08);
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.25s var(--ease);
 }
 
-.nav-links a.active {
-  color: var(--accent);
-  background: rgba(182, 255, 0, 0.1);
-}
+.nav-links a:hover { color: var(--text); }
+.nav-links a:hover::after { transform: scaleX(0.4); }
+.nav-links a.active { color: var(--text); }
+.nav-links a.active::after { transform: scaleX(1); }
 
 .nav-cta {
   display: flex;
@@ -276,65 +333,84 @@ header.nav {
   color: var(--text);
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font-size: 1.2rem;
   cursor: pointer;
 }
 
 /* --------------------------------------------------------------------------
    Section 8 - Buttons
+   Primary actions carry a chamfered corner, the one shape nothing else on
+   the site uses.
    -------------------------------------------------------------------------- */
-.btn {
+.btn,
+.btn-primary,
+.btn-ghost {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0.8rem 1.4rem;
-  border-radius: 13px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.93rem;
+  letter-spacing: 0.01em;
+  padding: 0.78rem 1.35rem;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.14s, background 0.2s, box-shadow 0.25s;
+  text-decoration: none;
+  transition: transform 0.14s, background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.btn:active {
-  transform: scale(0.97);
+.btn:active,
+.btn-primary:active,
+.btn-ghost:active {
+  transform: translateY(1px);
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #090A0F;
-  box-shadow: 0 10px 38px -10px var(--accent-glow);
+  color: var(--accent-ink);
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%, 0 100%);
 }
 
 .btn-primary:hover {
-  background: #C9FF26;
-  box-shadow: 0 16px 52px -10px rgba(182, 255, 0, 0.65);
-  transform: translateY(-2px);
+  background: #A396FF;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* clip-path would cut the focus ring off, so drop the chamfer while focused. */
+.btn-primary:focus-visible {
+  clip-path: none;
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--text);
   border-color: var(--line-strong);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.22);
-  transform: translateY(-2px);
+  border-color: var(--accent);
+  color: #fff;
+  background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .btn-sm {
-  padding: 0.55rem 1rem;
-  font-size: 0.85rem;
-  border-radius: 10px;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.84rem;
+  --chamfer: 7px;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--readout);
   outline-offset: 3px;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 /* --------------------------------------------------------------------------
@@ -347,7 +423,7 @@ header.nav {
 }
 
 .tool-card {
-  background: rgba(17, 20, 32, 0.8);
+  background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   padding: 22px;
@@ -357,7 +433,7 @@ header.nav {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 26px;
+  padding: 22px 24px;
   overflow: hidden;
   position: relative;
 }
@@ -367,18 +443,17 @@ header.nav {
   position: absolute;
   left: 0;
   top: 0;
-  width: 36%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), transparent);
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--readout), transparent);
 }
 
 .stat-card b {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 2.4rem;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 2.1rem;
+  font-weight: 600;
   display: block;
-  letter-spacing: -0.02em;
-  color: var(--accent);
+  color: var(--readout);
 }
 
 .stat-card span {
@@ -386,302 +461,56 @@ header.nav {
   font-size: 0.85rem;
 }
 
-/* --------------------------------------------------------------------------
-   Section 10 - Bento Grid (Tools)
-   -------------------------------------------------------------------------- */
-.bento {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.tool {
+/* Corner brackets: a HUD frame drawn with two gradients, no extra markup. */
+.frame {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 22px;
-  overflow: hidden;
-  transition: transform 0.28s, border-color 0.28s;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-height: 152px;
 }
 
-.tool::before {
+.frame::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.3s;
+  inset: -1px;
   pointer-events: none;
-  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 50%), rgba(182, 255, 0, 0.12), transparent 60%);
-}
-
-.tool:hover::before {
-  opacity: 1;
-}
-
-.tool:hover {
-  transform: translateY(-5px);
-  border-color: var(--line-strong);
-  background: var(--surface-2);
-}
-
-.tool .ic {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  font-size: 1.3rem;
-  background: linear-gradient(150deg, rgba(182, 255, 0, 0.18), rgba(182, 255, 0, 0.05));
-  color: var(--accent);
-  margin-bottom: 0.35rem;
-  border: 1px solid rgba(182, 255, 0, 0.18);
-}
-
-/* Tile titles were h4 at 16px; now that they are h3 (they are peers of the
-   featured tile's h3) this keeps them at the size they rendered. */
-.tool h3 {
-  font-size: 1rem;
-}
-
-.tool p {
-  font-size: 0.86rem;
-  color: var(--muted);
-  flex: 1;
-}
-
-.tool .go {
-  font-size: 0.82rem;
-  color: var(--accent);
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  opacity: 0;
-  transform: translateX(-5px);
-  transition: 0.28s;
-}
-
-.tool:hover .go {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.tool.feat {
-  grid-column: span 2;
-  grid-row: span 2;
-  justify-content: flex-end;
-  min-height: 320px;
-  background: linear-gradient(155deg, rgba(182, 255, 0, 0.14), rgba(139, 204, 0, 0.05) 45%, var(--surface) 70%);
-}
-
-.tool.feat .ic {
-  width: 54px;
-  height: 54px;
-  font-size: 1.55rem;
-}
-
-.tool.feat h3 {
-  font-size: 1.6rem;
-  letter-spacing: -0.02em;
-}
-
-.tool.feat p {
-  font-size: 1rem;
-  max-width: 32ch;
-  flex: none;
-}
-
-.tool.wide {
-  grid-column: span 2;
+  border-radius: inherit;
+  background:
+    linear-gradient(var(--accent), var(--accent)) top left / 14px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top left / 2px 14px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 14px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 14px no-repeat;
 }
 
 /* --------------------------------------------------------------------------
-   Section 11 - Hero Section
+   Section 11 - Verdicts (shared by the checker, the hero and tool pages)
    -------------------------------------------------------------------------- */
-.hero {
-  position: relative;
-  padding: 100px 0 72px;
-  z-index: 2;
-}
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 52px;
-  align-items: center;
-}
-
-.hero h1 {
-  font-size: clamp(2.6rem, 5.4vw, 4.4rem);
-  font-weight: 700;
-  letter-spacing: -0.038em;
-  margin-top: 1rem;
-  text-wrap: balance;
-}
-
-.hero h1 .g {
-  background: linear-gradient(115deg, var(--accent), #D9FF66 45%, #E8ECF2 68%, var(--accent));
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  /* Static: animating background-position repainted this headline on the
-     main thread every frame for as long as the page was open. */
-}
-
-.hero p.lead {
-  font-size: 1.18rem;
-  color: var(--muted);
-  max-width: 36ch;
-  margin-top: 1.4rem;
-  text-wrap: pretty;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 0.8rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
-}
-
-.hero-stats {
-  display: flex;
-  gap: 1.8rem;
-  margin-top: 2.6rem;
-  flex-wrap: wrap;
-}
-
-.hero-stats div {
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-stats b {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.hero-stats span {
-  font-size: 0.8rem;
-  color: var(--faint);
-  margin-top: 2px;
-}
-
-/* --------------------------------------------------------------------------
-   Section 12 - Hero Check Card
-   -------------------------------------------------------------------------- */
-.check-card {
-  position: relative;
-  border-radius: 22px;
-  padding: 28px;
-  transform-style: preserve-3d;
-  background: linear-gradient(180deg, rgba(22, 26, 42, 0.9), rgba(9, 10, 15, 0.92));
-  border: 1px solid var(--line-strong);
-  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(182, 255, 0, 0.08);
-}
-
-.check-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: linear-gradient(150deg, rgba(182, 255, 0, 0.5), transparent 55%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-}
-
-.check-card .badge-new {
-  position: absolute;
-  top: -14px;
-  right: 18px;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  background: var(--accent);
-  color: #090A0F;
-  font-weight: 700;
-  padding: 0.3rem 0.6rem;
-  border-radius: 8px;
-}
-
-.check-card h2 {
-  font-size: 1.06rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.check-card .field {
-  margin-top: 15px;
-}
-
-.check-card label {
-  font-size: 0.76rem;
-  color: var(--faint);
-  display: block;
-  margin-bottom: 6px;
-}
-
-.check-card .ipt {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  padding: 0.78rem 0.9rem;
-  color: var(--text);
-  font-size: 0.92rem;
-  font-family: inherit;
-}
-
-.check-card .ipt:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(182, 255, 0, 0.15);
-}
-
-.check-card .row-2 {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
 .verdict {
   margin-top: 17px;
   display: flex;
   align-items: center;
   gap: 0.7rem;
   padding: 0.85rem 0.95rem;
-  border-radius: 13px;
-  background: rgba(182, 255, 0, 0.07);
-  border: 1px solid rgba(182, 255, 0, 0.25);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  border-left-width: 3px;
+  background: var(--surface-2);
   font-size: 0.9rem;
 }
 
 .verdict.pass {
-  background: rgba(182, 255, 0, 0.07);
-  border-color: rgba(182, 255, 0, 0.25);
+  background: rgb(var(--ok-rgb) / 0.07);
+  border-color: rgb(var(--ok-rgb) / 0.35);
+  border-left-color: var(--ok);
 }
 
 .verdict.fail {
-  background: rgba(239, 68, 68, 0.07);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgb(var(--bad-rgb) / 0.07);
+  border-color: rgb(var(--bad-rgb) / 0.35);
+  border-left-color: var(--bad);
 }
 
 .verdict.warn {
-  background: rgba(251, 191, 36, 0.07);
-  border-color: rgba(251, 191, 36, 0.3);
+  background: rgb(var(--warn-rgb) / 0.07);
+  border-color: rgb(var(--warn-rgb) / 0.35);
+  border-left-color: var(--warn);
 }
 
 .verdict .icon {
@@ -689,184 +518,22 @@ header.nav {
 }
 
 /* --------------------------------------------------------------------------
-   Section 13 - Blog Cards
-   -------------------------------------------------------------------------- */
-.blog-section .sec-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-bottom: 36px;
-  flex-wrap: wrap;
-}
-
-.posts-grid {
-  display: grid;
-  grid-template-columns: 1.7fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.posts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.bcard {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.28s, border-color 0.28s;
-}
-
-.bcard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-  z-index: 3;
-  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(182, 255, 0, 0.1), transparent 60%);
-}
-
-.bcard:hover::before {
-  opacity: 1;
-}
-
-.bcard:hover {
-  transform: translateY(-5px);
-  border-color: var(--line-strong);
-}
-
-.bcard .thumb {
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  width: 100%;
-  display: block;
-  transition: transform 0.5s;
-}
-
-.bcard:hover .thumb {
-  transform: scale(1.05);
-}
-
-.bcard .body {
-  padding: 16px 17px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.bcard .cat {
-  font-size: 0.69rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.bcard h3 {
-  font-size: 1.02rem;
-  line-height: 1.25;
-}
-
-.bcard .meta {
-  margin-top: auto;
-  font-size: 0.77rem;
-  color: var(--faint);
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-/* --------------------------------------------------------------------------
-   Section 14 - Popular Posts Panel
-   -------------------------------------------------------------------------- */
-.popular {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 24px;
-}
-
-.popular h3 {
-  font-size: 1.05rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.popular ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  counter-reset: p;
-}
-
-.popular li {
-  counter-increment: p;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--line);
-  display: flex;
-  gap: 0.85rem;
-  align-items: flex-start;
-}
-
-.popular li:first-child {
-  border-top: none;
-}
-
-.popular li::before {
-  content: counter(p, decimal-leading-zero);
-  font-family: 'Space Grotesk', sans-serif;
-  color: var(--faint);
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding-top: 1px;
-}
-
-.popular a {
-  font-size: 0.9rem;
-  line-height: 1.35;
-  transition: color 0.2s;
-}
-
-.popular a:hover {
-  color: var(--accent);
-}
-
-/* --------------------------------------------------------------------------
-   Section 15 - Stats Grid
-   -------------------------------------------------------------------------- */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-/* --------------------------------------------------------------------------
-   Section 16 - CTA Band
+   Section 12 - CTA Band
    -------------------------------------------------------------------------- */
 .cta-band {
   position: relative;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: var(--radius);
   padding: 56px 40px;
   text-align: center;
-  background: linear-gradient(150deg, rgba(182, 255, 0, 0.12), rgba(139, 204, 0, 0.05) 50%, var(--surface));
+  background:
+    radial-gradient(ellipse 600px 260px at 50% 0%, rgb(var(--accent-rgb) / 0.22), transparent 70%),
+    var(--surface);
   border: 1px solid var(--line-strong);
 }
 
 .cta-band h2 {
-  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
 }
 
 .cta-band p {
@@ -876,21 +543,29 @@ header.nav {
 }
 
 /* --------------------------------------------------------------------------
-   Section 17 - Footer
+   Section 13 - Footer
    -------------------------------------------------------------------------- */
 footer {
   position: relative;
   z-index: 2;
-  border-top: 1px solid var(--line);
-  margin-top: 36px;
+  border-top: 1px solid var(--line-strong);
+  background: var(--bg-soft);
+  margin-top: 48px;
   padding: 52px 0 38px;
 }
 
 .foot-inner {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 2rem;
   flex-wrap: wrap;
+}
+
+.foot-tag {
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 46ch;
 }
 
 .foot-links {
@@ -911,26 +586,26 @@ footer {
 
 footer small {
   color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
 }
 
 /* --------------------------------------------------------------------------
-   Section 18 - Reveal Animations
+   Section 14 - Reveal Animations
    -------------------------------------------------------------------------- */
 .reveal {
   opacity: 0;
-  transform: translateY(20px);
-  filter: blur(4px);
-  transition: opacity 0.6s, transform 0.6s, filter 0.6s;
+  transform: translateY(14px);
+  transition: opacity 0.5s, transform 0.5s var(--ease);
 }
 
 .reveal.in {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 
 /* --------------------------------------------------------------------------
-   Section 19 - Forms & Autocomplete
+   Section 15 - Forms & Autocomplete
    -------------------------------------------------------------------------- */
 .autocomplete-wrapper {
   position: relative;
@@ -944,9 +619,9 @@ footer small {
   z-index: 100;
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   margin-top: 4px;
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 50px -15px rgb(0 0 0 / 0.8);
   display: none;
   overflow: hidden;
 }
@@ -963,15 +638,15 @@ footer small {
 }
 
 .autocomplete-item:hover {
-  background: rgba(182, 255, 0, 0.08);
-  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.12);
+  color: #fff;
 }
 
 select, input {
   background: var(--bg-soft);
   border: 1px solid var(--line-strong);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   font-family: inherit;
@@ -981,90 +656,53 @@ select, input {
 select:focus, input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(182, 255, 0, 0.15);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.22);
 }
 
 /* --------------------------------------------------------------------------
-   Section 20 - Result Badges
+   Section 16 - Result Badges
    -------------------------------------------------------------------------- */
-.result-badge-pass {
-  background: rgba(182, 255, 0, 0.1);
-  border: 1px solid rgba(182, 255, 0, 0.3);
-  color: var(--accent);
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.9rem;
+.result-badge-pass,
+.result-badge-fail,
+.result-badge-warn {
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.88rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  border: 1px solid;
+}
+
+.result-badge-pass {
+  background: rgb(var(--ok-rgb) / 0.1);
+  border-color: rgb(var(--ok-rgb) / 0.35);
+  color: var(--ok);
 }
 
 .result-badge-fail {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #F87171;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  background: rgb(var(--bad-rgb) / 0.1);
+  border-color: rgb(var(--bad-rgb) / 0.35);
+  color: var(--bad);
 }
 
 .result-badge-warn {
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  color: #FCD34D;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  background: rgb(var(--warn-rgb) / 0.1);
+  border-color: rgb(var(--warn-rgb) / 0.35);
+  color: var(--warn);
 }
 
 /* --------------------------------------------------------------------------
-   Section 21 - Responsive Breakpoints
+   Section 17 - Responsive Breakpoints
    -------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
-  .bento {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .tool.feat {
-    grid-column: span 2;
-    grid-row: auto;
-  }
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .posts-grid {
-    grid-template-columns: 1fr;
-  }
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 44px;
-  }
   .nav-links {
     display: none;
   }
   .menu-btn {
     display: grid;
     place-items: center;
-  }
-}
-
-@media (max-width: 640px) {
-  .posts {
-    grid-template-columns: 1fr;
-  }
-  .bento {
-    grid-template-columns: 1fr;
-  }
-  .tool.wide, .tool.feat {
-    grid-column: span 1;
   }
 }
 
@@ -1077,15 +715,16 @@ select:focus, input:focus {
   .live-dot {
     animation: none;
   }
+  html { scroll-behavior: auto; }
 }
 
 /* --------------------------------------------------------------------------
-   Section 22 - SEO Prose
+   Section 18 - SEO Prose
    -------------------------------------------------------------------------- */
 .prose {
   font-size: 1.04rem;
-  line-height: 1.78;
-  color: #D3D7E0;
+  line-height: 1.8;
+  color: #CDD2E4;
   max-width: 74ch;
   margin: 0 auto;
 }
@@ -1094,7 +733,6 @@ select:focus, input:focus {
   font-size: 1.5rem;
   margin-top: 2.4rem;
   color: #fff;
-  letter-spacing: -0.02em;
 }
 
 .prose h3 {
@@ -1110,7 +748,8 @@ select:focus, input:focus {
 .prose a {
   color: var(--accent);
   text-decoration: underline;
-  text-decoration-color: rgba(182, 255, 0, 0.35);
+  text-decoration-color: rgb(var(--accent-rgb) / 0.4);
+  text-underline-offset: 3px;
 }
 
 .prose ul {
@@ -1123,11 +762,11 @@ select:focus, input:focus {
 }
 
 .prose li::marker {
-  color: var(--accent);
+  color: var(--readout);
 }
 
 /* --------------------------------------------------------------------------
-   ACCESSIBILITY + FOOTER COLUMNS + SHARED PAGE FURNITURE (SEO pass)
+   ACCESSIBILITY + FOOTER COLUMNS + SHARED PAGE FURNITURE
    -------------------------------------------------------------------------- */
 .skip-link {
   position: absolute;
@@ -1135,10 +774,9 @@ select:focus, input:focus {
   top: 0;
   z-index: 999;
   background: var(--accent);
-  color: #000;
+  color: var(--accent-ink);
   padding: 10px 18px;
-  border-radius: 0 0 10px 0;
-  font-weight: 600;
+  font-weight: 700;
 }
 .skip-link:focus { left: 0; }
 
@@ -1146,13 +784,15 @@ select:focus, input:focus {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 28px;
-  margin-top: 28px;
+  margin-top: 36px;
 }
 .foot-cols h2 {
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--accent);
+  letter-spacing: .14em;
+  color: var(--readout);
   margin: 0 0 12px;
 }
 .foot-cols a {
@@ -1192,40 +832,49 @@ select:focus, input:focus {
 .data-table th {
   text-align: left;
   padding: 12px 14px;
-  color: var(--accent);
-  font-size: 12px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .1em;
   border-bottom: 1px solid var(--line-strong);
+  background: var(--bg-soft);
   white-space: nowrap;
 }
 .data-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); }
-.data-table tr:hover td { background: rgba(182, 255, 0, 0.03); }
-.data-table a { color: var(--text); text-decoration: none; font-weight: 500; }
+.data-table tr:nth-child(even) td { background: rgb(140 155 230 / 0.025); }
+.data-table tr:hover td { background: rgb(var(--accent-rgb) / 0.06); }
+.data-table a { color: var(--text); text-decoration: none; font-weight: 600; }
 .data-table a:hover { color: var(--accent); }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* Tier pill */
+/* Tier chip: a cool-to-warm scale of its own rather than the usual
+   red-to-blue tier-list rainbow. */
 .pill {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
   letter-spacing: .04em;
+  color: var(--accent-ink);
 }
-.pill.t-S { background: #ff7f7f; color: #000; }
-.pill.t-A { background: #ffbf7f; color: #000; }
-.pill.t-B { background: #ffff7f; color: #000; }
-.pill.t-C { background: #7fff7f; color: #000; }
-.pill.t-D { background: #7fbfff; color: #000; }
-.pill.t-F { background: #bfbfbf; color: #000; }
+.pill.t-S { background: #B7A9FF; }
+.pill.t-A { background: #7FA6FF; }
+.pill.t-B { background: #45C9FF; }
+.pill.t-C { background: #3DDC97; }
+.pill.t-D { background: #FBBF24; }
+.pill.t-F { background: #9AA3C0; }
 
 /* Card grid used by hub pages */
 .grid-auto {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 /* FAQ block (drives FAQPage schema on tool pages) */
@@ -1233,40 +882,41 @@ select:focus, input:focus {
 .faq h2 { margin-bottom: 18px; }
 .faq details {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-sm);
   padding: 16px 18px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   background: var(--surface);
 }
-.faq details[open] { border-color: var(--line-strong); }
+.faq details[open] { border-left-color: var(--accent); }
 .faq summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   list-style: none;
   display: flex;
   justify-content: space-between;
   gap: 12px;
 }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: '+'; color: var(--accent); font-size: 20px; line-height: 1; }
+.faq summary::after { content: '+'; color: var(--accent); font-family: var(--font-mono); font-size: 20px; line-height: 1; }
 .faq details[open] summary::after { content: '\2212'; }
 .faq details p { color: var(--muted); margin: 12px 0 0; line-height: 1.65; font-size: 15px; }
 
 /* Related-links block for internal linking */
 .related { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
 .related h2 { font-size: 20px; margin-bottom: 16px; }
-.related ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.related ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .related li a {
   display: inline-block;
   padding: 8px 14px;
   border: 1px solid var(--line-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   text-decoration: none;
   font-size: 14px;
   transition: all .2s var(--ease);
 }
-.related li a:hover { border-color: var(--accent); color: var(--accent); }
+.related li a:hover { border-color: var(--accent); color: #fff; background: rgb(var(--accent-rgb) / 0.08); }
 
 /* ==========================================================================
    RESPONSIVE LAYER
@@ -1277,11 +927,9 @@ select:focus, input:focus {
 
 /* Nothing may push the page sideways. Wide content (tables, benchmark grids)
    scrolls inside its own container instead — see .table-scroll. */
-html, body { max-width: 100%; overflow-x: hidden; }
-
-/* The decorative aurora blobs are larger than a phone screen by design; keep
-   them from contributing to layout width on any device. */
-.aurora { max-width: 100vw; }
+/* clip, not hidden: overflow-x:hidden turns <body> into a scroll container,
+   which silently stops the sticky header from sticking. */
+html, body { max-width: 100%; overflow-x: clip; }
 
 /* --------------------------------------------------------------------------
    Fluid typography. clamp() lets the same heading read well at 375px and
@@ -1291,7 +939,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
   h1 { font-size: clamp(26px, 6.4vw, 40px); line-height: 1.18; }
   h2 { font-size: clamp(20px, 4.8vw, 28px); }
   h3 { font-size: clamp(17px, 4vw, 22px); }
-  .hero h1 { font-size: clamp(28px, 8vw, 44px); }
   .lead, .lede { font-size: 15.5px; }
 }
 
@@ -1300,6 +947,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
   .wrap { padding: 0 16px; }
+  .eyebrow { letter-spacing: 0.08em; font-size: 0.7rem; }
 
   .page-head { padding: 28px 0 20px; margin-bottom: 24px; }
   .page-head p.lede { font-size: 15px; }
@@ -1326,7 +974,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* --------------------------------------------------------------------------
    Tap targets. Anything interactive should be reachable with a thumb; 44px is
-   the accepted minimum and several links here were 21px.
+   the accepted minimum.
    -------------------------------------------------------------------------- */
 @media (pointer: coarse) {
   /* .brand is rendered by the Navbar component, so this has to live in the
@@ -1382,7 +1030,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
    Two-column tool layouts (form beside results) stack on small screens.
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
-  .tool, .tool-container { grid-template-columns: 1fr; }
+  .tool-container { grid-template-columns: 1fr; }
   .inputs-panel, .results-panel { width: auto; }
 }
 
@@ -1394,37 +1042,32 @@ input, select, textarea, button { font-size: max(16px, 1em); }
 img, svg, video, canvas { max-width: 100%; height: auto; }
 
 /* --------------------------------------------------------------------------
-   Navbar on small screens.
-
-   "Check My PC" was wrapping onto two lines, which inflated the sticky header
-   to 96px — a quarter of a phone screen permanently occupied before any
-   content. The label stays (it is the primary action) but is kept on one line
-   and sized down.
+   Navbar on small screens. The label on the primary action stays on one line
+   so the sticky header never grows past its 56px.
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
   .nav-inner {
     gap: 0.5rem;
-    margin: 8px auto;
-    padding: 0.4rem 0.5rem 0.4rem 0.75rem;
-    border-radius: 14px;
+    height: 56px;
+    padding: 0 12px 0 16px;
   }
   .nav-cta { gap: 0.4rem; }
   .nav-cta .btn-primary {
     white-space: nowrap;
     font-size: 13px;
-    padding: 0 12px;
+    padding: 0 14px;
     min-height: 40px;
-    display: inline-flex;
-    align-items: center;
+    --chamfer: 8px;
   }
   .menu-btn { width: 40px; height: 40px; flex: 0 0 auto; }
-    .brand img { height: 26px; }
+  .brand { font-size: 1.05rem; }
+  .brand-mark { width: 26px; height: 26px; }
 }
 
 /* Only the narrowest phones drop the wordmark. 375px covers the iPhone SE and
    12 mini, which are common enough that the brand should still show there. */
 @media (max-width: 340px) {
-  .brand span { display: none; }
+  .brand-word { display: none; }
   .nav-cta .btn-primary { font-size: 12.5px; padding: 0 10px; }
 }
 
@@ -1432,13 +1075,27 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
    viewport is short (landscape phones especially). */
 @media (max-width: 1024px) {
   .nav-links.show-mobile {
-    max-height: calc(100vh - 90px);
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    padding: 0.5rem 1rem 1rem;
+    border-bottom: 1px solid var(--line-strong);
+    max-height: calc(100vh - 64px);
     overflow-y: auto;
     gap: 2px;
     z-index: 60;
   }
   .nav-links.show-mobile a {
     padding: 12px 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
+  .nav-links.show-mobile a::after {
+    left: 0; right: auto; top: 10px; bottom: 10px; width: 2px; height: auto;
+    transform: scaleY(0);
+  }
+  .nav-links.show-mobile a.active::after { transform: scaleY(1); }
 }

@@ -380,7 +380,7 @@ const schema = [
     padding: 36px 0 34px; border-bottom: 1px solid var(--line); margin-bottom: 44px;
   }
   .cover {
-    aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: var(--surface-2);
+    aspect-ratio: 2/3; border-radius: var(--radius); overflow: hidden; background: var(--surface-2);
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 14px 40px rgba(0,0,0,.5);
   }
@@ -398,7 +398,7 @@ const schema = [
       drop-shadow(0 1px 2px rgba(0,0,0,.9))
       drop-shadow(0 6px 22px rgba(0,0,0,.7));
   }
-  .cover :global(.initials) { font-family: 'Space Grotesk', sans-serif; font-size: 54px; font-weight: 700; color: hsl(var(--hue) 70% 72%); }
+  .cover :global(.initials) { font-family: var(--font-display); font-size: 54px; font-weight: 700; color: hsl(var(--hue) 70% 72%); }
 
   .hero-info h1 { font-size: clamp(26px, 4.2vw, 40px); margin: 10px 0 14px; line-height: 1.15; }
   .hero-info .lede { color: var(--muted); line-height: 1.75; max-width: 62ch; margin: 0 0 18px; }
@@ -406,7 +406,7 @@ const schema = [
   .feat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
   .tag {
     font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 4px 11px;
-    border-radius: 99px; background: rgba(182,255,0,.12); color: var(--accent);
+    border-radius: 3px; background: rgb(var(--accent-rgb) / .12); color: var(--accent);
   }
   @media (max-width: 720px) {
     .game-hero { grid-template-columns: 1fr; }
@@ -420,16 +420,16 @@ const schema = [
   .req a { color: var(--text); }
   .req a:hover { color: var(--accent); }
   .fps { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
-  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
-  .v.ok { background: rgba(120,255,120,.12); color: #7fe98a; }
-  .v.warn { background: rgba(255,200,80,.12); color: #ffc850; }
-  .v.bad { background: rgba(255,110,110,.12); color: #ff8080; }
+  .v { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 3px; white-space: nowrap; }
+  .v.ok { background: rgba(120,255,120,.12); color: var(--ok); }
+  .v.warn { background: rgba(255,200,80,.12); color: var(--warn); }
+  .v.bad { background: rgba(255,110,110,.12); color: var(--bad); }
   .note, .disclaimer { color: var(--muted); font-size: 14px; line-height: 1.7; margin-top: 16px; }
   .disclaimer { color: var(--faint); font-size: 13px; }
   .note a, .disclaimer a { color: var(--accent); }
 
   .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
-  .feat-grid > div { border: 1px solid var(--line); border-radius: 14px; padding: 20px; background: var(--surface); }
+  .feat-grid > div { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; background: var(--surface); }
   .feat-grid h3 { font-size: 15px; margin: 0 0 8px; color: var(--accent); }
   .feat-grid p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
   .feat-grid a { color: var(--accent); }
@@ -439,7 +439,7 @@ const schema = [
 <script>
   document.querySelectorAll<HTMLElement>('.fps').forEach(el => {
     const v = parseInt(el.dataset.v || '0', 10);
-    el.style.color = v >= 90 ? '#7fe98a' : v >= 60 ? '#b6ff00' : v >= 30 ? '#ffc850' : '#ff8080';
+    el.style.color = v >= 90 ? 'var(--ok)' : v >= 60 ? 'var(--readout)' : v >= 30 ? 'var(--warn)' : 'var(--bad)';
   });
 </script>
 

@@ -149,13 +149,13 @@ const schema = [
   .panel {
     background: var(--surface);
     border: 1px solid var(--line-strong);
-    border-radius: 18px;
+    border-radius: var(--radius);
     padding: 22px;
     display: grid;
     gap: 16px;
   }
   .submit { width: 100%; margin-top: 4px; }
-  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+  .err { color: var(--bad); font-size: 13.5px; margin: 0; }
 
   .results { min-height: 320px; }
   .placeholder {
@@ -168,7 +168,7 @@ const schema = [
     text-align: center;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 18px;
+    border-radius: var(--radius);
     padding: 40px 24px;
   }
   .placeholder :global(.icon) { font-size: 40px; color: var(--faint); }
@@ -177,18 +177,18 @@ const schema = [
 
   :global(.scan-summary) {
     background: var(--surface); border: 1px solid var(--accent);
-    border-radius: 18px; padding: 20px 24px; margin-bottom: 20px; font-size: 15px; color: var(--text);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; font-size: 15px; color: var(--text);
   }
   :global(.scan-summary b) { color: var(--accent); }
   :global(.tier-tabs) { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   :global(.tier-tab) {
     background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
-    padding: 7px 15px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+    padding: 7px 15px; border-radius: 3px; font: inherit; font-size: 13px; cursor: pointer;
   }
   :global(.tier-tab.active) { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
   :global(.games-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
   :global(.game-card) {
-    display: block; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    display: block; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius);
     background: var(--surface); text-decoration: none; color: var(--text);
     transition: border-color .2s var(--ease);
   }

@@ -120,30 +120,30 @@ const schema = [
 <style>
   .tool { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; gap: 24px; align-items: start; margin-bottom: 52px; }
   @media (max-width: 900px) { .tool { grid-template-columns: 1fr; } }
-  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 22px; display: grid; gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 22px; display: grid; gap: 16px; }
   .submit { width: 100%; margin-top: 4px; }
-  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+  .err { color: var(--bad); font-size: 13.5px; margin: 0; }
 
   .results { min-height: 300px; }
   .placeholder {
     min-height: 300px; display: grid; place-content: center; justify-items: center; gap: 10px;
     text-align: center; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 18px; padding: 40px 24px;
+    border-radius: var(--radius); padding: 40px 24px;
   }
   .placeholder :global(.icon) { font-size: 38px; color: var(--faint); }
   .placeholder h2 { font-size: 18px; margin: 0; }
   .placeholder p { margin: 0; color: var(--muted); font-size: 14px; }
 
-  :global(.fps-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 26px; }
+  :global(.fps-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 26px; }
   :global(.fps-hero) { text-align: center; margin-bottom: 24px; }
-  :global(.fps-big) { font-family: 'Space Grotesk', sans-serif; font-size: clamp(46px, 10vw, 72px); font-weight: 700; line-height: 1; color: var(--accent); }
+  :global(.fps-big) { font-family: var(--font-display); font-size: clamp(46px, 10vw, 72px); font-weight: 700; line-height: 1; color: var(--accent); }
   :global(.fps-big small) { font-size: 18px; color: var(--faint); font-weight: 500; margin-left: 6px; }
   :global(.fps-band) { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
   :global(.fps-ctx) { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
   :global(.fps-ctx b) { color: var(--text); }
   :global(.fps-limit) {
     display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 600;
-    padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--muted);
+    padding: 4px 12px; border-radius: 3px; background: rgba(255,255,255,.06); color: var(--muted);
   }
   :global(.fps-note) { color: var(--faint); font-size: 12.5px; line-height: 1.6; margin-top: 16px; }
   :global(.fps-note a) { color: var(--accent); }

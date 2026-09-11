@@ -2,9 +2,9 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
-import Icon from '../components/Icon.astro';
+import BrandMark from '../components/BrandMark.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, SITE_NAME, ART_BASE } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE } from '../lib/site';
 
 interface Props {
   title: string;
@@ -89,7 +89,7 @@ const year = new Date().getFullYear();
   <meta name="keywords" content={keywords}>
   <link rel="canonical" href={canonicalURL}>
   <meta name="robots" content={robotsValue}>
-  <meta name="theme-color" content="#090A0F">
+  <meta name="theme-color" content="#070A12">
   <meta name="color-scheme" content="dark">
   {author && <meta name="author" content={author} />}
 
@@ -145,6 +145,7 @@ const year = new Date().getFullYear();
        connection, which only matters for that rare, temporary case. -->
 
   <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
@@ -163,7 +164,7 @@ const year = new Date().getFullYear();
   <a href="#main" class="skip-link">Skip to content</a>
   <div class="progress"></div>
 
-  <div class="aurora" aria-hidden="true"></div>
+  <div class="backdrop" aria-hidden="true"></div>
 
   <Navbar />
 
@@ -174,10 +175,11 @@ const year = new Date().getFullYear();
   <footer>
     <div class="wrap">
       <div class="foot-inner">
-        <div class="brand">
-          <div class="icon"><Icon name="controller" /></div>
-          <b>{SITE_NAME}</b>
-        </div>
+        <a href="/" class="brand">
+          <BrandMark class="brand-mark" id="foot-mark" />
+          <span class="brand-word"><b>{SITE_NAME_PARTS.bold}</b><span>{SITE_NAME_PARTS.rest}</span></span>
+        </a>
+        <p class="foot-tag">Publisher-stated requirements, checked against your own parts. Free, in the browser, no download.</p>
       </div>
 
       <div class="foot-cols">
@@ -221,7 +223,7 @@ const year = new Date().getFullYear();
         </div>
       </div>
 
-      <div class="divider" style="margin: 20px 0;"></div>
+      <div class="divider" style="margin: 28px 0 20px;"></div>
       <small>&copy; {year} {SITE_NAME}. All rights reserved. Independent PC hardware &amp; game performance resource.</small>
     </div>
   </footer>

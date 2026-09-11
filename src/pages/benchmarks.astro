@@ -197,7 +197,7 @@ const schema = [
   .res-switch { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
   .rbtn {
     background: transparent; border: 1px solid var(--line-strong); color: var(--muted);
-    padding: 8px 18px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+    padding: 8px 18px; border-radius: 3px; font: inherit; font-size: 13px; cursor: pointer;
     transition: all .2s var(--ease);
   }
   .rbtn:hover { color: var(--text); }
@@ -215,10 +215,10 @@ const schema = [
   .ghead:hover { color: var(--accent) !important; }
   .fps-cell { text-align: center; font-variant-numeric: tabular-nums; }
   .fps { font-weight: 600; }
-  .fps[data-band="great"] { color: #7fe98a; }
-  .fps[data-band="good"] { color: #b6ff00; }
-  .fps[data-band="ok"] { color: #ffc850; }
-  .fps[data-band="bad"] { color: #ff8080; }
+  .fps[data-band="great"] { color: var(--ok); }
+  .fps[data-band="good"] { color: var(--readout); }
+  .fps[data-band="ok"] { color: var(--warn); }
+  .fps[data-band="bad"] { color: var(--bad); }
 
   .disclaimer { color: var(--faint); font-size: 13px; line-height: 1.7; margin-top: 18px; max-width: 80ch; }
   .disclaimer a { color: var(--accent); }
@@ -226,12 +226,12 @@ const schema = [
   .legend { margin-top: 52px; }
   .legend h2 { font-size: 20px; margin-bottom: 16px; }
   .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
-  .legend-grid > div { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .legend-grid > div { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
   .legend-grid b { display: block; margin: 8px 0 4px; font-size: 14px; }
   .legend-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; }
-  .d-great { background: #7fe98a; } .d-good { background: #b6ff00; }
-  .d-ok { background: #ffc850; } .d-bad { background: #ff8080; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+  .d-great { background: var(--ok); } .d-good { background: var(--readout); }
+  .d-ok { background: var(--warn); } .d-bad { background: var(--bad); }
 </style>
 
 <script>

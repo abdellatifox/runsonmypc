@@ -73,14 +73,14 @@ const schema = {
 <style>
   .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
   .list-card {
-    display: block; padding: 24px; border: 1px solid var(--line); border-radius: 16px;
+    display: block; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius);
     background: var(--surface); text-decoration: none; color: inherit;
     transition: transform .25s var(--ease), border-color .25s var(--ease);
   }
   .list-card:hover { transform: translateY(-4px); border-color: var(--accent); }
   .list-card .ic {
-    width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px;
-    background: rgba(182,255,0,.1); color: var(--accent); font-size: 20px; margin-bottom: 16px;
+    width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radius);
+    background: rgb(var(--accent-rgb) / .1); color: var(--accent); font-size: 20px; margin-bottom: 16px;
   }
   .list-card h2 { font-size: 17px; margin: 0 0 8px; }
   .list-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 14px; }

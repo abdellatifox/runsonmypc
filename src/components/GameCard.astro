@@ -38,7 +38,7 @@ const art = getGameArt(slug, name);
     text-decoration: none;
     color: inherit;
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: var(--radius);
     overflow: hidden;
     background: var(--surface);
     transition: transform .25s var(--ease), border-color .25s var(--ease);
@@ -88,7 +88,7 @@ const art = getGameArt(slug, name);
       drop-shadow(0 6px 22px rgba(0,0,0,.7));
   }
   .gcard-art :global(.art-initials) {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-family: var(--font-display);
     font-size: 46px;
     font-weight: 700;
     color: hsl(var(--hue) 70% 72%);

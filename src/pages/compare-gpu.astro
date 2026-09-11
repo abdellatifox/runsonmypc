@@ -243,7 +243,7 @@ if (paired && winner) {
     align-items: end;
     background: var(--surface);
     border: 1px solid var(--line-strong);
-    border-radius: 16px;
+    border-radius: var(--radius);
     padding: 20px;
     margin-bottom: 28px;
   }
@@ -253,23 +253,23 @@ if (paired && winner) {
     width: 100%;
     background: var(--bg-soft);
     border: 1px solid var(--line-strong);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     padding: 11px 12px;
     color: var(--text);
     font: inherit;
     outline: none;
   }
   .picker select:focus { border-color: var(--accent); }
-  .vs { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--faint); padding-bottom: 11px; }
+  .vs { font-family: var(--font-display); font-weight: 700; color: var(--faint); padding-bottom: 11px; }
   @media (max-width: 780px) {
     .picker { grid-template-columns: 1fr; }
     .vs { text-align: center; padding: 0; }
   }
 
   .verdict-banner {
-    background: rgba(182,255,0,.08);
+    background: rgb(var(--accent-rgb) / .08);
     border: 1px solid var(--line-strong);
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 16px 20px;
     margin-bottom: 24px;
     font-size: 15px;
@@ -292,7 +292,7 @@ if (paired && winner) {
   .sug-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
   .sug-list a {
     display: block; padding: 13px 16px; border: 1px solid var(--line);
-    border-radius: 10px; color: var(--text); text-decoration: none; font-size: 14px;
+    border-radius: var(--radius-sm); color: var(--text); text-decoration: none; font-size: 14px;
     transition: border-color .2s var(--ease);
   }
   .sug-list a:hover { border-color: var(--accent); color: var(--accent); }

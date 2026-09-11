@@ -132,25 +132,25 @@ const schema = [
 <style>
   .tool { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; gap: 24px; align-items: start; margin-bottom: 52px; }
   @media (max-width: 900px) { .tool { grid-template-columns: 1fr; } }
-  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 22px; display: grid; gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 22px; display: grid; gap: 16px; }
   .submit { width: 100%; margin-top: 4px; }
-  .err { color: #ff8080; font-size: 13.5px; margin: 0; }
+  .err { color: var(--bad); font-size: 13.5px; margin: 0; }
 
   .results { min-height: 300px; }
   .placeholder {
     min-height: 300px; display: grid; place-content: center; justify-items: center; gap: 10px;
     text-align: center; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 18px; padding: 40px 24px;
+    border-radius: var(--radius); padding: 40px 24px;
   }
   .placeholder :global(.icon) { font-size: 38px; color: var(--faint); }
   .placeholder h2 { font-size: 18px; margin: 0; }
   .placeholder p { margin: 0; color: var(--muted); font-size: 14px; }
 
-  :global(.bn-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; padding: 26px; }
-  :global(.bn-verdict) { display: inline-flex; align-items: center; gap: 9px; padding: 8px 16px; border-radius: 999px; font-weight: 600; font-size: 15px; margin-bottom: 14px; }
-  :global(.bn-verdict.ok) { background: rgba(120,255,120,.1); color: #7fe98a; border: 1px solid rgba(120,255,120,.25); }
-  :global(.bn-verdict.mild) { background: rgba(255,200,80,.1); color: #ffc850; border: 1px solid rgba(255,200,80,.25); }
-  :global(.bn-verdict.bad) { background: rgba(255,110,110,.1); color: #ff8080; border: 1px solid rgba(255,110,110,.25); }
+  :global(.bn-card) { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 26px; }
+  :global(.bn-verdict) { display: inline-flex; align-items: center; gap: 9px; padding: 8px 16px; border-radius: 3px; font-weight: 600; font-size: 15px; margin-bottom: 14px; }
+  :global(.bn-verdict.ok) { background: rgba(120,255,120,.1); color: var(--ok); border: 1px solid rgba(120,255,120,.25); }
+  :global(.bn-verdict.mild) { background: rgba(255,200,80,.1); color: var(--warn); border: 1px solid rgba(255,200,80,.25); }
+  :global(.bn-verdict.bad) { background: rgba(255,110,110,.1); color: var(--bad); border: 1px solid rgba(255,110,110,.25); }
   :global(.bn-detail) { color: var(--muted); line-height: 1.75; margin: 0 0 24px; max-width: 62ch; }
   :global(.bn-detail b) { color: var(--text); }
 
@@ -158,9 +158,9 @@ const schema = [
   :global(.bn-row) { display: grid; grid-template-columns: 108px 1fr 58px; align-items: center; gap: 12px; }
   :global(.bn-row span.lbl) { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   :global(.bn-row b) { font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
-  :global(.bn-track) { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
-  :global(.bn-fill) { height: 100%; border-radius: 99px; transition: width .5s var(--ease); }
-  :global(.bn-fill.cpu) { background: #8ab8ff; }
+  :global(.bn-track) { height: 10px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  :global(.bn-fill) { height: 100%; border-radius: 3px; transition: width .5s var(--ease); }
+  :global(.bn-fill.cpu) { background: var(--readout); }
   :global(.bn-fill.gpu) { background: var(--accent); }
 
   :global(.bn-advice) { margin: 0; padding-left: 20px; }
