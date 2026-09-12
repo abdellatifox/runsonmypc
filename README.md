@@ -23,6 +23,22 @@ npm run build
 All colours, fonts and radii are tokens at the top of `src/styles/global.css`.
 Pages use the tokens (`var(--accent)`, `rgb(var(--accent-rgb) / .1)`), never literals.
 
+## SEO
+
+- `src/lib/year.ts` owns every year label. `SEO_YEAR` rolls to the next year
+  from September (`ROLLOVER_MONTH`), so titles never advertise a past year.
+  Prerendered pages bake it in at build time — the monthly refresh rebuilds.
+- `src/lib/seo.ts` fits titles (65) and descriptions (165) so a long game or
+  part name drops a clause instead of being cut off in the results.
+- `npm run seo:audit` checks one URL per template and each title format against
+  the longest name in the data. Keep it at 0 problems.
+- Unreleased games: `data/upcoming-games.mjs` lists them by appid,
+  `npm run data:upcoming` fetches each one's Steam listing, and
+  `/upcoming-games-<year>` is generated per year from that data. Placeholder
+  requirement text ("TBD", "Coming Soon", Steam's 64-bit boilerplate) is
+  stripped, and a game with nothing measurable says so rather than showing a
+  guessed spec.
+
 ## Identity
 
 Domain, brand, contact address and fetcher User-Agent live only in
@@ -35,6 +51,7 @@ Domain, brand, contact address and fetcher User-Agent live only in
 | 00 Decisions | done |
 | 01 Domain | chosen: runsonmypc.com — not yet registered |
 | 02 Keywords | waiting on SEMrush API units |
+| 2027 coverage | 50 unreleased titles tracked, 19 with published requirements |
 | 04 Repo | pushed to github.com/abdellatifox/runsonmypc (public) |
 | 05 Cloudflare | not started — `wrangler.toml` ids are placeholders |
 | 07 Design | first pass done — violet/cyan instrument-panel look, new homepage; inner page layouts still PCGameFit's |
