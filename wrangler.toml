@@ -4,37 +4,37 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 # --------------------------------------------------------------------------
-# The ids below are placeholders until phase 05 creates the resources. Run
-# `npx wrangler whoami` first and confirm it is this site's account — never
-# the PCGameFit account's resources and never anything named critvolt-*.
+# Cloudflare account: Abdellatifox1000 (949a7a3e262ac7c7426f3059286ae26d),
+# zone runsonmypc.com. This is NOT the PCGameFit account — never point these
+# ids at that one, and never touch anything named critvolt-*.
 #
-#   npx wrangler d1 create runsonmypc-db
-#   npx wrangler kv namespace create runsonmypc-tools
-#   npx wrangler kv namespace create runsonmypc-session
+# Run wrangler through the token wrapper so it cannot reach the wrong account:
+#   npm run cf -- whoami
+#   npm run deploy
+#   npm run db:migrate
 #
-# then paste the ids each command prints into the matching field.
-#
-# The site degrades gracefully without them: src/lib/db.ts falls back to the
-# bundled rows, and the tool APIs skip the cache when TOOLS_KV is missing.
+# KV titles carry a doubled prefix ("runsonmypc-runsonmypc-tools") because
+# wrangler v3 prefixes namespace titles with the project name. Cosmetic only —
+# bindings resolve by id.
 # --------------------------------------------------------------------------
 
 [[d1_databases]]
 binding = "DB"
 database_name = "runsonmypc-db"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "7761340a-abd4-4981-aed9-b52e7fe496d4"
 migrations_dir = "migrations"
 
 # Caches tool and autocomplete results. Optional: the APIs query directly when
 # this namespace is missing or erroring.
 [[kv_namespaces]]
 binding = "TOOLS_KV"
-id = "REPLACE_WITH_TOOLS_KV_ID"
+id = "b9708169e6834cf5845ba3c141ee1f61"
 
 # Required by @astrojs/cloudflare's session support. Without it the build
 # warns "Invalid binding `SESSION`".
 [[kv_namespaces]]
 binding = "SESSION"
-id = "REPLACE_WITH_SESSION_KV_ID"
+id = "9b11163446884c7fb8284374011fc488"
 
 # R2 is deliberately unused. Game art ships as Pages static assets, which the
 # same edge serves with no egress cost and no Worker invocation.

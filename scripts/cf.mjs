@@ -23,7 +23,9 @@
  *        Zone    | Cache Purge           | Purge
  *      Account Resources: that account. Zone Resources: runsonmypc.com.
  *   3. Save the token as the only line of  .cloudflare/token
- *      (the folder is git-ignored; never paste a token into chat or a commit).
+ *      — .cloudflare/token.txt works too, because Windows editors append the
+ *      extension to a file saved without one.
+ *      Never paste a token into chat or a commit.
  *
  * Then every command runs with no browser and no login:
  *   npm run cf -- whoami
@@ -39,17 +41,22 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(ROOT, '.cloudflare');
-const TOKEN_FILE = path.join(DIR, 'token');
-const ACCOUNT_FILE = path.join(DIR, 'account');
+const TOKEN_FILES = [path.join(DIR, 'token'), path.join(DIR, 'token.txt')];
+const ACCOUNT_FILES = [path.join(DIR, 'account'), path.join(DIR, 'account.txt')];
 
-/** First non-empty, non-comment line of a file. */
-function firstLine(file) {
-  if (!existsSync(file)) return null;
-  const line = readFileSync(file, 'utf8')
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .find(l => l && !l.startsWith('#'));
-  return line || null;
+/** First usable line across the given files, ignoring comments and blanks. */
+function firstLine(...files) {
+  for (const file of files) {
+    if (!existsSync(file)) continue;
+    const line = readFileSync(file, 'utf8')
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      // Tolerate a pasted "api: <value>" prefix.
+      .map(l => l.replace(/^(api|token|account)\s*[:=]\s*/i, ''))
+      .find(l => l && !l.startsWith('#'));
+    if (line) return line;
+  }
+  return null;
 }
 
 const args = process.argv.slice(2);
@@ -58,13 +65,13 @@ if (!args.length) {
   process.exit(2);
 }
 
-const token = process.env.CLOUDFLARE_API_TOKEN || firstLine(TOKEN_FILE);
+const token = process.env.CLOUDFLARE_API_TOKEN || firstLine(...TOKEN_FILES);
 if (!token) {
   console.error(
     `No Cloudflare API token found.\n\n` +
     `Create one for the account that owns runsonmypc.com (the permission list\n` +
     `is in the comment at the top of scripts/cf.mjs), then save it as the only\n` +
-    `line of:\n\n  ${TOKEN_FILE}\n\n` +
+    `line of:\n\n  ${TOKEN_FILES[0]}\n\n` +
     `That folder is git-ignored, so the token never leaves this machine.`
   );
   process.exit(1);
@@ -73,7 +80,7 @@ if (!token) {
 const env = { ...process.env, CLOUDFLARE_API_TOKEN: token };
 
 // Optional: pin the account id, needed only if the token can see several.
-const account = process.env.CLOUDFLARE_ACCOUNT_ID || firstLine(ACCOUNT_FILE);
+const account = process.env.CLOUDFLARE_ACCOUNT_ID || firstLine(...ACCOUNT_FILES);
 if (account) env.CLOUDFLARE_ACCOUNT_ID = account;
 
 /* An OAuth session on this machine would otherwise take precedence for some
@@ -82,10 +89,19 @@ if (account) env.CLOUDFLARE_ACCOUNT_ID = account;
 delete env.CLOUDFLARE_API_KEY;
 delete env.CLOUDFLARE_EMAIL;
 
-const child = spawn('npx', ['wrangler', ...args], {
+/* Run wrangler's own entry point with this Node, not `npx` through a shell.
+   On Windows a shell is needed to find npx.cmd, and a shell concatenates the
+   arguments unescaped — so `d1 execute --command "SELECT a, b FROM t"`
+   reached wrangler split at every space and it printed its help instead. */
+const WRANGLER = path.join(ROOT, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+if (!existsSync(WRANGLER)) {
+  console.error('wrangler is not installed — run `npm ci` first.');
+  process.exit(1);
+}
+
+const child = spawn(process.execPath, [WRANGLER, ...args], {
   cwd: ROOT,
   env,
-  stdio: 'inherit',
-  shell: process.platform === 'win32'
+  stdio: 'inherit'
 });
 child.on('exit', code => process.exit(code ?? 1));
