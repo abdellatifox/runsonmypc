@@ -10,6 +10,21 @@ following the PCGameFit build playbook phase by phase.
 - `DOMAINS.md` — how the domain was chosen.
 - `DATA.md` — the data pipeline.
 
+## Deploy
+
+Push to `main`. Cloudflare Pages builds and deploys it (project `runsonmypc`,
+account Abdellatifox1000). There is no manual deploy step.
+
+Anything else on Cloudflare goes through `npm run cf -- <wrangler args>`, which
+reads the API token from `.cloudflare/token.txt` (git-ignored) so it can never
+reach another account. See the comment in `scripts/cf.mjs` for token setup.
+
+After a deploy, check production with:
+
+```bash
+npm run seo:audit -- https://runsonmypc.com
+```
+
 ## Run it
 
 ```bash
@@ -49,11 +64,11 @@ Domain, brand, contact address and fetcher User-Agent live only in
 | Phase | State |
 |---|---|
 | 00 Decisions | done |
-| 01 Domain | chosen: runsonmypc.com — not yet registered |
+| 01 Domain | runsonmypc.com, live (apex + www, HTTPS) |
 | 02 Keywords | waiting on SEMrush API units |
 | 2027 coverage | 50 unreleased titles tracked, 19 with published requirements |
-| 04 Repo | pushed to github.com/abdellatifox/runsonmypc (public) |
-| 05 Cloudflare | not started — `wrangler.toml` ids are placeholders |
+| 04 Repo | github.com/abdellatifox/runsonmypc (public) — every push to main deploys |
+| 05 Cloudflare | done — Pages (Git-connected), D1, KV, custom domain |
 | 07 Design | first pass done — violet/cyan instrument-panel look, new homepage; inner page layouts still PCGameFit's |
 | 08 Brand assets | mark (BrandMark.astro) + SVG favicon done; PNG icons, manifest icons and share cards not yet |
 
