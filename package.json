@@ -6,9 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "wrangler pages deploy dist",
-    "db:migrate": "wrangler d1 migrations apply runsonmypc-db --remote",
-    "db:migrate:local": "wrangler d1 migrations apply runsonmypc-db --local",
+    "deploy": "node scripts/cf.mjs pages deploy dist",
+    "db:migrate": "node scripts/cf.mjs d1 migrations apply runsonmypc-db --remote",
+    "db:migrate:local": "node scripts/cf.mjs d1 migrations apply runsonmypc-db --local",
     "data:index": "node scripts/fetch-steam-index.mjs",
     "data:reqs": "node scripts/fetch-steam-requirements.mjs",
     "data:upcoming": "node scripts/fetch-upcoming.mjs",
@@ -17,7 +17,8 @@
     "data:refresh": "npm run data:index && npm run data:reqs && npm run data:upcoming && npm run data:build",
     "data:reresolve": "node scripts/reresolve-requirements.mjs",
     "data:covers": "node scripts/build-covers.mjs",
-    "seo:audit": "node scripts/audit-seo.mjs"
+    "seo:audit": "node scripts/audit-seo.mjs",
+    "cf": "node scripts/cf.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.0.0",

@@ -17,3 +17,6 @@ Thumbs.db
 
 # Local ledger for scripts/sync-r2.mjs — build state, not source.
 src/lib/r2-uploaded.json
+
+# Cloudflare API token for this account — never committed.
+.cloudflare/
