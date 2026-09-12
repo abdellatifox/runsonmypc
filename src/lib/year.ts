@@ -11,20 +11,31 @@
  * switch later in the year; the whole site follows this one number.
  *
  * Two things to know:
- *  - Prerendered pages bake this in at build time, so the site has to be
- *    rebuilt for the rollover to appear. The monthly data refresh does that.
+ *  - Every page — prerendered or server-rendered — gets the year the build
+ *    computed, so the site has to be rebuilt for the rollover to appear. Any
+ *    push rebuilds it, and so does the monthly data refresh.
  *  - It is a *label*, never a fact. Anything factual — a card's release year, a
  *    game's announced date, a "last updated" line — comes from the data, not
  *    from here.
  */
 export const ROLLOVER_MONTH = 9;
 
+/* Filled in by astro.config.mjs (vite `define`) with values computed in Node
+   at build time. They must not be computed here at module load: Cloudflare
+   Workers freeze the clock at 0 outside a request, so a module-level
+   `new Date()` is 1 January 1970 in production — which put "GPU Tier List
+   1970" on every server-rendered page while local builds looked fine. */
+declare const __SEO_YEAR__: number | undefined;
+declare const __CALENDAR_YEAR__: number | undefined;
+
 export function seoYear(now: Date = new Date()): number {
   return now.getUTCFullYear() + (now.getUTCMonth() + 1 >= ROLLOVER_MONTH ? 1 : 0);
 }
 
 /** The advertised year, fixed for this build. */
-export const SEO_YEAR = seoYear();
+export const SEO_YEAR: number =
+  typeof __SEO_YEAR__ === 'number' ? __SEO_YEAR__ : seoYear();
 
-/** The calendar year, for anything that must state the real present. */
-export const CALENDAR_YEAR = new Date().getUTCFullYear();
+/** The calendar year of this build, for anything that must state the present. */
+export const CALENDAR_YEAR: number =
+  typeof __CALENDAR_YEAR__ === 'number' ? __CALENDAR_YEAR__ : new Date().getUTCFullYear();

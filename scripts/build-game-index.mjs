@@ -17,6 +17,7 @@ import { isExcludedGame } from '../data/excluded-games.mjs';
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(ROOT, 'data', 'steam-index.json');
 const REQ = path.join(ROOT, 'data', 'games.requirements.json');
+const UPCOMING = path.join(ROOT, 'data', 'upcoming.requirements.json');
 const OUT = path.join(ROOT, 'src', 'lib', 'game-index.json');
 
 /*
@@ -70,6 +71,37 @@ const seenSlug = new Set();
 const games = [];
 let excludedCount = 0;
 
+/*
+ * Unreleased games go first. The index is ordered by SteamSpy ownership, and a
+ * game nobody owns yet is not in it at all — so typing "fable" into the
+ * checker offered Fable Anniversary and Fabledom but never the Fable that the
+ * homepage and /upcoming-games-2027 were sending people to check. Leading the
+ * index also gives them top popularity, which is right: they are what people
+ * are searching for now. `u` marks them and `d` carries Steam's own date text.
+ */
+let upcomingCount = 0;
+if (fs.existsSync(UPCOMING)) {
+  for (const g of Object.values(JSON.parse(fs.readFileSync(UPCOMING, 'utf8')).games || {})) {
+    if (!g.comingSoon) continue;
+    const name = g.name.trim();
+    const slug = g.slug;
+    if (!slug || seenSlug.has(slug)) continue;
+    if (isExcludedGame({ appid: g.appid, slug, name })) { excludedCount++; continue; }
+    seenSlug.add(slug);
+    const al = deriveAliases(name);
+    games.push({
+      a: g.appid,
+      n: name,
+      s: slug,
+      r: 1,                        // always bundled: it has its own page
+      u: 1,
+      ...(g.releaseDate ? { d: g.releaseDate } : {}),
+      ...(al.length ? { x: al } : {})
+    });
+    upcomingCount++;
+  }
+}
+
 for (const g of index.slice(0, BUNDLE)) {
   const name = canonicalName.get(g.a) ?? g.n;
   if (name !== g.n) renamed++;
@@ -101,5 +133,6 @@ fs.writeFileSync(OUT, JSON.stringify({
 const bytes = fs.statSync(OUT).size;
 console.log(`bundled ${games.length} of ${index.length} games (${(bytes / 1024).toFixed(0)} KB)`);
 console.log(`  with parsed requirements: ${games.filter(g => g.r).length}`);
+console.log(`  unreleased (listed first): ${upcomingCount}`);
 console.log(`  with abbreviations: ${games.filter(g => g.x).length}`);
 console.log(`  renamed from Steam (stale SteamSpy titles): ${renamed}`);

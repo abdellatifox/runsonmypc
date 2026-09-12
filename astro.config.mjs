@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import { SITE_URL } from './src/lib/site';
+import { seoYear } from './src/lib/year';
 
 export default defineConfig({
   output: 'server',
@@ -37,11 +38,21 @@ export default defineConfig({
   },
 
   build: {
+    /* Prerendered pages as /upcoming-games-2027.html rather than
+       /upcoming-games-2027/index.html. With the directory form Cloudflare Pages
+       answers the canonical no-slash URL with a 308 to the slash version, so
+       every prerendered page's canonical pointed at a redirect. */
+    format: 'file',
     /* Every page's CSS is ~9 KB compressed. As two external files it blocked
        first render for a round trip each; inline, it arrives with the HTML. */
     inlineStylesheets: 'always'
   },
   vite: {
+    // Computed here, in Node, at build time — see src/lib/year.ts for why.
+    define: {
+      __SEO_YEAR__: JSON.stringify(seoYear()),
+      __CALENDAR_YEAR__: JSON.stringify(new Date().getUTCFullYear())
+    },
     ssr: { external: ['node:buffer'] }
   }
 });

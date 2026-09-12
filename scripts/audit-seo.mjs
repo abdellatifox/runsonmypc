@@ -22,17 +22,17 @@ const DESC_MAX = 165;
 /** One URL per template, so a regression anywhere shows up here. */
 const PAGES = [
   ['home', '/'],
-  ['upcoming year hub', '/upcoming-games-2027'],
-  ['game (released)', '/game/cyberpunk-2077'],
+  ['upcoming year hub', '/upcoming-games-2027', { expectYear: true }],
+  ['game (released)', '/game/cyberpunk-2077', { expectYear: true }],
   ['game (upcoming, has reqs)', '/game/fable'],
   ['game (upcoming, no reqs)', '/game/final-fantasy-vii-revelation'],
   ['gpu', '/gpu/nvidia-geforce-rtx-4070-ti-super'],
   ['cpu', '/cpu/amd-ryzen-5-5600'],
-  ['gpu tier list', '/gpu-tier-list'],
-  ['cpu tier list', '/cpu-tier-list'],
-  ['matchup', '/can-it-run/fable/nvidia-geforce-rtx-4060'],
+  ['gpu tier list', '/gpu-tier-list', { expectYear: true }],
+  ['cpu tier list', '/cpu-tier-list', { expectYear: true }],
+  ['matchup', '/can-it-run/fable/nvidia-geforce-rtx-4060', { expectYear: true }],
   ['games index', '/games'],
-  ['game list', '/game-list/low-end-pc-games'],
+  ['game list', '/game-list/low-end-pc-games', { expectYear: true }],
   ['tools', '/tools'],
   ['tool page', '/fps-estimator'],
   // The blog is deliberately noindex until it has posts of its own.
@@ -51,6 +51,12 @@ const titleOf = html => decode((head(html).match(/<title>([\s\S]*?)<\/title>/) |
 const metaOf = (html, name) =>
   decode((head(html).match(new RegExp(`<meta name="${name}" content="([^"]*)"`)) || [])[1] ?? '');
 const attrOf = (html, re) => (head(html).match(re) || [])[1] ?? '';
+
+/* The year these titles must carry. Read before any page is fetched, and
+   compared against the live HTML: that is what catches a runtime computing its
+   own year — Workers freeze the clock at 0, and the first deploy shipped
+   "GPU Tier List 1970" on every server-rendered page. */
+const { SEO_YEAR: EXPECTED_YEAR } = await import('../src/lib/year.ts');
 
 let problems = 0;
 const seenTitles = new Map();
@@ -86,6 +92,8 @@ for (const [label, path, opts = {}] of PAGES) {
   if (!jsonLd) issues.push('no JSON-LD');
   if (!ogImage) issues.push('no og:image');
   if (/noindex/.test(robots) && !opts.noindexOk) issues.push('noindex');
+  if (/1970/.test(title)) issues.push('title says 1970 — a year was computed from a frozen clock');
+  if (opts.expectYear && !title.includes(String(EXPECTED_YEAR))) issues.push(`title lacks ${EXPECTED_YEAR}`);
 
   if (seenTitles.has(title)) issues.push(`title duplicates ${seenTitles.get(title)}`);
   else seenTitles.set(title, path);

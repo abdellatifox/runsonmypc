@@ -6,7 +6,7 @@ import { staticGames } from '../../../lib/db';
 import { rank, JSON_HEADERS, type Suggestion } from '../../../lib/search';
 import { isExcludedGame } from '../../../../data/excluded-games.mjs';
 
-interface IndexRow { a: number; n: string; s: string; r: number; x?: string[] }
+interface IndexRow { a: number; n: string; s: string; r: number; x?: string[]; u?: 1; d?: string }
 const INDEX = (gameIndex as { games: IndexRow[] }).games ?? [];
 
 /**
@@ -71,8 +71,11 @@ export const GET: APIRoute = async (context) => {
   const data: Suggestion[] = hits.map(g => ({
     label: g.n,
     value: g.r ? g.s : `steam:${g.a}`,
-    meta: g.r ? 'Requirements on file' : 'Requirements fetched on open',
-    badge: undefined
+    // An unreleased game says so in the list, so nobody picks it thinking it is out.
+    meta: g.u
+      ? (g.d && /\d{4}/.test(g.d) ? `Unreleased · due ${g.d}` : 'Unreleased · date not announced')
+      : g.r ? 'Requirements on file' : 'Requirements fetched on open',
+    badge: g.u ? 'Upcoming' : undefined
   }));
 
   // Fall back to Steam when we have thin local coverage (or none bundled yet).
