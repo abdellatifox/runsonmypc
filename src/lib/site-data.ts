@@ -1,3 +1,4 @@
+import { SEO_YEAR } from './year';
 /** Single source of truth for the toolkit and the curated game lists.
  *  Used by /tools, the homepage, the footer and the sitemap so a new tool is
  *  added in exactly one place and can never be orphaned from the crawl graph. */
@@ -77,7 +78,7 @@ export const GAME_LISTS: GameList[] = [
   {
     slug: 'low-end-pc-games',
     title: 'Best Games for Low-End PCs',
-    h1: 'Best Games for Low-End PCs in 2026',
+    h1: `Best Games for Low-End PCs in ${SEO_YEAR}`,
     blurb: 'Games that run well on integrated graphics, old GTX cards and office laptops. Every title here has a minimum GPU requirement low enough for entry-level hardware.',
     icon: 'bi-laptop',
     filter: (g) => pctAtMost(g, 0.35),
@@ -86,7 +87,7 @@ export const GAME_LISTS: GameList[] = [
   {
     slug: 'most-demanding-pc-games',
     title: 'Most Demanding PC Games',
-    h1: 'The Most Demanding PC Games in 2026',
+    h1: `The Most Demanding PC Games in ${SEO_YEAR}`,
     blurb: 'The titles that punish even flagship hardware. Ranked by recommended GPU requirement — these are the games to benchmark a new build with.',
     icon: 'bi-fire',
     filter: (g) => pctAtLeast(g, 0.85),

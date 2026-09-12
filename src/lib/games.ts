@@ -44,6 +44,9 @@ interface RawGame {
   a: number; n: string; y: number | null; g: string | null; d: string | null;
   img: string | null; min: RawSide | null; rec: RawSide | null; src: string;
   manual?: boolean; unpublished?: boolean; note?: string;
+  /** Unreleased: 1, plus the publisher's own date string and whether
+      requirements are published yet. See scripts/fetch-upcoming.mjs. */
+  up?: 1; rd?: string | null; hq?: 0 | 1; buzz?: string; buzzSrc?: string;
 }
 
 const BUNDLE = reqs as unknown as {
@@ -99,6 +102,16 @@ export interface SiteGame {
   gpu_intensive: number | null;
 
   source: string;
+
+  /** Not out yet. Everything below is only meaningful when this is true. */
+  upcoming: boolean;
+  /** The publisher's own date text: "Feb 23, 2027", "Q1 2027", "Coming soon". */
+  release_date: string | null;
+  /** False when the game is announced but has published no requirements yet. */
+  requirements_published: boolean;
+  /** A sourced anticipation note, with the source that ranked it. */
+  buzz: { label: string; source: string } | null;
+
   unpublished: boolean;
   notes: string | null;
   /** True when both GPU tiers resolved, i.e. the game can be ranked/compared. */
@@ -176,6 +189,11 @@ function adapt(raw: RawGame): SiteGame {
     gpu_intensive: f ? (f.cpuBound ? 0 : 1) : null,
 
     source: raw.src,
+    upcoming: raw.up === 1,
+    release_date: raw.rd ?? null,
+    // A released game always has requirements; an upcoming one may not yet.
+    requirements_published: raw.up === 1 ? raw.hq === 1 : true,
+    buzz: raw.buzz ? { label: raw.buzz, source: raw.buzzSrc ?? '' } : null,
     unpublished: Boolean(raw.unpublished),
     notes: raw.note ?? null,
     scorable: minG != null && recG != null,
@@ -238,6 +256,33 @@ export function featuredGames(): SiteGame[] {
   return allGames().filter(g => g.supports_ray_tracing !== null);
 }
 
+/**
+ * Unreleased games, soonest first. Ones with a full date come before ones with
+ * only a year or "coming soon", because a reader scanning for what is close is
+ * not served by "2027" sitting above "Feb 4, 2027".
+ */
+export function upcomingGames(): SiteGame[] {
+  const rank = (g: SiteGame) => {
+    const d = g.release_date ?? '';
+    if (/[A-Za-z]{3,} \d{1,2},? \d{4}/.test(d)) return 0;   // "Feb 23, 2027"
+    if (/^Q[1-4]/i.test(d)) return 1;                        // "Q1 2027"
+    if (/^\d{4}$/.test(d.trim())) return 2;                  // "2027"
+    return 3;                                                // "Coming soon"
+  };
+  return allGames()
+    .filter(g => g.upcoming)
+    .sort((a, b) =>
+      (a.release_year ?? 9999) - (b.release_year ?? 9999) ||
+      rank(a) - rank(b) ||
+      Date.parse(`${a.release_date} UTC`) - Date.parse(`${b.release_date} UTC`) ||
+      a.name.localeCompare(b.name));
+}
+
+/** Released games only — anything presented as playable today must use this. */
+export function releasedGames(): SiteGame[] {
+  return allGames().filter(g => !g.upcoming);
+}
+
 export function gameBySlug(slug: string): SiteGame | null {
   return allGames().find(g => g.slug === slug) ?? null;
 }
@@ -247,6 +292,8 @@ export const gameCounts = () => {
   return {
     total: all.length,
     scorable: all.filter(g => g.scorable).length,
-    featureVerified: all.filter(g => g.supports_ray_tracing !== null).length
+    featureVerified: all.filter(g => g.supports_ray_tracing !== null).length,
+    upcoming: all.filter(g => g.upcoming).length,
+    upcomingWithReqs: all.filter(g => g.upcoming && g.requirements_published).length
   };
 };

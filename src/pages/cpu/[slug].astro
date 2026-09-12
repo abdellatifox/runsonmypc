@@ -1,4 +1,6 @@
 ---
+import { fitTitle } from '../../lib/seo';
+import { SEO_YEAR } from '../../lib/year';
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
@@ -45,7 +47,7 @@ const verdict =
   : cpu.score >= 40 ? 'an entry-level gaming processor that will bottleneck faster GPUs in CPU-heavy titles'
   : 'a dated processor that limits performance in most modern titles';
 
-const title = `${cpu.name} — Gaming Benchmarks & Specs | ${SITE_NAME}`;
+const title = fitTitle(cpu.name, [' — Gaming Benchmarks & Specs', ' — Gaming Benchmarks', ' Benchmarks'], ` | ${SITE_NAME}`);
 const description = `${cpu.name} review and specs: ${cpu.cores} cores, ${cpu.threads} threads, up to ${cpu.boost_ghz} GHz. Performance score ${cpu.score}/100, tier ${cpu.tier}. See which games it runs and what GPU to pair it with.`;
 
 const schema = [
@@ -209,7 +211,7 @@ const schema = [
     <section class="related">
       <h2>Related</h2>
       <ul>
-        <li><a href="/cpu-tier-list">CPU Tier List 2026</a></li>
+        <li><a href="/cpu-tier-list">CPU Tier List {SEO_YEAR}</a></li>
         <li><a href="/cpus">All processors</a></li>
         <li><a href="/bottleneck">Bottleneck Calculator</a></li>
         <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>

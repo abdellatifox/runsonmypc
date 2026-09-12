@@ -5,6 +5,7 @@ import { getPageCover } from '../lib/images';
 import BrandMark from '../components/BrandMark.astro';
 import IconSprite from '../components/IconSprite.astro';
 import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
 
 interface Props {
   title: string;
@@ -205,6 +206,7 @@ const year = new Date().getFullYear();
         <div>
           <h2>Games</h2>
           <a href="/games">All Games</a>
+          <a href={`/upcoming-games-${SEO_YEAR}`}>Upcoming {SEO_YEAR}</a>
           <a href="/game-lists">Game Lists</a>
           <a href="/what-can-my-pc-run">What Can My PC Run?</a>
           <a href="/vr-ready">VR Ready Test</a>

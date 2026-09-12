@@ -9,6 +9,8 @@ import GameArt from '../../components/GameArt.astro';
 import { getGameArt, getGameOgImage } from '../../lib/images';
 import { estimateFps } from '../../lib/perf';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
+import { SEO_YEAR } from '../../lib/year';
+import { fitMeta, fitTitle } from '../../lib/seo';
 
 const { slug } = Astro.params;
 const game = await getGame(Astro.locals, slug!);
@@ -88,15 +90,46 @@ const boundLabel =
 
 const gbOrDash = (n: number | null) => n != null ? `${n}GB` : null;
 
-const title = `${game.name} System Requirements (2026) | ${SITE_NAME}`;
+/* The year in the title: for an unreleased game, the year it is due (that is
+   the year people pair with its name); otherwise the advertised year. */
+const titleYear = game.upcoming ? (game.release_year ?? SEO_YEAR) : SEO_YEAR;
+/* Titles are fitted rather than formatted: "System Requirements (2027) |
+   RunsOnMyPC" is 39 characters on its own, and plenty of real game names are
+   over 60 by themselves. */
+const title = fitTitle(
+  game.name,
+  [` System Requirements (${titleYear})`, ` PC Requirements (${titleYear})`, ` Requirements (${titleYear})`],
+  ` | ${SITE_NAME}`
+);
+
 const specBits = [
   game.min_ram_gb != null && `${game.min_ram_gb}GB RAM`,
   game.min_vram_gb != null && `${game.min_vram_gb}GB VRAM`,
   game.min_storage_gb != null && `${game.min_storage_gb}GB storage`
 ].filter(Boolean).join(', ');
-const description = specBits
-  ? `Can you run ${game.name}? Minimum: ${specBits}. Publisher-stated requirements plus estimated FPS on ${showcaseGpus.length} graphics cards.`
-  : `${game.name} PC system requirements as published, with estimated performance on ${showcaseGpus.length} graphics cards.`;
+const dueText = game.release_date && /\d{4}/.test(game.release_date)
+  ? `due ${game.release_date}`
+  : 'with no announced release date';
+/* Built sentence by sentence so a long game name drops a clause instead of
+   overflowing the 165-character budget. */
+const description = game.upcoming && !game.requirements_published
+  ? fitMeta([
+      `${game.name} is ${dueText}.`,
+      'Its PC requirements are not published yet.',
+      "We re-read the game's Steam listing every month and fill them in the day they appear."
+    ])
+  : game.upcoming
+  ? fitMeta([
+      `${game.name} is ${dueText}.`,
+      specBits && `Published PC requirements: ${specBits}.`,
+      'Check them against your own graphics card, processor and memory.'
+    ])
+  : fitMeta([
+      `Can you run ${game.name}?`,
+      specBits && `Minimum: ${specBits}.`,
+      'Publisher-stated requirements,',
+      `plus estimated FPS on ${showcaseGpus.length} graphics cards.`
+    ]);
 
 const schema = [
   {
@@ -110,7 +143,9 @@ const schema = [
     ...(ogImage ? { "image": ogImage } : {}),
     ...(game.developer ? { "author": { "@type": "Organization", "name": game.developer } } : {}),
     ...(game.publisher ? { "publisher": { "@type": "Organization", "name": game.publisher } } : {}),
-    ...(game.release_year ? { "datePublished": String(game.release_year) } : {}),
+    ...(game.upcoming
+      ? { "releasedEvent": { "@type": "PublicationEvent", "startDate": String(game.release_year ?? '') } }
+      : game.release_year ? { "datePublished": String(game.release_year) } : {}),
     "operatingSystem": game.min_os || 'Windows 10',
     ...(game.min_cpu_text ? { "processorRequirements": game.min_cpu_text } : {}),
     ...(game.min_ram_gb != null ? { "memoryRequirements": `${game.min_ram_gb} GB` } : {}),
@@ -122,10 +157,14 @@ const schema = [
     "mainEntity": [
       {
         "@type": "Question",
-        "name": `What are the minimum requirements for ${game.name}?`,
+        "name": game.upcoming && !game.requirements_published
+          ? `Have ${game.name}'s PC requirements been announced?`
+          : `What are the minimum requirements for ${game.name}?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `${game.name} states: ${game.min_cpu_text ?? 'no processor requirement'}; ${game.min_gpu_text ?? 'no graphics requirement'}${specBits ? `; ${specBits}` : ''}. Operating system: ${game.min_os || 'Windows 10'}.`
+          "text": game.upcoming && !game.requirements_published
+            ? `No. ${game.name} is ${dueText} and its publisher has not published PC system requirements yet. We re-check its Steam listing every month.`
+            : `${game.name} states: ${game.min_cpu_text ?? 'no processor requirement'}; ${game.min_gpu_text ?? 'no graphics requirement'}${specBits ? `; ${specBits}` : ''}. Operating system: ${game.min_os || 'Windows 10'}.`
         }
       },
       {
@@ -141,7 +180,7 @@ const schema = [
         "name": `Is ${game.name} demanding on PC?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": demandLabel ? `${game.name} is ${demandLabel} by 2026 standards, with a recommended GPU score of ${game.rec_gpu_score} out of 100.${boundLabel ? ` It leans ${boundLabel}.` : ''}` : `${game.name} does not name a graphics card in its published requirements, so we do not rate how demanding it is.`
+          "text": demandLabel ? `${game.name} is ${demandLabel} by ${SEO_YEAR} standards, with a recommended GPU score of ${game.rec_gpu_score} out of 100.${boundLabel ? ` It leans ${boundLabel}.` : ''}` : `${game.name} does not name a graphics card in its published requirements, so we do not rate how demanding it is.`
         }
       },
       ...(game.supports_dlss || game.supports_fsr ? [{
@@ -164,6 +203,23 @@ const schema = [
       { name: game.name }
     ]} />
 
+    {game.upcoming && (
+      <div class="release-bar">
+        <span class="rb-tag">Unreleased</span>
+        <span class="rb-date">
+          {game.release_date && /\d{4}/.test(game.release_date)
+            ? <>Due <b>{game.release_date}</b> on Steam</>
+            : <>Release date not announced yet</>}
+        </span>
+        {game.buzz && (
+          <a class="rb-buzz" href={game.buzz.source} target="_blank" rel="nofollow noopener">
+            {game.buzz.label} ↗
+          </a>
+        )}
+        <a class="rb-all" href={`/upcoming-games-${game.release_year ?? SEO_YEAR}`}>All {game.release_year ?? SEO_YEAR} releases →</a>
+      </div>
+    )}
+
     <header class="game-hero">
       <div class="cover" data-kind={art.kind} style={art.kind !== 'cover' ? `--hue:${art.hue}` : undefined}>
         <GameArt slug={game.slug} art={art} eager={true} sizes="(max-width: 720px) 180px, 300px"
@@ -173,8 +229,10 @@ const schema = [
         <span class="eyebrow">{game.genre} · {game.release_year}{game.developer ? ` · ${game.developer}` : ''}</span>
         <h1>{game.name} System Requirements</h1>
         <p class="lede">
-          {demandLabel
-            ? <>{game.name} is <b>{demandLabel}</b> by 2026 standards. </>
+          {game.upcoming && !game.requirements_published
+            ? <>{game.name} is {dueText}. <b>Its PC requirements have not been published yet.</b> We read them from the game's Steam page, and this table fills in the day they appear. </>
+            : demandLabel
+            ? <>{game.name} is <b>{demandLabel}</b> by {SEO_YEAR} standards. </>
             : <>{game.name}'s listing does not name a graphics card we can measure against, so we do not rate how demanding it is. </>}
           {boundLabel && <>It leans <b>{boundLabel}</b>. </>}
           {game.rec_ram_gb != null && <>It wants <b>{gbOrDash(game.rec_ram_gb)} of memory</b>{game.rec_vram_gb != null && <> and <b>{gbOrDash(game.rec_vram_gb)} of VRAM</b></>} for a comfortable experience. </>}
@@ -337,7 +395,7 @@ const schema = [
       </details>
       <details>
         <summary>Is {game.name} demanding on PC?</summary>
-        <p>It is {demandLabel} by 2026 standards, with a recommended GPU score of {game.rec_gpu_score}/100. It is primarily {game.gpu_intensive ? 'GPU-bound' : 'CPU-bound'}.</p>
+        <p>It is {demandLabel} by {SEO_YEAR} standards, with a recommended GPU score of {game.rec_gpu_score}/100. It is primarily {game.gpu_intensive ? 'GPU-bound' : 'CPU-bound'}.</p>
       </details>
       {(game.supports_dlss === 1 || game.supports_fsr === 1) && (
         <details>
@@ -375,6 +433,27 @@ const schema = [
 </BaseLayout>
 
 <style>
+  /* Unreleased banner. Placed above the hero so a visitor never reads the
+     requirements table without knowing the game is not out. */
+  .release-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin: 0 0 18px; padding: 10px 14px;
+    background: rgb(var(--accent-rgb) / 0.08);
+    border: 1px solid rgb(var(--accent-rgb) / 0.35);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+  }
+  .rb-tag {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent); padding: 2px 8px; border-radius: 3px;
+  }
+  .rb-date { color: var(--text); }
+  .rb-buzz { color: var(--readout); font-size: 13px; }
+  .rb-all { margin-left: auto; color: var(--accent); font-weight: 700; }
+  @media (max-width: 640px) { .rb-all { margin-left: 0; } }
+
   .game-hero {
     display: grid; grid-template-columns: 210px 1fr; gap: 32px; align-items: start;
     padding: 36px 0 34px; border-bottom: 1px solid var(--line); margin-bottom: 44px;

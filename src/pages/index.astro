@@ -4,6 +4,8 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { staticGames, staticGpus, staticCpus } from '../lib/db';
 import { getGameArt } from '../lib/images';
+import { upcomingGames } from '../lib/games';
+import { SEO_YEAR } from '../lib/year';
 import Icon from '../components/Icon.astro';
 import Autocomplete from '../components/Autocomplete.astro';
 import GameArt from '../components/GameArt.astro';
@@ -22,6 +24,12 @@ const allGames = staticGames();
 const gameCount = allGames.length;
 const gpuCount = staticGpus().length;
 const cpuCount = staticCpus().length;
+/* Unreleased games whose publisher has already stated requirements: the one
+   thing here nobody else can answer yet, so it goes above the tool list. */
+const upcoming = upcomingGames().filter(g => g.requirements_published);
+const upcomingDated = upcoming.filter(g => g.release_year === SEO_YEAR);
+const upcomingCount = upcomingGames().filter(g => g.release_year === SEO_YEAR).length;
+
 const featuredGames = FEATURED_SLUGS
   .map(slug => allGames.find(g => g.slug === slug))
   .filter(Boolean)
@@ -160,6 +168,35 @@ const faqSchema = {
         </li>
       </ol>
     </section>
+
+    <!-- UPCOMING -->
+    {upcoming.length > 0 && (
+    <section class="upcoming-sec">
+      <div class="sec-head row">
+        <div>
+          <span class="eyebrow">Not out yet</span>
+          <h2>Check a {SEO_YEAR} release before it launches</h2>
+        </div>
+        <a href={`/upcoming-games-${SEO_YEAR}`} class="btn-ghost">All {upcomingCount} {SEO_YEAR} games <Icon name="arrow-right" /></a>
+      </div>
+      <p class="up-note">
+        These publishers have already stated what their game needs. We hold their exact wording,
+        so your PC can be checked against it today.
+      </p>
+      <ul class="up-grid">
+        {(upcomingDated.length >= 4 ? upcomingDated : upcoming).slice(0, 6).map(g => (
+          <li class="up-card">
+            <a href={`/game/${g.slug}`}>
+              <span class="up-date mono">{g.release_date}</span>
+              <b>{g.name}</b>
+              {g.min_gpu_text && <small>Min GPU: {g.min_gpu_text}</small>}
+            </a>
+            <a class="up-check" href={`/can-it-run?game=${g.slug}`}>Check my PC <Icon name="arrow-right" /></a>
+          </li>
+        ))}
+      </ul>
+    </section>
+    )}
 
     <!-- TOOLKIT -->
     <section id="tools" class="toolkit">
@@ -484,6 +521,30 @@ const faqSchema = {
   .tool-link :global(.tl-go) { color: var(--faint); transition: transform 0.2s var(--ease), color 0.2s; }
   .tool-link:hover :global(.tl-go) { color: var(--accent); transform: translateX(3px); }
 
+  /* ---------- upcoming ---------- */
+  .up-note { color: var(--muted); font-size: 14.5px; margin: -14px 0 20px; max-width: 70ch; }
+  .up-grid {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  }
+  .up-card {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
+    transition: border-color .2s;
+  }
+  .up-card:hover { border-color: rgb(var(--accent-rgb) / 0.55); border-left-color: var(--accent); }
+  .up-card > a:first-child { padding: 14px 16px 10px; display: block; }
+  .up-date { display: block; font-size: 12px; color: var(--readout); letter-spacing: .04em; }
+  .up-card b { display: block; margin-top: 4px; font-family: var(--font-display); font-size: 1.05rem; }
+  .up-card small { display: block; margin-top: 6px; color: var(--faint); font-size: 12.5px; line-height: 1.45; }
+  .up-check {
+    margin-top: auto; padding: 10px 16px 13px;
+    font-size: 0.84rem; font-weight: 700; color: var(--accent);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .up-check:hover { color: #fff; }
+
   /* ---------- games ---------- */
   .games-grid {
     display: grid;
@@ -562,6 +623,7 @@ const faqSchema = {
     .run-btn { grid-column: 1 / -1; }
     .games-grid { grid-template-columns: repeat(4, 1fr); }
     .groups { grid-template-columns: 1fr 1fr; }
+    .up-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 760px) {
     .home { padding: 0 16px 16px; }
@@ -574,6 +636,7 @@ const faqSchema = {
     .steps li, .steps li + li { padding: 20px 0 0; border-left: 0; }
     .steps li + li { border-top: 1px solid var(--line); margin-top: 20px; }
     .groups { grid-template-columns: 1fr; }
+    .up-grid { grid-template-columns: 1fr; }
     .games-grid { grid-template-columns: repeat(2, 1fr); }
     .about-cols { grid-template-columns: 1fr; gap: 4px; }
     .sec-head.row .btn-ghost { width: 100%; }

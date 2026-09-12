@@ -1,4 +1,6 @@
 ---
+import { fitTitle } from '../../lib/seo';
+import { SEO_YEAR } from '../../lib/year';
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
@@ -61,7 +63,7 @@ const upscalers = [
   gpu.supports_xess && 'XeSS'
 ].filter(Boolean) as string[];
 
-const title = `${gpu.name} — Benchmarks & FPS | ${SITE_NAME}`;
+const title = fitTitle(gpu.name, [' — Benchmarks & FPS', ' Benchmarks & FPS', ' Benchmarks'], ` | ${SITE_NAME}`);
 const description = `${gpu.name}: ${gpu.vram_gb}GB VRAM, ${gpu.tdp_watts}W, score ${gpu.score}/100 (tier ${gpu.tier}). Best at ${resVerdict}, with estimated FPS in ${showcase.length} demanding games.`;
 
 const schema = [
@@ -96,7 +98,7 @@ const schema = [
     "mainEntity": [
       {
         "@type": "Question",
-        "name": `Is the ${gpu.name} good in 2026?`,
+        "name": `Is the ${gpu.name} good in ${SEO_YEAR}?`,
         "acceptedAnswer": {
           "@type": "Answer",
           "text": `The ${gpu.name} scores ${gpu.score}/100 in our gaming index, ranking #${rank} of ${allGpus.length} cards we track and ahead of roughly ${pctFaster}% of them. It is best suited to ${resVerdict}.`

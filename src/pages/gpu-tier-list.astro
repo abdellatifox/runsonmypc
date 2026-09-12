@@ -1,4 +1,5 @@
 ---
+import { SEO_YEAR } from '../lib/year';
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
@@ -25,7 +26,7 @@ const tiers = TIER_ORDER
   .map(t => ({ tier: t, cards: gpus.filter(g => g.tier === t) }))
   .filter(t => t.cards.length > 0);
 
-const year = new Date().getFullYear();
+const year = SEO_YEAR;
 const best = gpus[0];
 const bestValue = [...gpus]
   .filter(g => g.msrp_usd && g.score >= 45)
@@ -86,7 +87,7 @@ const schema = [
 <BaseLayout
   title={`GPU Tier List ${year} — All ${gpus.length} Graphics Cards Ranked | ${SITE_NAME}`}
   description={description}
-  keywords="gpu tier list, best graphics card, graphics card ranking, best gpu 2026, gpu hierarchy, graphics card tier list"
+  keywords={`gpu tier list, best graphics card, graphics card ranking, best gpu ${SEO_YEAR}, gpu hierarchy, graphics card tier list`}
   jsonLd={schema}
 >
   <div class="wrap">

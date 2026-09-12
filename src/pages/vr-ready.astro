@@ -1,4 +1,5 @@
 ---
+import { SEO_YEAR } from '../lib/year';
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
@@ -39,7 +40,7 @@ const schema = [
       },
       {
         "@type": "Question",
-        "name": "What GPU do I need for VR in 2026?",
+        "name": `What GPU do I need for VR in ${SEO_YEAR}?`,
         "acceptedAnswer": { "@type": "Answer", "text": "For entry-level headsets such as Quest 3 over Link, a card scoring around 45 in our index is the practical floor. High-resolution headsets like the Pimax Crystal or Varjo Aero realistically need an upper-tier card scoring 78 or above." }
       },
       {
@@ -138,7 +139,7 @@ const schema = [
         <p>It means your PC can hold the headset's native refresh rate without dropping frames. That bar sits well above flat-screen gaming, because a headset renders two views at high refresh and dropped frames cause discomfort rather than just looking bad.</p>
       </details>
       <details>
-        <summary>What GPU do I need for VR in 2026?</summary>
+        <summary>What GPU do I need for VR in {SEO_YEAR}?</summary>
         <p>For entry-level headsets such as Quest 3 over Link, a card scoring around 45 in our index is the practical floor. High-resolution headsets like the Pimax Crystal or Varjo Aero realistically need a card scoring 78 or above.</p>
       </details>
       <details>

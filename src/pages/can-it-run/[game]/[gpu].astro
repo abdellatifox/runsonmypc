@@ -1,4 +1,5 @@
 ---
+import { SEO_YEAR } from '../../../lib/year';
 import { SITE_NAME } from '../../../lib/site';
 export const prerender = false;
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -68,7 +69,7 @@ const alternatives = gpus
     better: g.score > gpu.score
   }));
 
-const year = new Date().getFullYear();
+const year = SEO_YEAR;
 const title = `Can a ${gpu.name} Run ${game.name}? (${year}) | ${SITE_NAME}`;
 const description = `${summary.slice(0, 150)}`;
 

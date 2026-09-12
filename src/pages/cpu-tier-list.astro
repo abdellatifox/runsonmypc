@@ -1,4 +1,5 @@
 ---
+import { SEO_YEAR } from '../lib/year';
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
@@ -23,7 +24,7 @@ const tiers = TIER_ORDER
   .map(t => ({ tier: t, chips: cpus.filter(c => c.tier === t) }))
   .filter(t => t.chips.length > 0);
 
-const year = new Date().getFullYear();
+const year = SEO_YEAR;
 const best = cpus[0];
 const bestValue = [...cpus].filter(c => c.score >= 60).sort((a, b) => b.score - a.score)[Math.min(3, cpus.length - 1)];
 const amdBest = cpus.find(c => c.brand === 'AMD');
@@ -81,7 +82,7 @@ const schema = [
 <BaseLayout
   title={`CPU Tier List ${year} — ${cpus.length} Gaming CPUs Ranked | ${SITE_NAME}`}
   description={description}
-  keywords="cpu tier list, top rated cpus, best gaming cpu 2026, processor ranking, cpu hierarchy, amd vs intel gaming"
+  keywords={`cpu tier list, top rated cpus, best gaming cpu ${SEO_YEAR}, processor ranking, cpu hierarchy, amd vs intel gaming`}
   jsonLd={schema}
 >
   <div class="wrap">

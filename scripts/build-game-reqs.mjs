@@ -46,6 +46,7 @@ function manualSide(x) {
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(ROOT, 'data', 'games.requirements.json');
+const UPCOMING = path.join(ROOT, 'data', 'upcoming.requirements.json');
 const OUT = path.join(ROOT, 'src', 'lib', 'game-reqs.json');
 
 const MAX = parseInt(process.argv[2] || '3000', 10);
@@ -104,6 +105,43 @@ for (const g of all.slice(0, MAX)) {
   if (!bySlug[g.slug]) bySlug[g.slug] = g.appid;   // most-owned wins the slug
 }
 
+/*
+ * Unreleased titles (data/upcoming-games.mjs, fetched by
+ * scripts/fetch-upcoming.mjs). They cannot come from the normal crawl: that is
+ * ordered by SteamSpy ownership and a game nobody owns yet is simply not in
+ * it. Their records carry `up: 1` plus the publisher's own date string, so
+ * pages can say "releases Feb 23, 2027" instead of implying the game is out.
+ *
+ * `hq: 0` means announced but no requirements published yet — the page says
+ * exactly that rather than inventing a spec.
+ */
+let upcomingCount = 0;
+if (fs.existsSync(UPCOMING)) {
+  const rows = Object.values(JSON.parse(fs.readFileSync(UPCOMING, 'utf8')).games || {});
+  for (const g of rows) {
+    if (isExcludedGame({ appid: g.appid, slug: g.slug, name: g.name })) { excluded++; continue; }
+    if (!g.comingSoon) continue;          // shipped since the list was written
+    if (out[g.appid]) continue;           // already in the crawl
+    out[g.appid] = {
+      a: g.appid,
+      n: g.name.trim(),
+      y: g.expectedYear ?? null,
+      g: (g.genres || [])[0] ?? null,
+      d: (g.developers || [])[0] ?? null,
+      img: g.headerImage ?? null,
+      min: side(g.minimum),
+      rec: side(g.recommended),
+      src: g.source,
+      up: 1,
+      rd: g.releaseDate ?? null,
+      hq: g.hasRequirements ? 1 : 0,
+      ...(g.buzz ? { buzz: g.buzz.label, buzzSrc: g.buzz.source } : {})
+    };
+    bySlug[g.slug] = g.appid;             // an upcoming title owns its slug
+    upcomingCount++;
+  }
+}
+
 // Non-Steam titles use negative synthetic ids so they cannot collide with appids.
 let manualId = -1;
 for (const m of MANUAL_GAMES) {
@@ -139,5 +177,6 @@ const kb = fs.statSync(OUT).size / 1024;
 const resolvedGpu = Object.values(out).filter(g => g.min?.gpu).length;
 console.log(`bundled ${Object.keys(out).length} games (${kb.toFixed(0)} KB raw)`);
 console.log(`  manual (non-Steam) entries: ${MANUAL_GAMES.length}`);
+console.log(`  upcoming (unreleased) entries: ${upcomingCount}`);
 console.log(`  min GPU resolved to a known part: ${resolvedGpu}`);
 if (kb > 3500) console.log('  WARNING: approaching Worker bundle limits — lower maxGames');

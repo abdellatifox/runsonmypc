@@ -1,4 +1,5 @@
 ---
+import { SEO_YEAR } from '../../lib/year';
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
@@ -69,7 +70,7 @@ const schema = [
     <header class="page-head">
       <h1><Icon name={list.icon} /> {list.h1}</h1>
       <p class="lede">{list.blurb}</p>
-      <p class="count"><b>{games.length}</b> games in this list · updated {new Date().getFullYear()}</p>
+      <p class="count"><b>{games.length}</b> games in this list · updated {SEO_YEAR}</p>
       {coverage && <p class="coverage">{coverage}</p>}
     </header>
 

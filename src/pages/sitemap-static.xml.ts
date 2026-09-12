@@ -2,6 +2,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { urlset, toLastmod, type UrlEntry } from '../lib/sitemap';
 import { TOOLS, GAME_LISTS } from '../lib/site-data';
+import { upcomingGames } from '../lib/games';
+import { SEO_YEAR } from '../lib/year';
 
 export const GET: APIRoute = () => {
   const today = toLastmod();
@@ -25,6 +27,15 @@ export const GET: APIRoute = () => {
     loc: `/game-list/${l.slug}`, priority: 0.7, changefreq: 'weekly' as const, lastmod: today
   }));
 
+  /* Year hubs for unreleased games. Generated from the data so a year appears
+     the moment a game is dated into it, and /upcoming-games itself is left out
+     because it only redirects here. */
+  const years = new Set<number>([SEO_YEAR]);
+  for (const g of upcomingGames()) if (g.release_year) years.add(g.release_year);
+  const upcoming: UrlEntry[] = [...years].sort().map(y => ({
+    loc: `/upcoming-games-${y}`, priority: 0.9, changefreq: 'daily' as const, lastmod: today
+  }));
+
   const info: UrlEntry[] = [
     { loc: '/about',               priority: 0.5, changefreq: 'monthly', lastmod: today },
     { loc: '/contact',             priority: 0.4, changefreq: 'yearly',  lastmod: today },
@@ -35,7 +46,7 @@ export const GET: APIRoute = () => {
 
   // De-duplicate: TOOLS already contains several of the core tool routes.
   const seen = new Set<string>();
-  const all = [...core, ...tools, ...lists, ...info].filter(e => {
+  const all = [...core, ...upcoming, ...tools, ...lists, ...info].filter(e => {
     if (seen.has(e.loc)) return false;
     seen.add(e.loc);
     return true;
