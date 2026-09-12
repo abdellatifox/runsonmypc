@@ -16,13 +16,16 @@
  * with that source next to it. No invented hype.
  */
 
+/* Each claim is worded as its source words it, and links the page that says
+   it. Both were checked by reading the source (2026-09-12); an earlier version
+   linked the Fable figure to a forum thread that does not contain it. */
 const GDC_SGF26 = {
-  label: 'Top 10 most wishlisted on Steam at Summer Game Fest 2026',
-  source: 'https://www.resetera.com/threads/top-10-most-wishlisted-steam-games-coming-out-of-summer-game-fest-2026.1550326/'
+  label: "In GameDiscoverCo's top 10 most-wishlisted Steam games from Summer Game Fest 2026",
+  source: 'https://newsletter.gamediscover.co/p/what-were-the-top-games-and-showcases'
 };
-const GDC_FABLE = {
-  label: 'Third most wishlisted game on Steam after its date reveal (~125k adds)',
-  source: 'https://www.resetera.com/threads/gamediscoverco-the-top-20-most-steam-wishlisted-2026-releases-pb0-1-onimusha-3-control-5-ac6-14-sw-zc-16-gears-17.1593175/'
+const FABLE_JUNE26 = {
+  label: 'Jumped to No. 3 in Steam wishlist adds after its June 2026 date reveal (~125k)',
+  source: 'https://www.gamer.org/the-most-wishlisted-games-on-steam-right-now-and-which-ones-will-actually-ship/'
 };
 
 export const UPCOMING_GAMES = [
@@ -33,7 +36,7 @@ export const UPCOMING_GAMES = [
   { appid: 3130220, name: 'Sagas of Lumin' },
   { appid: 3558670, name: 'Tomb Raider: Legacy of Atlantis' },
   { appid: 2963950, name: 'Persona 4 Revival' },
-  { appid: 2769570, name: 'Fable', buzz: GDC_FABLE },
+  { appid: 2769570, name: 'Fable', buzz: FABLE_JUNE26 },
   { appid: 3230960, name: 'EXODUS' },
   { appid: 4354570, name: 'FINAL FANTASY VII REVELATION' },
   { appid: 2017940, name: 'Pony Island 2: Panda Circus' },

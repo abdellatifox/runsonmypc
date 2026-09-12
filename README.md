@@ -54,6 +54,15 @@ Pages use the tokens (`var(--accent)`, `rgb(var(--accent-rgb) / .1)`), never lit
   stripped, and a game with nothing measurable says so rather than showing a
   guessed spec.
 
+## Blog
+
+Articles are generated, not written by hand: `scripts/build-blog.mjs` computes
+every figure from `data/upcoming.requirements.json` and the hardware index, and
+writes `src/lib/blog-posts.json`. `npm run data:blog` rebuilds the articles and
+their covers; `data:build` does it as part of the monthly refresh, so an article
+never quotes a spec the data no longer holds. Anticipation claims come from
+`data/upcoming-games.mjs`, each with the source that says it.
+
 ## Identity
 
 Domain, brand, contact address and fetcher User-Agent live only in

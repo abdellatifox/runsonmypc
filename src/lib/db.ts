@@ -8,6 +8,7 @@
  * rather than 500-ing or shipping a half-empty page to Googlebot.
  */
 import fallback from './fallback-data.json';
+import blogBundle from './blog-posts.json';
 import hardware from './hardware-data.json';
 import { allGames, gameBySlug, scorableGames, releasedGames, type SiteGame } from './games';
 
@@ -39,7 +40,20 @@ export interface BlogPost {
   title: string; slug: string; excerpt: string; content: string; category: string;
   author: string; image_url: string; read_time: number; featured: number;
   published_at: string;
+  /** Date of the data the article was generated from. */
+  updated_at?: string;
 }
+
+/*
+ * Articles are generated from the site's data by scripts/build-blog.mjs and
+ * shipped in the bundle — not stored in D1. Their numbers are computed from the
+ * same requirements the pages show, so they have to be rebuilt with that data;
+ * a database copy would drift the moment the data refreshed (which is exactly
+ * how a stale brand name survived in a D1 row on the first site).
+ */
+const POSTS = ((blogBundle as unknown as { posts: BlogPost[] }).posts ?? [])
+  .slice()
+  .sort((a, b) => (b.published_at || '').localeCompare(a.published_at || '') || a.title.localeCompare(b.title));
 
 const FB = fallback as unknown as {
   gpus: Gpu[]; cpus: Cpu[]; games: Game[]; blog: BlogPost[];
@@ -127,16 +141,12 @@ export async function getGame(_locals: any, slug: string): Promise<Game | null> 
 
 /* ---------------------------------- Blog --------------------------------- */
 
-export async function getPosts(locals: any): Promise<BlogPost[]> {
-  return query<BlogPost>(locals,
-    'SELECT * FROM blog_posts ORDER BY published_at DESC', [],
-    () => [...FB.blog].sort((a, b) => (b.published_at || '').localeCompare(a.published_at || '')));
+export async function getPosts(_locals: any): Promise<BlogPost[]> {
+  return POSTS;
 }
 
-export async function getPost(locals: any, slug: string): Promise<BlogPost | null> {
-  const rows = await query<BlogPost>(locals, 'SELECT * FROM blog_posts WHERE slug = ?', [slug],
-    () => FB.blog.filter(p => p.slug === slug));
-  return rows[0] ?? null;
+export async function getPost(_locals: any, slug: string): Promise<BlogPost | null> {
+  return POSTS.find(p => p.slug === slug) ?? null;
 }
 
 /* Static-data accessors — used by prerendered pages and sitemaps, where we
@@ -144,4 +154,4 @@ export async function getPost(locals: any, slug: string): Promise<BlogPost | nul
 export const staticGpus = () => [...HW.gpus].sort((a, b) => b.score - a.score);
 export const staticCpus = () => [...HW.cpus].sort((a, b) => b.score - a.score);
 export const staticGames = () => allGames();
-export const staticPosts = () => [...FB.blog];
+export const staticPosts = () => [...POSTS];

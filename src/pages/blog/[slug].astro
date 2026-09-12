@@ -5,6 +5,7 @@ import { getPost, getPosts } from '../../lib/db';
 import { getPostCover } from '../../lib/images';
 import Icon from '../../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
+import { fitTitle } from '../../lib/seo';
 
 const { slug } = Astro.params;
 const post = await getPost(Astro.locals, slug!);
@@ -14,14 +15,6 @@ const post = await getPost(Astro.locals, slug!);
 // fed the index pages of nothing. Unknown posts are now a real 404.
 if (!post) {
   return new Response(null, { status: 404, statusText: 'Not Found' });
-}
-
-// View counting is best-effort and must never break the render.
-const db = (Astro.locals as any).runtime?.env?.DB;
-if (db) {
-  try {
-    await db.prepare('UPDATE blog_posts SET view_count = view_count + 1 WHERE slug = ?').bind(slug).run();
-  } catch { /* non-fatal */ }
 }
 
 const allPosts = await getPosts(Astro.locals);
@@ -36,6 +29,11 @@ const heroImg = cover.thumb;
 const shareImg = `${SITE_URL}${cover.png}`;
 
 const published = post.published_at || new Date().toISOString();
+const modified = post.updated_at || published;
+// Fixed locale and zone: the server's own locale is not the reader's, and an
+// unpinned format rendered differently between local builds and Cloudflare.
+const fmtDate = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00Z`)
+  .toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const readTime = typeof post.read_time === 'number' ? `${post.read_time} min read` : (post.read_time || '5 min read');
 
 const description = post.excerpt || `${post.title} — a guide from ${SITE_NAME}.`;
@@ -52,17 +50,17 @@ const schema = {
   "author": { "@type": "Organization", "name": post.author || `${SITE_NAME} Team`, "url": `${SITE_URL}/about` },
   "publisher": { "@id": `${SITE_URL}/#organization` },
   "datePublished": published,
-  "dateModified": published
+  "dateModified": modified
 };
 ---
 <BaseLayout
-  title={`${post.title} | ${SITE_NAME}`}
+  title={fitTitle(post.title, [''], ` | ${SITE_NAME}`)}
   description={description}
   ogImage={shareImg}
   ogType="article"
   jsonLd={schema}
   publishedAt={published}
-  modifiedAt={published}
+  modifiedAt={modified}
   author={post.author || `${SITE_NAME} Team`}
   keywords={`${post.category?.toLowerCase() || 'pc gaming'}, ${post.title.toLowerCase()}`}
 >
@@ -77,7 +75,8 @@ const schema = {
         <h1>{post.title}</h1>
         <div class="meta">
           <span>By {post.author || `${SITE_NAME} Team`}</span> &bull;
-          <span>{new Date(post.published_at).toLocaleDateString()}</span> &bull;
+          <span>Published <time datetime={published}>{fmtDate(published)}</time></span> &bull;
+          {modified !== published && <><span>Updated <time datetime={modified}>{fmtDate(modified)}</time></span> &bull;</>}
           <span>{readTime}</span>
         </div>
       </header>

@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { MANUAL_GAMES } from '../data/games.manual.mjs';
+import { UPCOMING_GAMES } from '../data/upcoming-games.mjs';
 import { isExcludedGame } from '../data/excluded-games.mjs';
 import { GPU_ROWS } from '../data/gpus.source.mjs';
 import { CPU_ROWS } from '../data/cpus.source.mjs';
@@ -116,6 +117,7 @@ for (const g of all.slice(0, MAX)) {
  * exactly that rather than inventing a spec.
  */
 let upcomingCount = 0;
+const BUZZ = new Map(UPCOMING_GAMES.filter(g => g.buzz).map(g => [g.appid, g.buzz]));
 if (fs.existsSync(UPCOMING)) {
   const rows = Object.values(JSON.parse(fs.readFileSync(UPCOMING, 'utf8')).games || {});
   for (const g of rows) {
@@ -135,7 +137,9 @@ if (fs.existsSync(UPCOMING)) {
       up: 1,
       rd: g.releaseDate ?? null,
       hq: g.hasRequirements ? 1 : 0,
-      ...(g.buzz ? { buzz: g.buzz.label, buzzSrc: g.buzz.source } : {})
+      // Attribution comes from the curated list, so correcting a label or a
+      // source link does not need a re-fetch from Steam.
+      ...(BUZZ.get(g.appid) ? { buzz: BUZZ.get(g.appid).label, buzzSrc: BUZZ.get(g.appid).source } : {})
     };
     bySlug[g.slug] = g.appid;             // an upcoming title owns its slug
     upcomingCount++;

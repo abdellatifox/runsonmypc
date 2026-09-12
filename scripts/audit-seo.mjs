@@ -35,8 +35,8 @@ const PAGES = [
   ['game list', '/game-list/low-end-pc-games', { expectYear: true }],
   ['tools', '/tools'],
   ['tool page', '/fps-estimator'],
-  // The blog is deliberately noindex until it has posts of its own.
-  ['blog index', '/blog', { noindexOk: true }],
+  ['blog index', '/blog'],
+  ['blog post', '/blog/best-gpu-for-2027-games', { expectYear: true }],
   ['about', '/about']
 ];
 
@@ -91,6 +91,16 @@ for (const [label, path, opts = {}] of PAGES) {
   if (h1s !== 1) issues.push(`${h1s} h1 tags`);
   if (!jsonLd) issues.push('no JSON-LD');
   if (!ogImage) issues.push('no og:image');
+  else {
+    /* A tag pointing at a missing file passes every check above and still
+       gives a blank preview on every share — which is what happened when the
+       old brand's cover images were removed. */
+    const imgUrl = ogImage.replace(/^https?:\/\/[^/]+/, BASE);
+    const img = await fetch(imgUrl, { method: 'GET' }).catch(() => null);
+    const type = img?.headers.get('content-type') || '';
+    if (!img || img.status !== 200) issues.push(`og:image ${img ? img.status : 'unreachable'}: ${ogImage}`);
+    else if (!/^image\/(png|jpe?g|webp)/.test(type)) issues.push(`og:image is ${type || 'untyped'}, not a raster image`);
+  }
   if (/noindex/.test(robots) && !opts.noindexOk) issues.push('noindex');
   if (/1970/.test(title)) issues.push('title says 1970 — a year was computed from a frozen clock');
   if (opts.expectYear && !title.includes(String(EXPECTED_YEAR))) issues.push(`title lacks ${EXPECTED_YEAR}`);

@@ -17,11 +17,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import { SITE_NAME_PARTS, SITE_DOMAIN } from '../src/lib/site.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ART = path.join(ROOT, 'public', 'art');
 const OUT = path.join(ROOT, 'public', 'og');
-const LOGO = path.join(ROOT, 'brand', 'logo.png');
 
 const W = 1200;
 const H = 630;
@@ -35,21 +35,37 @@ const ground = Buffer.from(
   `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
      <defs>
        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-         <stop offset="0" stop-color="#121A0B"/><stop offset="1" stop-color="#070810"/>
+         <stop offset="0" stop-color="#151B30"/><stop offset="1" stop-color="#070A12"/>
        </linearGradient>
        <radialGradient id="w" cx="0.5" cy="0.34" r="0.55">
-         <stop offset="0" stop-color="#B6FF00" stop-opacity="0.22"/>
-         <stop offset="1" stop-color="#B6FF00" stop-opacity="0"/>
+         <stop offset="0" stop-color="#8E7DFF" stop-opacity="0.24"/>
+         <stop offset="1" stop-color="#8E7DFF" stop-opacity="0"/>
        </radialGradient>
      </defs>
      <rect width="${W}" height="${H}" fill="url(#g)"/>
      <rect width="${W}" height="${H}" fill="url(#w)"/>
-     <rect width="${W}" height="6" fill="#B6FF00"/>
+     <rect width="${W}" height="6" fill="#8E7DFF"/>
    </svg>`
 );
 
-/* Wordmark sits bottom-left, small enough to stay out of the artwork's way. */
-const wordmark = await sharp(LOGO).trim({ threshold: 1 }).resize({ height: 40 }).png().toBuffer();
+/* Wordmark sits bottom-left, small enough to stay out of the artwork's way.
+   Drawn as vector — the same mark as src/components/BrandMark.astro — rather
+   than read from a brand image file, so it cannot go missing the way the old
+   brand's logo.png did when that brand was removed. */
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const wordmark = await sharp(Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="44" viewBox="0 0 420 44">
+     <defs><linearGradient id="m" x1="0" y1="0" x2="1" y2="1">
+       <stop offset="0" stop-color="#8E7DFF"/><stop offset="1" stop-color="#45C9FF"/>
+     </linearGradient></defs>
+     <g transform="translate(0 4) scale(1.1)">
+       <path d="M4 5.5h24v13.5l-4 4H4z" fill="#0F1424" stroke="url(#m)" stroke-width="2.2"/>
+       <path d="M13 9.5l7.5 4.75L13 19z" fill="#45C9FF"/>
+       <path d="M11 27.5h10" stroke="#8E7DFF" stroke-width="2.2"/>
+     </g>
+     <text x="46" y="31" font-family="Segoe UI, system-ui, Helvetica, Arial, sans-serif" font-size="26" font-weight="700" fill="#E6E9F5">${esc(SITE_NAME_PARTS.bold)}<tspan fill="#8E7DFF">${esc(SITE_NAME_PARTS.rest)}</tspan><tspan fill="#8089A8" font-weight="600">.${esc(SITE_DOMAIN.split('.').pop())}</tspan></text>
+   </svg>`
+)).png().toBuffer();
 
 let made = 0;
 let skipped = 0;
