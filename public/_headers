@@ -6,8 +6,14 @@
 /art/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Not immutable: covers are regenerated under the same filename whenever an
+# article's title changes (the advertised year rolls over, a data refresh
+# renames a post), so a year-long immutable cache would pin the old image.
 /covers/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/og/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
