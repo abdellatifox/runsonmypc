@@ -230,6 +230,53 @@ const year = new Date().getFullYear();
     </div>
   </footer>
 
+  <!--
+    Labels table cells with their column header so that, on a phone, a table
+    can collapse into cards that still say what each number is (see "Tables on
+    phones" in global.css). Inline and synchronous, placed after the content:
+    it runs before first paint, and the CSS reserves the label line, so the
+    cards do not shift. The observer covers rows the tools render later.
+  -->
+  <script is:inline>
+    (function () {
+      function label(table) {
+        var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+          return th.textContent.replace(/\s+/g, ' ').trim();
+        });
+        if (!heads.length) return;
+        var rows = table.querySelectorAll('tbody tr');
+        for (var r = 0; r < rows.length; r++) {
+          var col = 0, cells = rows[r].children;
+          for (var c = 0; c < cells.length; c++) {
+            var td = cells[c], span = td.colSpan || 1;
+            if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[col] || '');
+            // Long text (a publisher's requirement line) and spanning cells get the full card width.
+            if (span > 1 || td.textContent.trim().length > 24) td.classList.add('cell-wide');
+            col += span;
+          }
+        }
+      }
+      function run(root) {
+        var tables = root.querySelectorAll ? root.querySelectorAll('table.data-table, table.req-table') : [];
+        for (var i = 0; i < tables.length; i++) label(tables[i]);
+      }
+      run(document);
+      if ('MutationObserver' in window) {
+        new MutationObserver(function (records) {
+          for (var i = 0; i < records.length; i++) {
+            var added = records[i].addedNodes;
+            for (var j = 0; j < added.length; j++) {
+              var n = added[j];
+              if (n.nodeType !== 1) continue;
+              var t = n.closest && n.closest('table.data-table, table.req-table');
+              t ? label(t) : run(n);
+            }
+          }
+        }).observe(document.body, { childList: true, subtree: true });
+      }
+    })();
+  </script>
+
   <script>
     // Scroll progress: transform only, measured once per resize, one write per frame.
     const progress = document.querySelector('.progress') as HTMLElement | null;

@@ -115,6 +115,10 @@ const {
     line-height: 1; border-radius: 6px;
   }
   .ac-clear:hover { color: var(--text); }
+  /* The visible icon stays small; the hit area does not. It was 25px. */
+  @media (pointer: coarse) {
+    .ac-clear { min-width: 40px; min-height: 40px; right: 2px; display: grid; place-items: center; }
+  }
 
   .ac-spinner {
     position: absolute; right: 32px;

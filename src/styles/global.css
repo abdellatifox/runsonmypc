@@ -950,6 +950,8 @@ html, body { max-width: 100%; overflow-x: clip; }
   .eyebrow { letter-spacing: 0.08em; font-size: 0.7rem; }
 
   .page-head { padding: 28px 0 20px; margin-bottom: 24px; }
+  /* Mono labels at 11px are fine on a monitor and hard on a phone. */
+  .eyebrow { font-size: 12px; }
   .page-head p.lede { font-size: 15px; }
 
   section { margin-bottom: 32px; }
@@ -958,18 +960,15 @@ html, body { max-width: 100%; overflow-x: clip; }
      rather than force the column wider. */
   h1, h2, h3, p, td, th, li, summary { overflow-wrap: anywhere; }
 
-  /* Pill rails and chip rows scroll rather than stack into a tall wall. */
+  /* Chip rows and segmented switches wrap onto more lines. They used to scroll
+     sideways with the scrollbar hidden, which on a phone simply hid most of
+     the options — internal links and resolution choices alike — with nothing
+     to say they were there. */
   .related ul, .genre-rail, .brand-chips, .req-tabs, .res-switch, .budget-switch {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 4px;
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
-  .related ul::-webkit-scrollbar,
-  .genre-rail::-webkit-scrollbar,
-  .brand-chips::-webkit-scrollbar { display: none; }
-  .related li, .genre-rail .chip, .brand-chips .chip { flex: 0 0 auto; }
+  .related li, .genre-rail .chip, .brand-chips .chip { flex: 0 1 auto; }
 }
 
 /* --------------------------------------------------------------------------
@@ -991,6 +990,11 @@ html, body { max-width: 100%; overflow-x: clip; }
     align-items: center;
   }
   .foot-cols a { padding: 6px 0; }
+  /* FAQ rows were 26px tall. */
+  .faq summary { min-height: 44px; align-items: center; }
+  /* Checkboxes and radios are tiny native controls; make the box itself bigger
+     so it is hittable even when it has no wrapping label. */
+  input[type="checkbox"], input[type="radio"] { width: 24px; height: 24px; min-height: 24px; }
   .btn, .btn-primary, .btn-ghost, .btn-sm { min-height: 44px; }
 
   /*
@@ -1008,22 +1012,125 @@ html, body { max-width: 100%; overflow-x: clip; }
 }
 
 /* --------------------------------------------------------------------------
-   Wide tables. They already scroll; on touch devices say so, because a table
-   that is cut off with no affordance just looks broken.
+   Tables on phones.
+
+   These used to be forced to 520px with nowrap cells inside a sideways
+   scroller. On a 375px screen that hid up to two-thirds of every table — the
+   4K column and the verdict on a game page, most of the benchmark grid — and
+   people do not discover a hidden horizontal scroll.
+
+   So a table with three or more columns becomes a stack of cards: the first
+   cell is the card's title, and every other cell is a small labelled readout.
+   The labels come from the column headers (data-label, filled in by the
+   script in BaseLayout, which also marks long or spanning cells full-width).
+   Two-column key/value tables already fit, so they stay tables and just wrap.
    -------------------------------------------------------------------------- */
 .table-scroll { position: relative; }
-@media (max-width: 720px) {
+
+@media (max-width: 640px) {
   .table-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    /* Fading right edge signals there is more to the side. */
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
-  .table-scroll .data-table { min-width: 520px; }
-  .data-table th, .data-table td { white-space: nowrap; }
-  /* The first column carries the name and must stay readable. */
-  .data-table td:first-child { white-space: normal; min-width: 140px; }
+  .data-table, .req-table { min-width: 0 !important; }
+  .data-table th, .data-table td,
+  .req-table th, .req-table td { white-space: normal !important; }
+
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) { display: block; width: 100%; }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) tbody { display: grid; gap: 10px; }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) tr {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 10px 14px;
+    padding: 14px 14px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td {
+    display: block;
+    min-width: 0 !important;
+    width: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    text-align: left !important;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td:first-child {
+    grid-column: 1 / -1;
+    font-weight: 700;
+    font-size: 15px;
+    padding-bottom: 8px !important;
+    border-bottom: 1px dashed var(--line-strong) !important;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td.cell-wide { grid-column: 1 / -1; }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td:not(:first-child)::before {
+    content: attr(data-label);
+    display: block;
+    /* Reserve the label's line before the script fills it, so nothing moves. */
+    min-height: 1.35em;
+    margin-bottom: 1px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  /* A cell with no header (an action link) needs no label line. */
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td[data-label=""]::before { display: none; }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td:empty { display: none; }
+  .data-table tr:nth-child(even) td,
+  .data-table tr:hover td { background: none; }
+  /* Wide tables (seven or more columns — one per game on /benchmarks) read as
+     a list inside each card: label on the left, number on the right. As a
+     grid of small readouts, long game names wrapped to four lines and pushed
+     their numbers out of line with their neighbours. */
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(7)) tr {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(7)) td:not(:first-child) {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    padding: 7px 0 !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(7)) td:last-child {
+    border-bottom: 0 !important;
+  }
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(7)) td:not(:first-child)::before {
+    min-height: 0;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+
+  /* Opt-out: a short side-by-side comparison (metric | card A | card B) is
+     clearer as a table than as cards, and three columns fit a phone once the
+     cells are allowed to wrap. */
+  .keep-table { width: 100%; table-layout: fixed; }
+  .keep-table th, .keep-table td { padding: 10px 8px !important; vertical-align: top; }
+  .keep-table th:first-child, .keep-table td:first-child { width: 36%; }
+
+  /* The touch rule that stretches a lone link over its whole cell assumes
+     table padding; inside a card it must not. */
+  :is(.data-table, .req-table):not(.keep-table):has(thead th:nth-child(3)) td > a:only-child {
+    display: inline;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 /* --------------------------------------------------------------------------

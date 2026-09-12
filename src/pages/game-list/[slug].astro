@@ -4,7 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import GameCard from '../../components/GameCard.astro';
-import { getGames } from '../../lib/db';
+import { getReleasedGames } from '../../lib/db';
 import { GAME_LISTS } from '../../lib/site-data';
 import Icon from '../../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
@@ -13,7 +13,7 @@ const { slug } = Astro.params;
 const list = GAME_LISTS.find(l => l.slug === slug);
 if (!list) return new Response(null, { status: 404, statusText: 'Not Found' });
 
-const all = await getGames(Astro.locals);
+const all = await getReleasedGames(Astro.locals);
 let games = list.appids
   ? all.filter(g => g.steam_id != null && list.appids!.includes(g.steam_id))
   : all.filter(list.filter);

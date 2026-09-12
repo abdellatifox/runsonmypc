@@ -2,12 +2,12 @@
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { getGames } from '../lib/db';
+import { getReleasedGames } from '../lib/db';
 import { GAME_LISTS } from '../lib/site-data';
 import Icon from '../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../lib/site';
 
-const all = await getGames(Astro.locals);
+const all = await getReleasedGames(Astro.locals);
 const lists = GAME_LISTS.map(l => ({ ...l, count: all.filter(l.filter).length }));
 
 const description = 'Curated PC game lists by hardware requirement — best games for low-end PCs, the most demanding titles, ray tracing and DLSS support, CPU-heavy games and more.';

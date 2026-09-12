@@ -4,7 +4,7 @@ import { SEO_YEAR } from '../../lib/year';
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import { getGpu, getGpus, getGames } from '../../lib/db';
+import { getGpu, getGpus, getReleasedGames } from '../../lib/db';
 import { estimateFps } from '../../lib/perf';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
 
@@ -19,7 +19,7 @@ if (!gpu) {
 
 const [allGpus, games] = await Promise.all([
   getGpus(Astro.locals),
-  getGames(Astro.locals)
+  getReleasedGames(Astro.locals)
 ]);
 
 const rank = allGpus.findIndex(g => g.slug === gpu.slug) + 1;

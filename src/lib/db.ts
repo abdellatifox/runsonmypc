@@ -9,7 +9,7 @@
  */
 import fallback from './fallback-data.json';
 import hardware from './hardware-data.json';
-import { allGames, gameBySlug, scorableGames, type SiteGame } from './games';
+import { allGames, gameBySlug, scorableGames, releasedGames, type SiteGame } from './games';
 
 export interface Gpu {
   name: string; brand: string; score: number; vram_gb: number; tier: string;
@@ -108,6 +108,17 @@ export async function getGames(_locals: any): Promise<Game[]> {
  */
 export async function getScorableGames(_locals: any): Promise<Game[]> {
   return scorableGames();
+}
+
+/**
+ * Games that are out. Any page that presents games as playable, benchmarked or
+ * "runnable on this card" must use this: unreleased titles are in the catalogue
+ * with their publisher-stated requirements, and without this filter /benchmarks
+ * listed Lords of the Fallen II and Tomb Raider: Legacy of Atlantis as though
+ * they had been measured.
+ */
+export async function getReleasedGames(_locals: any): Promise<Game[]> {
+  return releasedGames();
 }
 
 export async function getGame(_locals: any, slug: string): Promise<Game | null> {

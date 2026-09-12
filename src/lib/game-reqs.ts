@@ -42,6 +42,8 @@ export interface GameReqs {
   rec: ReqSide | null;
   src: string;
   live?: boolean;
+  /** 1 for an unreleased title (see scripts/fetch-upcoming.mjs). */
+  up?: 1;
 }
 
 const BUNDLE = bundled as unknown as {
@@ -165,7 +167,15 @@ async function cachedLive(appid: number, kv?: any): Promise<GameReqs | null> {
 }
 
 export const bundleMeta = BUNDLE.meta;
-export const bundledCount = () => Object.keys(BUNDLE.games || {}).length;
+/**
+ * Released titles only. Both of these answer "which games can you play", and an
+ * unreleased game cannot be played however good the PC is — counting the 50
+ * upcoming titles made What Can My PC Run report games like Fable as runnable
+ * today. Unreleased games are still checked individually through can-it-run.
+ */
+const released = () => Object.values(BUNDLE.games || {}).filter(g => g.up !== 1);
 
-/** Every bundled title with real, publisher-stated requirements — used to scan a whole library against one set of parts (see /api/tools/what-can-my-pc-run). */
-export const allBundledGames = (): GameReqs[] => Object.values(BUNDLE.games || {});
+export const bundledCount = () => released().length;
+
+/** Every released bundled title with real, publisher-stated requirements — used to scan a whole library against one set of parts (see /api/tools/what-can-my-pc-run). */
+export const allBundledGames = (): GameReqs[] => released();

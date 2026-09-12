@@ -90,7 +90,8 @@ const schema = {
     <div class="grid-auto game-grid" id="game-grid">
       {filtered.map((g, i) => (
         <div class="game-slot" data-genre={g.genre} data-name={g.name.toLowerCase()}>
-          <GameCard slug={g.slug} name={g.name} genre={g.genre} year={g.release_year} eager={i < 6} />
+          <GameCard slug={g.slug} name={g.name} genre={g.genre} year={g.release_year} eager={i < 6}
+                upcoming={g.upcoming ? (g.release_date ?? '') : null} />
         </div>
       ))}
     </div>

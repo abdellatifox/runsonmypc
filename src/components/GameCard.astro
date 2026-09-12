@@ -9,9 +9,11 @@ interface Props {
   year?: number;
   /** Set on the first row of cards so the LCP image is not lazy-loaded. */
   eager?: boolean;
+  /** Publisher's release-date text for an unreleased game; marks the card. */
+  upcoming?: string | null;
 }
 
-const { slug, name, genre, year, eager = false } = Astro.props;
+const { slug, name, genre, year, eager = false, upcoming = null } = Astro.props;
 const art = getGameArt(slug, name);
 ---
 <a href={`/game/${slug}`} class="gcard" data-kind={art.kind}>
@@ -25,6 +27,7 @@ const art = getGameArt(slug, name);
     />
   </div>
   <div class="gcard-body">
+    {upcoming !== null && <span class="gcard-soon">Unreleased</span>}
     <h3>{name}</h3>
     {(genre || year) && (
       <p class="meta">{[genre, year].filter(Boolean).join(' · ')}</p>
@@ -33,6 +36,18 @@ const art = getGameArt(slug, name);
 </a>
 
 <style>
+  .gcard-soon {
+    display: inline-block;
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
   .gcard {
     display: block;
     text-decoration: none;
