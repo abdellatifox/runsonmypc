@@ -1,5 +1,6 @@
 ---
-export const prerender = false;
+import { getGames } from '../lib/db';
+export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Autocomplete from '../components/Autocomplete.astro';
@@ -7,7 +8,11 @@ import { bundledCount } from '../lib/game-reqs';
 import Icon from '../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../lib/site';
 
-const preselectGame = Astro.url.searchParams.get('game') ?? '';
+/* Prerendered. ?game=<slug> is picked up in the browser: this map lets the
+   script fill in both the readable name and the resolved value. Before, the
+   server put the raw slug in the text box and left the resolved value empty,
+   so checking a linked game failed with "Pick a game from the suggestions". */
+const gameNames = Object.fromEntries((await getGames(Astro.locals)).map(g => [g.slug, g.name]));
 const bundled = bundledCount();
 
 // Common capacities, plus the odd sizes people actually run.
@@ -82,13 +87,13 @@ const schema = [
     </header>
 
     <section class="tool">
+      <script type="application/json" id="game-names" set:html={JSON.stringify(gameNames)}></script>
       <form class="panel" id="check-form" novalidate>
         <Autocomplete
           id="game"
           label="Game"
           placeholder="Start typing a game name…"
           endpoint="/api/games/search"
-          value={preselectGame}
           hint="Not in the list? Keep typing — we search Steam live."
           required
         />
@@ -309,6 +314,20 @@ const schema = [
 
   const val = (id: string) =>
     (document.getElementById(`${id}-value`) as HTMLInputElement | null)?.value?.trim() || '';
+
+  // Arriving from a game page or the homepage: /can-it-run?game=<slug>.
+  {
+    const slug = new URLSearchParams(location.search).get('game')?.trim();
+    const names = JSON.parse(document.getElementById('game-names')?.textContent || '{}') as Record<string, string>;
+    const shown = document.getElementById('game') as HTMLInputElement | null;
+    const hidden = document.getElementById('game-value') as HTMLInputElement | null;
+    if (slug && names[slug] && shown && hidden) {
+      shown.value = names[slug];
+      hidden.value = slug;
+      const clear = shown.closest('[data-ac]')?.querySelector<HTMLElement>('.ac-clear');
+      if (clear) clear.hidden = false;
+    }
+  }
 
   function esc(s: unknown) {
     return String(s ?? '').replace(/[&<>"']/g, c =>

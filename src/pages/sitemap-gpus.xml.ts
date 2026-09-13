@@ -1,4 +1,4 @@
-export const prerender = false;
+export const prerender = true;
 import type { APIRoute } from 'astro';
 import { urlset, toLastmod } from '../lib/sitemap';
 import { getGpus } from '../lib/db';

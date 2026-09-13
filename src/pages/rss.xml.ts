@@ -1,5 +1,5 @@
 import { SITE_URL, SITE_NAME } from '../lib/site';
-export const prerender = false;
+export const prerender = true;
 import type { APIRoute } from 'astro';
 import { getPosts } from '../lib/db';
 const esc = (s: string) =>

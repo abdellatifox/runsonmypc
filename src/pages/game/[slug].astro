@@ -1,5 +1,5 @@
 ---
-export const prerender = false;
+export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import GameCard from '../../components/GameCard.astro';
@@ -11,6 +11,13 @@ import { estimateFps } from '../../lib/perf';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
 import { SEO_YEAR } from '../../lib/year';
 import { fitMeta, fitTitle } from '../../lib/seo';
+import { allGames } from '../../lib/games';
+
+export function getStaticPaths() {
+  // Every game in the bundle, released and upcoming. An unknown slug is a
+  // static miss, which Pages answers with 404.html and a real 404 status.
+  return allGames().map(g => ({ params: { slug: g.slug } }));
+}
 
 const { slug } = Astro.params;
 const game = await getGame(Astro.locals, slug!);

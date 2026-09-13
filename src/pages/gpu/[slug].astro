@@ -1,12 +1,17 @@
 ---
 import { fitTitle } from '../../lib/seo';
 import { SEO_YEAR } from '../../lib/year';
-export const prerender = false;
+export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getGpu, getGpus, getReleasedGames } from '../../lib/db';
 import { estimateFps } from '../../lib/perf';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
+import hardwareForPaths from '../../lib/hardware-data.json';
+
+export function getStaticPaths() {
+  return (hardwareForPaths as { gpus: { slug: string }[] }).gpus.map(g => ({ params: { slug: g.slug } }));
+}
 
 const { slug } = Astro.params;
 const gpu = await getGpu(Astro.locals, slug!);

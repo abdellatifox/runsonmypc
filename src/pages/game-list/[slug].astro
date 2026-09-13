@@ -1,6 +1,6 @@
 ---
 import { SEO_YEAR } from '../../lib/year';
-export const prerender = false;
+export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import GameCard from '../../components/GameCard.astro';
@@ -8,6 +8,10 @@ import { getReleasedGames } from '../../lib/db';
 import { GAME_LISTS } from '../../lib/site-data';
 import Icon from '../../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
+
+export function getStaticPaths() {
+  return GAME_LISTS.map(l => ({ params: { slug: l.slug } }));
+}
 
 const { slug } = Astro.params;
 const list = GAME_LISTS.find(l => l.slug === slug);

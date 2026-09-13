@@ -34,7 +34,10 @@ export default defineConfig({
     '/gpu': { status: 301, destination: '/gpus' },
     '/cpu': { status: 301, destination: '/cpus' },
     '/best-picks': { status: 301, destination: '/game-lists' },
-    '/game-list': { status: 301, destination: '/game-lists' }
+    '/game-list': { status: 301, destination: '/game-lists' },
+    // Evergreen entry to the current year's release hub. The year is fixed at
+    // build time (see src/lib/year.ts), so this can be a static redirect.
+    '/upcoming-games': { status: 301, destination: `/upcoming-games-${seoYear()}` }
   },
 
   build: {

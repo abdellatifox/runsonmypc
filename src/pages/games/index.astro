@@ -1,5 +1,5 @@
 ---
-export const prerender = false;
+export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import GameCard from '../../components/GameCard.astro';
@@ -9,21 +9,16 @@ import Icon from '../../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
 
 const games = await getGames(Astro.locals);
-const q = (Astro.url.searchParams.get('q') || '').trim();
-
-const filtered = q
-  ? games.filter(g => g.name.toLowerCase().includes(q.toLowerCase()))
-  : games;
+/* Prerendered, so it costs no Worker request. A search from the URL is
+   applied in the browser by the script below, which already did live
+   filtering; every game is in the page, so the result is identical. */
+const filtered = games;
 
 const genres = [...new Set(games.map(g => g.genre).filter(Boolean))].sort();
 
-const title = q
-  ? `PC Games Matching "${q}" — System Requirements | ${SITE_NAME}`
-  : `PC Game System Requirements — ${games.length} Games | ${SITE_NAME}`;
+const title = `PC Game System Requirements — ${games.length} Games | ${SITE_NAME}`;
 
-const description = q
-  ? `Search results for "${q}". Minimum and recommended PC system requirements, with an instant can-I-run-it check for every title.`
-  : `Browse minimum and recommended system requirements for ${games.length} PC games. Check any title against your own GPU, CPU and RAM in one click — free, no download.`;
+const description = `Browse minimum and recommended system requirements for ${games.length} PC games. Check any title against your own GPU, CPU and RAM in one click — free, no download.`;
 
 const schema = {
   "@context": "https://schema.org",
@@ -66,7 +61,6 @@ const schema = {
       <input
         type="search"
         name="q"
-        value={q}
         placeholder="Search games…"
         aria-label="Search games"
         id="game-filter"
@@ -80,12 +74,7 @@ const schema = {
       {genres.map(gen => <button class="chip" data-genre={gen}>{gen}</button>)}
     </div>
 
-    {q && (
-      <p class="result-count">
-        <b>{filtered.length}</b> {filtered.length === 1 ? 'game' : 'games'} matching “{q}”
-        {filtered.length === 0 && <> — <a href="/games">clear search</a></>}
-      </p>
-    )}
+    <p class="result-count" id="result-count" aria-live="polite" hidden></p>
 
     <div class="grid-auto game-grid" id="game-grid">
       {filtered.map((g, i) => (
@@ -180,9 +169,33 @@ const schema = {
     apply();
   }));
 
-  // Live filtering on top of the server-rendered results.
+  const countEl = document.getElementById('result-count');
+
+  function showCount() {
+    if (!countEl) return;
+    const raw = filterInput?.value.trim() || '';
+    countEl.hidden = !raw;
+    if (!raw) return;
+    const shown = [...slots].filter(s => !s.hidden).length;
+    const b = document.createElement('b');
+    b.textContent = String(shown);
+    countEl.replaceChildren(b, ` ${shown === 1 ? 'game' : 'games'} matching “${raw}”`);
+  }
+
   filterInput?.addEventListener('input', () => {
     term = filterInput.value.trim().toLowerCase();
     apply();
+    showCount();
   });
+  chips.forEach(c => c.addEventListener('click', showCount));
+
+  // A search submitted from this form or from Google's sitelinks search box
+  // (the SearchAction in BaseLayout points at /games?q=).
+  const initial = new URLSearchParams(location.search).get('q')?.trim();
+  if (initial && filterInput) {
+    filterInput.value = initial;
+    term = initial.toLowerCase();
+    apply();
+    showCount();
+  }
 </script>

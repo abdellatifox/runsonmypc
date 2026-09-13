@@ -1,11 +1,16 @@
 ---
-export const prerender = false;
+export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPost, getPosts } from '../../lib/db';
 import { getPostCover } from '../../lib/images';
 import Icon from '../../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
 import { fitTitle } from '../../lib/seo';
+import blogForPaths from '../../lib/blog-posts.json';
+
+export function getStaticPaths() {
+  return (blogForPaths as { posts: { slug: string }[] }).posts.map(p => ({ params: { slug: p.slug } }));
+}
 
 const { slug } = Astro.params;
 const post = await getPost(Astro.locals, slug!);
