@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/write-routes.mjs",
     "preview": "astro preview",
     "deploy": "node scripts/cf.mjs pages deploy dist",
     "db:migrate": "node scripts/cf.mjs d1 migrations apply runsonmypc-db --remote",
