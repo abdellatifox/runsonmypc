@@ -54,6 +54,24 @@ Pages use the tokens (`var(--accent)`, `rgb(var(--accent-rgb) / .1)`), never lit
   stripped, and a game with nothing measurable says so rather than showing a
   guessed spec.
 
+## Before submitting to search engines
+
+```bash
+npm run check:prelaunch
+```
+
+Crawls the live site like a search engine: robots.txt, every sitemap URL,
+every internal link, share images, 404s, http/www, the tool APIs. It must end
+`READY` (warnings allowed). If it reports the Worker is not answering, the
+daily Functions quota is spent — re-run after 00:00 UTC.
+
+Manual steps it cannot do:
+1. Cloudflare dashboard → runsonmypc.com → Rules → Redirect Rules → template
+   "Redirect from WWW to root".
+2. Google Search Console → Add property → Domain → `runsonmypc.com`; put the
+   TXT record in Cloudflare DNS; submit `https://runsonmypc.com/sitemap.xml`.
+3. Bing Webmaster Tools → import the site from Search Console.
+
 ## Blog
 
 Articles are generated, not written by hand: `scripts/build-blog.mjs` computes
