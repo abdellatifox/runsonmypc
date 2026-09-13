@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
 import BrandMark from '../components/BrandMark.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
 
 interface Props {
@@ -35,11 +35,12 @@ const {
   author
 } = Astro.props;
 
-const canonicalURL = canonical ?? new URL(Astro.url.pathname, Astro.site ?? SITE_URL).toString();
+const path = publicPath(Astro.url.pathname);
+const canonicalURL = canonical ?? new URL(path, SITE_URL).toString();
 
 /* A page may pass its own image (a game's cover art, a post's card); otherwise
    it gets the card for its section rather than one generic brand image. */
-const resolvedOg = ogImage ?? getPageCover(Astro.url.pathname);
+const resolvedOg = ogImage ?? getPageCover(path);
 const absOgImage = resolvedOg.startsWith('http') ? resolvedOg : SITE_URL + resolvedOg;
 
 /* Sitewide entity graph — tells Google what the brand is and enables the

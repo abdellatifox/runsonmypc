@@ -19,7 +19,8 @@
     "data:covers": "node scripts/build-covers.mjs",
     "seo:audit": "node scripts/audit-seo.mjs",
     "cf": "node scripts/cf.mjs",
-    "data:blog": "node scripts/build-blog.mjs && node scripts/build-covers.mjs"
+    "data:blog": "node scripts/build-blog.mjs && node scripts/build-covers.mjs",
+    "check:prelaunch": "node scripts/prelaunch-check.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.0.0",

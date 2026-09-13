@@ -21,6 +21,22 @@ export const CONTACT_EMAIL = `hello@${SITE_DOMAIN}`;
 /** Identifies our fetchers to Steam, SteamSpy and SteamGridDB. */
 export const USER_AGENT = `${SITE_NAME}/1.0 (+${SITE_URL})`;
 
+/**
+ * The public path of the page being rendered.
+ *
+ * With build.format 'file', a prerendered page's Astro.url.pathname is the
+ * *file* it is written to — "/tools.html", "/game/fable.html" — not the URL
+ * Cloudflare serves it at ("/tools", which it 308s to from the .html form).
+ * Every canonical built from the raw pathname pointed at that redirect: 887
+ * pages told Google their real address was one that bounces back. Anything
+ * that turns the current path into a URL, a nav state or an image choice must
+ * go through this.
+ */
+export const publicPath = (pathname: string) => {
+  const p = pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+  return p.length > 1 ? p.replace(/\/$/, '') : '/';
+};
+
 /** Absolute URL for a site-relative path, for canonicals and schema. */
 export const absUrl = (path = '/') => `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 

@@ -89,6 +89,7 @@ const all = hasSteam
 const out = {};
 const bySlug = {};
 let excluded = 0;
+let duplicateNames = 0;
 for (const g of all.slice(0, MAX)) {
   if (isExcludedGame({ appid: g.appid, slug: g.slug, name: g.name })) { excluded++; continue; }
   const rec = {
@@ -102,8 +103,15 @@ for (const g of all.slice(0, MAX)) {
     rec: side(g.recommended),
     src: g.source
   };
+  /* A second Steam app with the same name — Black Ops II's separate
+     multiplayer app, a re-release — used to be bundled anyway, got its appid
+     as a fallback slug, and published an identical page at /game/202990 next
+     to /game/call-of-duty-black-ops-ii. The most-owned app keeps the name;
+     the others are left to the live Steam lookup, which still resolves them
+     by appid in the checker. */
+  if (bySlug[g.slug]) { duplicateNames++; continue; }
   out[g.appid] = rec;
-  if (!bySlug[g.slug]) bySlug[g.slug] = g.appid;   // most-owned wins the slug
+  bySlug[g.slug] = g.appid;
 }
 
 /*
@@ -182,5 +190,6 @@ const resolvedGpu = Object.values(out).filter(g => g.min?.gpu).length;
 console.log(`bundled ${Object.keys(out).length} games (${kb.toFixed(0)} KB raw)`);
 console.log(`  manual (non-Steam) entries: ${MANUAL_GAMES.length}`);
 console.log(`  upcoming (unreleased) entries: ${upcomingCount}`);
+console.log(`  skipped as same-name duplicates of a more-owned app: ${duplicateNames}`);
 console.log(`  min GPU resolved to a known part: ${resolvedGpu}`);
 if (kb > 3500) console.log('  WARNING: approaching Worker bundle limits — lower maxGames');

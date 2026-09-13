@@ -1,3 +1,8 @@
+# HTTPS only, for a year. No includeSubDomains or preload: those commit every
+# future subdomain to HTTPS and are hard to undo.
+/*
+  Strict-Transport-Security: max-age=31536000
+
 # Cloudflare Pages default is Cache-Control: max-age=14400 (4h) for everything
 # under public/. Game art, covers and fonts never change once built under a
 # given filename, so Lighthouse flags the short TTL as "inefficient cache

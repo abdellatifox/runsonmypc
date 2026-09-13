@@ -1,9 +1,9 @@
 ---
 import Icon from './Icon.astro';
 import BrandMark from './BrandMark.astro';
-import { SITE_NAME, SITE_NAME_PARTS } from '../lib/site';
+import { SITE_NAME, SITE_NAME_PARTS, publicPath } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
-const currentPath = Astro.url.pathname;
+const currentPath = publicPath(Astro.url.pathname);
 const links = [
   { href: '/games', label: 'Games' },
   { href: `/upcoming-games-${SEO_YEAR}`, label: `${SEO_YEAR} Releases` },
