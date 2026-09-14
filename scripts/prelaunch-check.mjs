@@ -133,7 +133,8 @@ function inspect(html) {
     jsonLd: [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]),
     insecure: [...html.matchAll(/\s(?:src|href)="(http:\/\/[^"]+)"/g)].map(m => m[1])
       .filter(u => !/^http:\/\/(www\.)?w3\.org/.test(u)),
-    links: [...body.matchAll(/<a\s[^>]*href="([^"#]+)(?:#[^"]*)?"/g)].map(m => decode(m[1]))
+    // Markup inside <script> (templates a tool fills in at runtime) is not a link a crawler follows.
+    links: [...body.replace(/<script[\s\S]*?<\/script>/g, '').matchAll(/<a\s[^>]*href="([^"#]+)(?:#[^"]*)?"/g)].map(m => decode(m[1]))
   };
 }
 
