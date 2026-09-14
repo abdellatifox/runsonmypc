@@ -250,7 +250,8 @@ const schema = [
   type G = { n: string; s: string; p: number; m: number; v: number };
   type C = { n: string; s: string; p: number };
   const data = JSON.parse($('advisor-data').textContent || '{}') as { gpus: G[]; cpus: C[]; target: Record<string, { n: string; p: number }> };
-  const link = (kind: 'gpu' | 'cpu', x: { n: string; s: string }) => `<a href="/${kind}/${x.s}">${x.n}</a>`;
+  // Path built separately so the inlined script holds no literal "/..." href for link checkers to misread.
+  const link = (kind: 'gpu' | 'cpu', x: { n: string; s: string }) => { const path = ['', kind, x.s].join('/'); return `<a href="${path}">${x.n}</a>`; };
 
   $('advise').addEventListener('click', () => {
     const [gPerfS, gVramS, gName] = ($('gpu') as HTMLSelectElement).value.split('|');
