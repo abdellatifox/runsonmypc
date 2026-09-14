@@ -275,15 +275,9 @@ header.nav {
   white-space: nowrap;
 }
 
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  display: block;
-}
-
-.brand-word b { font-weight: 700; color: var(--text); }
-.brand-word span { color: var(--accent); }
+.brand-logo { display: block; flex: 0 0 auto; line-height: 0; }
+.brand-logo img { display: block; height: 36px; width: auto; max-width: none; }
+footer .brand-logo img { height: 40px; }
 
 .nav-links {
   display: flex;
@@ -1173,14 +1167,13 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
     --chamfer: 8px;
   }
   .menu-btn { width: 40px; height: 40px; flex: 0 0 auto; }
-  .brand { font-size: 1.05rem; }
-  .brand-mark { width: 26px; height: 26px; }
+  .brand-logo img { height: 30px; }
 }
 
 /* Only the narrowest phones drop the wordmark. 375px covers the iPhone SE and
    12 mini, which are common enough that the brand should still show there. */
 @media (max-width: 340px) {
-  .brand-word { display: none; }
+  .brand-logo img { height: 24px; }
   .nav-cta .btn-primary { font-size: 12.5px; padding: 0 10px; }
 }
 

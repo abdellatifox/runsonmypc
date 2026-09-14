@@ -17,7 +17,7 @@
  *   - a directory that shares a prefix with a server route -> its pages one
  *     by one, so the server route is not swallowed
  *   - a prerendered root page         -> its clean URL  (/tools, /)
- *   - any other root file             -> its path       (/favicon.svg)
+ *   - any other root file             -> its path       (/favicon.ico)
  *   - every _redirects source         -> its path (Pages does not apply
  *     _redirects to requests a Function handles)
  * and fails the build rather than silently truncating if that is over 100.

@@ -1,10 +1,10 @@
 {
-  "logoWidth": 284,
-  "logoHeight": 64,
-  "ratio": 4.4375,
+  "logoWidth": 426,
+  "logoHeight": 80,
+  "ratio": 5.325,
   "logo": {
-    "avif": "/logo.04d52070.avif",
-    "webp": "/logo.ee8fb43b.webp",
-    "png": "/logo.c682573c.png"
+    "avif": "/logo.ea47c7ce.avif",
+    "webp": "/logo.8e542e2b.webp",
+    "png": "/logo.c0798cce.png"
   }
 }

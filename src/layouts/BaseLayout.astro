@@ -2,10 +2,10 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
-import BrandMark from '../components/BrandMark.astro';
+import Logo from '../components/Logo.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath, SITE_DOMAIN, GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION, GTM_ID } from '../lib/site';
+import { SITE_URL, SITE_NAME, ART_BASE, publicPath, SITE_DOMAIN, GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION, GTM_ID } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
 
 interface Props {
@@ -180,7 +180,6 @@ const year = new Date().getFullYear();
        connection, which only matters for that rare, temporary case. */}
 
   {/* Icons */}
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
@@ -213,9 +212,8 @@ const year = new Date().getFullYear();
   <footer>
     <div class="wrap">
       <div class="foot-inner">
-        <a href="/" class="brand">
-          <BrandMark class="brand-mark" id="foot-mark" />
-          <span class="brand-word"><b>{SITE_NAME_PARTS.bold}</b><span>{SITE_NAME_PARTS.rest}</span></span>
+        <a href="/" class="brand" aria-label={`${SITE_NAME} home`}>
+          <Logo class="brand-logo" height={40} />
         </a>
         <p class="foot-tag">Publisher-stated requirements, checked against your own parts. Free, in the browser, no download.</p>
       </div>

@@ -21,6 +21,17 @@ import { SITE_NAME, SITE_DOMAIN } from '../src/lib/site.ts';
 
 const TLD = SITE_DOMAIN.split('.').pop();
 
+/* The brand lockup (brand/logo.png, the same master as the site header),
+   embedded as a data URI so each SVG stays self-contained and sharp's
+   rasteriser draws it into the PNG twins. Rendered 52px tall on the cards. */
+const LOGO_H = 52;
+const logoPng = await sharp(path.join(import.meta.dirname, '..', 'brand', 'logo.png'))
+  .trim({ threshold: 1 }).resize({ height: LOGO_H * 2 }).png({ compressionLevel: 9, palette: true }).toBuffer();
+const logoMeta = await sharp(logoPng).metadata();
+const LOGO_W = Math.round((logoMeta.width / logoMeta.height) * LOGO_H);
+const LOGO_URI = `data:image/png;base64,${logoPng.toString('base64')}`;
+const logoImage = (x, y) => `<image href="${LOGO_URI}" x="${x}" y="${y}" width="${LOGO_W}" height="${LOGO_H}"/>`;
+
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public', 'covers');
 
@@ -122,10 +133,8 @@ function cover({ title, category, kicker, slug }) {
       ${esc((kicker || t.label).toUpperCase())}
     </text>
     <text font-size="${fontSize}" font-weight="800" fill="#E6E9F5" letter-spacing="-1">${tspans}</text>
-    <text x="80" y="${H - 62}" font-size="27" font-weight="600" fill="#8089A8">
-      ${esc(SITE_NAME)}<tspan fill="${t.a}">.${TLD}</tspan>
-    </text>
   </g>
+  ${logoImage(80, H - 62 - 38)}
 </svg>`;
 }
 
@@ -186,8 +195,8 @@ function brandCard() {
     <text x="80" y="286" font-size="86" font-weight="800" fill="#E6E9F5" letter-spacing="-2">Will it run on</text>
     <text x="80" y="382" font-size="86" font-weight="800" fill="#8E7DFF" letter-spacing="-2">your PC?</text>
     <text x="80" y="470" font-size="30" fill="#9AA3C0">Publisher-stated requirements, checked against your parts.</text>
-    <text x="80" y="${H - 62}" font-size="27" font-weight="600" fill="#8089A8">${esc(SITE_NAME)}<tspan fill="#8E7DFF">.${TLD}</tspan></text>
   </g>
+  ${logoImage(80, H - 62 - 38)}
 </svg>`;
 }
 

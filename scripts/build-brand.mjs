@@ -6,8 +6,8 @@
  * which iOS does not support and silently ignores.
  *
  * Masters:
- *   brand/icon.png  square controller mark, transparent
- *   brand/logo.png  full wordmark lockup, transparent
+ *   brand/icon.png  square monitor-and-play mark, transparent
+ *   brand/logo.png  full RunsOnMyPC wordmark lockup, transparent
  *
  * Run: node scripts/build-brand.mjs
  */
@@ -23,7 +23,7 @@ const ICON = path.join(ROOT, 'brand', 'icon.png');
 const LOGO = path.join(ROOT, 'brand', 'logo.png');
 
 /** Site background, for surfaces that cannot keep transparency. */
-const BG = { r: 9, g: 10, b: 15, alpha: 1 };
+const BG = { r: 7, g: 10, b: 18, alpha: 1 };   // --bg #070A12
 
 const written = [];
 const write = (name, buf) => {
@@ -108,16 +108,16 @@ write('favicon-32.png', icoPngs[1].data);
 write('apple-touch-icon.png', await iconPng(180, { background: BG, padRatio: 0.08 }));
 
 /* Manifest icons. The maskable variant keeps the mark inside the safe zone so
-   Android can crop it to any shape without clipping the controller. */
+   Android can crop it to any shape without clipping the mark. */
 write('icon-192.png', await iconPng(192));
 write('icon-512.png', await iconPng(512));
 write('icon-maskable-512.png', await iconPng(512, { background: BG, padRatio: 0.1 }));
 
 /* --------------------------------- logo --------------------------------- */
 
-/* The navbar draws the lockup at 32px tall; 2x covers retina. Height drives the
-   resize so the aspect ratio stays exactly as drawn. */
-const LOGO_H = 64;
+/* The navbar draws the lockup at up to 40px tall; 2x covers retina. Height
+   drives the resize so the aspect ratio stays exactly as drawn. */
+const LOGO_H = 80;
 const logoBase = trimmed(LOGO).resize({ height: LOGO_H });
 const logoMeta = await logoBase.clone().png().toBuffer({ resolveWithObject: true });
 
