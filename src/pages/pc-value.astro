@@ -10,7 +10,7 @@ const PATH = '/pc-value';
 const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 const thisYear = new Date().getFullYear();
 
-const description = 'Selling or buying a used gaming PC? Pick its graphics card, processor, memory, storage and condition to get a rough private-sale price range and a per-part breakdown.';
+const description = 'Selling or buying a used gaming PC? Pick its graphics card, processor, memory, storage and condition for a rough private-sale price range and per-part breakdown.';
 
 // Grouped by maker and sorted by name, so a reader can find their part quickly.
 const byMaker = <T extends { brand: string; name: string }>(list: T[]) =>
@@ -59,7 +59,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title={`PC Value Calculator ${SEO_YEAR}: How Much Is My Gaming PC Worth? | ${SITE_NAME}`}
+  title={`PC Value Calculator: What's My Gaming PC Worth? | ${SITE_NAME}`}
   description={description}
   keywords={`how much is my gaming pc worth, pc value calculator, used gaming pc price, sell gaming pc ${SEO_YEAR}`}
   jsonLd={schema}

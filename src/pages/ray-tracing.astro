@@ -27,13 +27,14 @@ const byLevel = LEVELS.map(l => ({
     .sort((a, b) => a.name.localeCompare(b.name))
 })).filter(l => l.games.length > 0);
 
-/* What each hardware ray-tracing card is suited to, by our index. These bands
-   are our own judgement from the index, not a measurement. */
+/* What each hardware ray-tracing card is suited to. The bands are our own
+   judgement, pinned to named cards so they follow the index when it is rescaled. */
 const rtCards = gpus.filter(g => g.supports_ray_tracing === 1);
+const scoreOf = (slug: string, fallback: number) => gpus.find(g => g.slug === slug)?.score ?? fallback;
 const BANDS = [
-  { key: 'path', label: 'Path tracing, with upscaling', min: 85 },
-  { key: 'heavy', label: 'Heavy ray tracing, with upscaling', min: 65 },
-  { key: 'medium', label: 'Light to medium ray tracing', min: 45 },
+  { key: 'path', label: 'Path tracing, with upscaling', min: scoreOf('nvidia-geforce-rtx-4080', 64) },
+  { key: 'heavy', label: 'Heavy ray tracing, with upscaling', min: scoreOf('nvidia-geforce-rtx-4070', 43) },
+  { key: 'medium', label: 'Light to medium ray tracing', min: scoreOf('nvidia-geforce-rtx-4060', 27) },
   { key: 'light', label: 'Light effects at lower resolutions', min: 0 }
 ];
 const bandFor = (score: number) => BANDS.find(b => score >= b.min)!;
@@ -87,7 +88,7 @@ const schema = [
   }
 ];
 ---
-<BaseLayout title={`Ray Tracing Games & GPUs ${SEO_YEAR}: From Light RT to Path Tracing | ${SITE_NAME}`} description={description}
+<BaseLayout title={`Ray Tracing Games & GPUs ${SEO_YEAR} | ${SITE_NAME}`} description={description}
   keywords={`ray tracing games ${SEO_YEAR}, path tracing games, best gpu for ray tracing, ray tracing graphics cards`} jsonLd={schema}>
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Graphics cards', href: '/gpus' }, { name: 'Ray tracing' }]} />
@@ -124,7 +125,7 @@ const schema = [
 
     <section class="block">
       <h2>Cards, by how much ray tracing they can take</h2>
-      <p class="sub">Our own banding from the performance index. {noRt} of the {gpus.length} cards we track have no ray-tracing hardware and are left out.</p>
+      <p class="sub">Our own banding, set at the RTX 4080, RTX 4070 and RTX 4060 on the performance index. {noRt} of the {gpus.length} cards we track have no ray-tracing hardware and are left out.</p>
       <div class="bands">
         {cardBands.map(b => (
           <div class={`band lvl-${b.key}`}>

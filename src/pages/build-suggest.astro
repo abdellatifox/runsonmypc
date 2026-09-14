@@ -9,23 +9,32 @@ const PATH = '/build-suggest';
 
 const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 
-/* Build the recommendation table on the server so it is in the HTML for
-   crawlers, then let the client pick a row instantly. */
+/* Graphics card: the fastest desktop card from the last few launch years whose
+   launch price fits roughly half the budget. Processor: our pick for the budget,
+   by name — the table has no processor prices, so a score ceiling cannot stand
+   in for cost (it once put an RTX 5080 in the $1,200 build). */
 const BUDGETS = [
-  { key: '600',  label: '$600',  gpuMax: 45, cpuMax: 50, ram: 16, psu: 500, res: '1080p' },
-  { key: '900',  label: '$900',  gpuMax: 60, cpuMax: 62, ram: 16, psu: 650, res: '1080p' },
-  { key: '1200', label: '$1,200', gpuMax: 72, cpuMax: 72, ram: 32, psu: 750, res: '1440p' },
-  { key: '1800', label: '$1,800', gpuMax: 85, cpuMax: 85, ram: 32, psu: 850, res: '1440p' },
-  { key: '2500', label: '$2,500+', gpuMax: 100, cpuMax: 100, ram: 32, psu: 1000, res: '4K' }
+  { key: '600',  label: '$600',   gpuCap: 300,  cpu: 'amd-ryzen-5-5600',    ram: 16, psu: 550,  res: '1080p' },
+  { key: '900',  label: '$900',   gpuCap: 430,  cpu: 'amd-ryzen-5-7600',    ram: 16, psu: 650,  res: '1080p' },
+  { key: '1200', label: '$1,200', gpuCap: 600,  cpu: 'amd-ryzen-7-7700',    ram: 32, psu: 750,  res: '1440p' },
+  { key: '1800', label: '$1,800', gpuCap: 800,  cpu: 'amd-ryzen-7-7800x3d', ram: 32, psu: 850,  res: '1440p' },
+  { key: '2500', label: '$2,500+', gpuCap: 1100, cpu: 'amd-ryzen-7-9800x3d', ram: 32, psu: 1000, res: '4K' }
 ];
+const latest = Math.max(...gpus.map(g => g.release_year));
+const recentDesktop = gpus.filter(g => !/laptop/i.test(g.name) && g.msrp_usd && g.release_year >= latest - 3);
 
 const builds = BUDGETS.map(b => {
-  const gpu = gpus.filter(g => g.score <= b.gpuMax).sort((x, y) => y.score - x.score)[0] ?? gpus[gpus.length - 1];
-  const cpu = cpus.filter(c => c.score <= b.cpuMax).sort((x, y) => y.score - x.score)[0] ?? cpus[cpus.length - 1];
-  return { ...b, gpu, cpu };
-});
+  const gpu = recentDesktop.filter(g => g.msrp_usd! <= b.gpuCap).sort((x, y) => y.score - x.score)[0];
+  const cpu = cpus.find(c => c.slug === b.cpu)!;
+  // AM4 Ryzen 5000 chips take DDR4; the AM5 chips used here take DDR5.
+  const memType = /ryzen-\d-5\d{3}/.test(cpu.slug) ? 'DDR4' : 'DDR5';
+  // Same rule as /psu-calculator: parts + 60 W base + three fans and a drive, 40% headroom, next common size.
+  const load = gpu ? gpu.tdp_watts + cpu.tdp_watts + 60 + 9 + 8 : 0;
+  const psu = [450, 550, 650, 750, 850, 1000, 1200, 1300, 1600].find(w => w >= Math.ceil(load * 1.4)) ?? 1600;
+  return { ...b, gpu, cpu, memType, psu };
+}).filter(b => b.gpu && b.cpu);
 
-const description = `Gaming PC builds for ${SEO_YEAR} at five budgets from $600 to $2,500+, each with a graphics card and processor matched on our index, plus memory, storage, power and cooling.`;
+const description = `Gaming PC builds for ${SEO_YEAR} at five budgets from $600 to $2,500+: a matched graphics card and processor, plus memory, storage, power and cooling.`;
 
 const faq = [
   {
@@ -34,7 +43,7 @@ const faq = [
   },
   {
     q: 'How are the graphics card and processor chosen?',
-    a: 'Each budget has a ceiling on our performance index for both parts. The strongest card and processor under those ceilings are picked, which keeps them close enough that neither spends its time waiting on the other.'
+    a: 'The card is the fastest one from recent generations whose launch price fits about half the budget. The processor is our own pick for each budget, chosen so it keeps up with that card. Street prices move, so check both before buying.'
   },
   {
     q: 'Is 16 GB of memory still enough?',
@@ -65,7 +74,7 @@ const schema = [
 ];
 ---
 <BaseLayout
-  title={`Gaming PC Builds ${SEO_YEAR}: Parts Lists From $600 to $2,500 | ${SITE_NAME}`}
+  title={`Gaming PC Builds ${SEO_YEAR}: Parts Lists by Budget | ${SITE_NAME}`}
   description={description}
   keywords={`gaming pc build ${SEO_YEAR}, best gaming pc build for the money, pc parts list by budget, 1440p gaming pc build`}
   jsonLd={schema}
@@ -77,8 +86,8 @@ const schema = [
       <span class="eyebrow">Parts lists</span>
       <h1>Gaming PC builds by budget</h1>
       <p class="lede">
-        Choose a budget. Each list pairs a graphics card and processor of similar strength on our index — so money is not
-        spent on speed the other part can’t use — then fills in memory, storage, power and cooling to suit.
+        Choose a budget. About half goes on the graphics card — the fastest recent one at that launch price — and the rest on a
+        processor that keeps up with it, plus memory, storage, power and cooling to suit.
       </p>
     </header>
 
@@ -110,16 +119,16 @@ const schema = [
               <tr>
                 <td>Graphics card</td>
                 <td><a href={`/gpu/${b.gpu.slug}`}>{b.gpu.name}</a> <span class={`pill t-${b.gpu.tier}`}>{b.gpu.tier}</span></td>
-                <td class="why">The fastest card under this budget’s ceiling, with {b.gpu.vram_gb} GB of video memory and {b.gpu.tdp_watts} W rated power.</td>
+                <td class="why">The fastest recent card with a launch price up to ${b.gpuCap} (${b.gpu.msrp_usd}): {b.gpu.vram_gb} GB of video memory, {b.gpu.tdp_watts} W.</td>
               </tr>
               <tr>
                 <td>Processor</td>
                 <td><a href={`/cpu/${b.cpu.slug}`}>{b.cpu.name}</a> <span class={`pill t-${b.cpu.tier}`}>{b.cpu.tier}</span></td>
-                <td class="why">Chosen to keep pace with the card: {b.cpu.cores} cores, {b.cpu.threads} threads, up to {b.cpu.boost_ghz} GHz.</td>
+                <td class="why">Our processor pick for this budget: {b.cpu.cores} cores, {b.cpu.threads} threads, up to {b.cpu.boost_ghz} GHz.</td>
               </tr>
               <tr>
                 <td>Memory</td>
-                <td>{b.ram}GB DDR5 (2 × {b.ram / 2}GB)</td>
+                <td>{b.ram} GB {b.memType} (2 × {b.ram / 2} GB)</td>
                 <td class="why">Two identical sticks, so the memory runs in dual channel.</td>
               </tr>
               <tr>

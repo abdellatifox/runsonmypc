@@ -145,7 +145,7 @@ export const GAME_LISTS: GameList[] = [
     slug: 'esports-games',
     title: "Esports Games",
     h1: 'Esports Games: PC Requirements for Competitive Play',
-    blurb: "Competitive shooters, MOBAs and arena games that aim for high frame rates on ordinary hardware. Chosen by hand, because Steam files most of them under a single Action genre.",
+    blurb: "Competitive shooters, MOBAs and arena games built for high frame rates on ordinary hardware. Picked by hand: Steam files most under one Action genre.",
     icon: 'bi-trophy',
     appids: [
       730,      // Counter-Strike 2
