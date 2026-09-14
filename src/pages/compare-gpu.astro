@@ -117,7 +117,7 @@ const feat = (c: Card) => [c.supports_dlss && 'DLSS', c.supports_fsr && 'FSR', c
       <p class="lede">
         {paired
           ? (view.lead
-              ? <>The <b>{view.lead.name}</b> is ahead by {view.gap}% on our index and meets the recommended card of {Math.abs(view.recA - view.recB)} more games. Below: where each one wins.</>
+              ? <>The <b>{view.lead.name}</b> is ahead by {view.gap}% on our index and {Math.abs(view.recA - view.recB) === 0 ? 'meets the recommended card of the same number of games' : `meets the recommended card of ${Math.abs(view.recA - view.recB)} more ${Math.abs(view.recA - view.recB) === 1 ? 'game' : 'games'}`}. Below: where each one wins.</>
               : <>Level on our index. Memory, power and price are what separate them.</>)
           : <>Choose two cards. You get their index, memory, power and launch price side by side, plus a count of the PC games each one meets at the publisher’s recommended spec.</>}
       </p>

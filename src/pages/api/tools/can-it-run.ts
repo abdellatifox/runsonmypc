@@ -48,14 +48,15 @@ function buildChecks(side: ReqSide | null, gpu: any, cpu: any, ramGb: number): C
   return [
     {
       label: 'Graphics card',
-      yours: gpu ? `${gpu.name} (${gpu.perf ?? gpu.score})` : '—',
+      // Name only: the raw perf value differs from the 0-100 index shown on part pages.
+      yours: gpu ? gpu.name : '—',
       // Show the publisher's wording, not our interpretation of it.
       required: side.rg ?? (side.gpu?.n ?? null),
       state: side.gpu ? cmp(gpu?.perf ?? null, side.gpu.p) : 'unknown'
     },
     {
       label: 'Processor',
-      yours: cpu ? `${cpu.name} (${cpu.perf ?? cpu.score})` : '—',
+      yours: cpu ? cpu.name : '—',
       required: side.rc ?? (side.cpu?.n ?? null),
       state: side.cpu
         ? cmp(cpu?.perf ?? null, side.cpu.p)
