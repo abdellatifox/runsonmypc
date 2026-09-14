@@ -20,6 +20,20 @@ const byMaker = <T extends { brand: string; name: string }>(list: T[]) =>
 const gpuGroups = byMaker(gpus);
 const cpuGroups = byMaker(cpus);
 
+/* Candidates for named suggestions, and the card we treat as comfortable at each
+   resolution on high settings (our judgement, pinned to named cards). */
+const perfOf = (p: { perf?: number; score: number }) => p.perf ?? p.score;
+const latestGpu = Math.max(...gpus.map(g => g.release_year));
+const latestCpu = Math.max(...cpus.map(c => c.release_year));
+const advisorData = {
+  gpus: gpus.filter(g => !/laptop/i.test(g.name) && g.msrp_usd && g.release_year >= latestGpu - 3)
+    .map(g => ({ n: g.name, s: g.slug, p: perfOf(g), m: g.msrp_usd, v: g.vram_gb })),
+  cpus: cpus.filter(c => c.release_year >= latestCpu - 3 && c.cores >= 6)
+    .map(c => ({ n: c.name, s: c.slug, p: perfOf(c) })),
+  target: Object.fromEntries(([['1080p', 'nvidia-geforce-rtx-4060'], ['1440p', 'nvidia-geforce-rtx-4070-super'], ['4k', 'nvidia-geforce-rtx-4080']] as const)
+    .map(([res, slug]) => { const g = gpus.find(x => x.slug === slug)!; return [res, { n: g.name, p: perfOf(g) }]; }))
+};
+
 const faq = [
   {
     q: 'Graphics card or processor first?',
@@ -82,7 +96,7 @@ const schema = [
           <select id="gpu">
             {gpuGroups.map(gr => (
               <optgroup label={gr.brand}>
-                {gr.items.map(g => <option selected={g.slug === 'nvidia-geforce-rtx-4060'} value={`${g.score}|${g.vram_gb}|${g.name}`}>{g.name}</option>)}
+                {gr.items.map(g => <option selected={g.slug === 'nvidia-geforce-rtx-4060'} value={`${perfOf(g)}|${g.vram_gb}|${g.name}`}>{g.name}</option>)}
               </optgroup>
             ))}
           </select>
@@ -92,7 +106,7 @@ const schema = [
           <select id="cpu">
             {cpuGroups.map(gr => (
               <optgroup label={gr.brand}>
-                {gr.items.map(c => <option selected={c.slug === 'amd-ryzen-5-5600'} value={`${c.score}|${c.cores}|${c.name}`}>{c.name}</option>)}
+                {gr.items.map(c => <option selected={c.slug === 'amd-ryzen-5-5600'} value={`${perfOf(c)}|${c.cores}|${c.name}`}>{c.name}</option>)}
               </optgroup>
             ))}
           </select>
@@ -136,6 +150,7 @@ const schema = [
       <button id="advise" class="btn btn-primary full">Show my upgrade order</button>
     </div>
 
+    <script type="application/json" id="advisor-data" set:html={JSON.stringify(advisorData)}></script>
     <div id="result" class="result" hidden>
       <div class="verdict-head">
         <span class="eyebrow">Do this first</span>
@@ -229,66 +244,80 @@ const schema = [
 </style>
 
 <script>
+  import { cpuNeeded } from '../lib/perf';
+
   const $ = (id: string) => document.getElementById(id)!;
+  type G = { n: string; s: string; p: number; m: number; v: number };
+  type C = { n: string; s: string; p: number };
+  const data = JSON.parse($('advisor-data').textContent || '{}') as { gpus: G[]; cpus: C[]; target: Record<string, { n: string; p: number }> };
+  const link = (kind: 'gpu' | 'cpu', x: { n: string; s: string }) => `<a href="/${kind}/${x.s}">${x.n}</a>`;
 
   $('advise').addEventListener('click', () => {
-    const [gScoreS, gVramS, gName] = ($('gpu') as HTMLSelectElement).value.split('|');
-    const [cScoreS, cCoresS, cName] = ($('cpu') as HTMLSelectElement).value.split('|');
-    const gpuScore = +gScoreS, vram = +gVramS;
-    const cpuScore = +cScoreS, cores = +cCoresS;
+    const [gPerfS, gVramS, gName] = ($('gpu') as HTMLSelectElement).value.split('|');
+    const [cPerfS, cCoresS, cName] = ($('cpu') as HTMLSelectElement).value.split('|');
+    const gpuPerf = +gPerfS, vram = +gVramS, cpuPerf = +cPerfS, cores = +cCoresS;
     const ram = +($('ram') as HTMLSelectElement).value;
     const storage = ($('storage') as HTMLSelectElement).value;
     const res = ($('res') as HTMLSelectElement).value;
     const budget = +($('budget') as HTMLSelectElement).value;
+    const resLabel = res === '4k' ? '4K' : res;
+    const target = data.target[res];
 
-    // Normalise each subsystem onto a 0-100 "readiness" scale for the target res.
-    const resNeed = res === '4k' ? 85 : res === '1440p' ? 65 : 45;
-    const gpuHealth = Math.min(100, Math.round((gpuScore / resNeed) * 100));
-    const cpuHealth = Math.min(100, Math.round((cpuScore / (resNeed * 0.85)) * 100));
-    const ramHealth = Math.min(100, Math.round((ram / 16) * 100));
+    // Same model as /bottleneck: how much processor this card needs at this resolution.
+    const needed = cpuNeeded(gpuPerf, res);
+    const gpuHealth = gpuPerf / target.p;
+    const cpuHealth = cpuPerf / needed;
+    const pct = (x: number) => Math.round(Math.min(1, x) * 100);
 
-    ($('bar-gpu') as HTMLElement).style.width = gpuHealth + '%';
-    ($('bar-cpu') as HTMLElement).style.width = cpuHealth + '%';
-    ($('bar-ram') as HTMLElement).style.width = ramHealth + '%';
-    $('val-gpu').textContent = gpuHealth + '%';
-    $('val-cpu').textContent = cpuHealth + '%';
-    $('val-ram').textContent = ramHealth + '%';
+    ($('bar-gpu') as HTMLElement).style.width = pct(gpuHealth) + '%';
+    ($('bar-cpu') as HTMLElement).style.width = pct(cpuHealth) + '%';
+    ($('bar-ram') as HTMLElement).style.width = pct(ram / 16) + '%';
+    $('val-gpu').textContent = pct(gpuHealth) + '%';
+    $('val-cpu').textContent = pct(cpuHealth) + '%';
+    $('val-ram').textContent = pct(ram / 16) + '%';
 
-    const weakest = Math.min(gpuHealth, cpuHealth, ramHealth);
     let title = '', why = '';
     const steps: string[] = [];
+    const vramFloor = res === '4k' ? 16 : res === '1440p' ? 12 : 8;
 
     if (ram < 16) {
-      title = 'Add system memory first';
-      why = `At ${ram}GB you are below what current releases assume. Memory is the cheapest fix here and it removes stutter rather than just raising the average frame rate.`;
-      steps.push(`Move to <b>16GB</b> (or 32GB if the budget allows) in <b>dual channel</b> — two matched sticks, not one.`);
-    } else if (gpuHealth <= cpuHealth) {
-      title = 'Upgrade the graphics card';
-      why = `Your ${gName} is the limiting part at ${res}. The ${cName} has headroom to feed something faster, so a GPU upgrade converts almost directly into frames.`;
-      steps.push(`Target a card scoring roughly <b>${Math.min(100, Math.round(cpuScore * 1.1))}</b> or better so it stays matched to your CPU — browse the <a href="/gpu-tier-list">GPU tier list</a>.`);
-      if (vram < (res === '4k' ? 12 : 8)) {
-        steps.push(`Your current <b>${vram}GB of VRAM</b> is tight for ${res}. Treat ${res === '4k' ? '16GB' : '12GB'} as the minimum on the replacement.`);
-      }
-    } else {
+      title = 'Add memory first';
+      why = `${ram} GB is under what most current games ask for. More memory is the cheapest change on this list and it smooths out stutter.`;
+      steps.push('Go to <b>16 GB</b> — or 32 GB if the budget stretches — as <b>two matching sticks</b>.');
+    } else if (cpuHealth < 0.9) {
       title = 'Upgrade the processor';
-      why = `Your ${cName} is holding back the ${gName}, especially at ${res} where the CPU sets the ceiling. A faster GPU right now would sit partly idle.`;
-      steps.push(`Target a processor scoring around <b>${Math.min(100, Math.round(gpuScore * 1.05))}</b> — see the <a href="/cpu-tier-list">CPU tier list</a>.`);
-      if (cores < 6) steps.push(`At <b>${cores} cores</b> you are under the 6-core baseline most 2024-onward titles assume. Prioritise core count.`);
-      steps.push('Check whether your motherboard supports the new chip — a CPU upgrade often drags the board and memory with it.');
+      why = `At ${resLabel} the ${cName} can’t keep your ${gName} fully used, so a faster card now would mostly wait on it.`;
+      const pick = data.cpus.filter(c => c.p >= needed).sort((a, b) => a.p - b.p)[0];
+      if (pick) steps.push(`A processor at the level of the ${link('cpu', pick)} or above keeps this card fed at ${resLabel}.`);
+      if (cores < 6) steps.push(`With <b>${cores} cores</b> you are under the six most new games are built around.`);
+      steps.push('Check the new chip fits your motherboard; a processor change often means a new board and memory too.');
+    } else if (gpuHealth < 0.95) {
+      title = 'Upgrade the graphics card';
+      why = `Your ${gName} is the part holding you back at ${resLabel}, and the ${cName} has room to feed something faster.`;
+      // Within the calculator's 10% "well matched" band, so the advice agrees with /bottleneck.
+      const fits = data.gpus.filter(g => g.p >= target.p * 0.95 && g.v >= vramFloor && cpuNeeded(g.p, res) * 0.9 <= cpuPerf).sort((a, b) => a.m - b.m || b.p - a.p);
+      const inBudget = fits.filter(g => g.m <= budget);
+      const pick = inBudget[0] ?? fits[0];
+      if (pick) {
+        steps.push(`Aim for ${target.n}-level performance or better at ${resLabel}. The lowest launch price among recent cards that get there and suit your processor: the ${link('gpu', pick)} ($${pick.m}).`);
+        if (!inBudget.length) steps.push(`That is more than your $${budget} budget. Within it, upscaling or a lower resolution gets you further than a small card upgrade.`);
+      } else {
+        steps.push(`No recent card at ${target.n} level suits your processor at ${resLabel}; plan the processor and card together.`);
+      }
+      if (vram < vramFloor) steps.push(`Your <b>${vram} GB</b> of video memory is tight for ${resLabel}; get at least ${vramFloor} GB on the next card.`);
+    } else {
+      title = `No upgrade needed for ${resLabel}`;
+      why = `Your ${gName} reaches the ${target.n} level we treat as comfortable at ${resLabel}, and the ${cName} keeps it fully used.`;
+      steps.push('For more, the next step is a higher resolution or refresh rate rather than a new part.');
     }
 
-    if (storage === 'hdd') {
-      steps.push('Move your games to an <b>SSD</b>. It will not raise FPS, but it removes traversal stutter and long load screens in open-world games.');
-    }
-    if (ram >= 16 && ram < 32 && res !== '1080p') {
-      steps.push('Consider <b>32GB</b> as a later step if you keep a browser, Discord and a stream open while playing.');
-    }
-    steps.push(`With a <b>$${budget}</b> budget, spend it on the single item above rather than splitting it — one meaningful jump beats two small ones.`);
-    steps.push('Re-run the <a href="/bottleneck">bottleneck calculator</a> with the part you plan to buy before ordering.');
+    if (storage === 'hdd') steps.push('Put your games on an <b>SSD</b>. Frame rate stays the same, but loading and open-world hitching improve a lot.');
+    if (ram >= 16 && ram < 32 && res !== '1080p') steps.push('<b>32 GB</b> is a sensible later step if you run a browser and voice chat while playing.');
+    steps.push('Test the part you plan to buy in the <a href="/bottleneck">bottleneck calculator</a> before ordering.');
 
     $('v-title').textContent = title;
     $('v-why').textContent = why;
-    $('steps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+    $('steps').innerHTML = steps.map(x => `<li>${x}</li>`).join('');
     ($('result') as HTMLElement).hidden = false;
     $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });

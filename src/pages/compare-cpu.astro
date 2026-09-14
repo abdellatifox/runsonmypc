@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getCpus, getGpus } from '../lib/db';
 import { releasedGames } from '../lib/games';
-import { bottleneck } from '../lib/perf';
+import { cpuNeeded, perfOf, PAIRING_RES } from '../lib/perf';
 import { SITE_URL, SITE_NAME } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
 import { fitTitle, fitMeta } from '../lib/seo';
@@ -27,8 +27,8 @@ const games = releasedGames().filter(g => g.rec_cpu_score != null);
 const recCount = (c: Chip) => games.filter(g => c.score >= g.rec_cpu_score!).length;
 const heavyGames = games.filter(g => g.cpu_intensive === 1);
 const desktop = gpus.filter(g => !/laptop/i.test(g.name));
-// The fastest desktop card the bottleneck model still calls an even match.
-const ceiling = (c: Chip) => desktop.filter(g => bottleneck(g.score, c.score).component === 'balanced').sort((x, y) => y.score - x.score)[0] ?? null;
+// The fastest desktop card each chip can keep fully used at 1440p (same model as /bottleneck).
+const ceiling = (c: Chip) => desktop.filter(g => cpuNeeded(perfOf(g), PAIRING_RES) <= perfOf(c)).sort((x, y) => y.score - x.score)[0] ?? null;
 
 let view: any = null;
 if (paired) {
@@ -66,8 +66,8 @@ const faq = paired ? [
       : 'They score the same for gaming; cores, power draw and platform cost are the tie-breakers.'
   },
   {
-    q: 'What is the fastest graphics card each one suits?',
-    a: `By our bottleneck model: ${view.capA ? `the ${view.capA.name} for the ${a!.name}` : `no close match for the ${a!.name}`}, and ${view.capB ? `the ${view.capB.name} for the ${b!.name}` : `no close match for the ${b!.name}`}.`
+    q: 'What is the fastest graphics card each one can keep up with?',
+    a: `At 1440p, by our bottleneck model: ${view.capA ? `the ${view.capA.name} for the ${a!.name}` : `no close match for the ${a!.name}`}, and ${view.capB ? `the ${view.capB.name} for the ${b!.name}` : `no close match for the ${b!.name}`}.`
   }
 ] : [];
 
@@ -150,7 +150,7 @@ const barW = (r: any, v: number) => Math.round((v / Math.max(r.a, r.b, 1)) * 100
           })}
           <div class="row txt"><span class="lbl">Released</span><span>{a!.release_year}</span><span>{b!.release_year}</span></div>
           <div class="row txt">
-            <span class="lbl">Suits cards up to</span>
+            <span class="lbl">Feeds cards up to (1440p)</span>
             <span>{view.capA ? <a href={`/gpu/${view.capA.slug}`}>{view.capA.name}</a> : 'no close match'}</span>
             <span>{view.capB ? <a href={`/gpu/${view.capB.slug}`}>{view.capB.name}</a> : 'no close match'}</span>
           </div>

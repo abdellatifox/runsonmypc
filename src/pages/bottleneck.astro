@@ -88,7 +88,7 @@ const schema = [
     </section>
 
     <section class="explain">
-      <div><h2>One scale</h2><p>Processor and graphics card each have a performance index on this site, so they can be set against each other.</p></div>
+      <div><h2>What the card needs</h2><p>Every graphics card is matched to the processor we judge it needs to stay fully used — an RTX 3070 to a Ryzen 5 5600 at 1080p, for example. Yours is measured against that.</p></div>
       <div><h2>Resolution shifts the balance</h2><p>The higher the resolution, the less processor it takes to keep a given card busy.</p></div>
       <div><h2>Games differ</h2><p>Strategy and simulation games lean on the processor far more than a linear shooter. Read the result as a rule of thumb.</p></div>
     </section>
@@ -170,13 +170,6 @@ const schema = [
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
-  /**
-   * How much processor a given graphics card needs to stay fed. Extra pixels
-   * are work for the GPU only, so the processor requirement falls as resolution
-   * rises — which is why the same pair flips from CPU- to GPU-bound at 4K.
-   */
-  const BALANCE: Record<string, number> = { '1080p': 1.0, '1440p': 0.8, '4k': 0.6 };
-
   async function part(kind: 'cpus' | 'gpus', slug: string) {
     const r = await fetch(`/api/${kind}/search?q=${encodeURIComponent(slug.replace(/-/g, ' '))}`);
     const j = await r.json();
@@ -208,14 +201,14 @@ const schema = [
         <p class="bn-detail">${d.detail}</p>
         <div class="bn-bars">
           <div class="bn-row">
-            <span class="lbl">${esc(d.cpu.name)}</span>
+            <span class="lbl">${esc(d.cpu.name)} has</span>
             <div class="bn-track"><div class="bn-fill cpu" style="width:${d.cpuBar}%"></div></div>
-            <b>${d.cpu.score}</b>
+            <b>${d.cpuHas}</b>
           </div>
           <div class="bn-row">
-            <span class="lbl">${esc(d.gpu.name)}</span>
+            <span class="lbl">${esc(d.gpu.name)} needs</span>
             <div class="bn-track"><div class="bn-fill gpu" style="width:${d.gpuBar}%"></div></div>
-            <b>${d.gpu.score}</b>
+            <b>${d.cpuNeeded}</b>
           </div>
         </div>
         <ul class="bn-advice">${d.advice.map((a: string) => `<li>${a}</li>`).join('')}</ul>

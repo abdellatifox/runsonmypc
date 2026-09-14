@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getCpu, getCpus, getGpus } from '../../lib/db';
 import { releasedGames, upcomingGames } from '../../lib/games';
-import { bottleneck } from '../../lib/perf';
+import { bottleneck, cpuNeeded, perfOf, PAIRING_RES } from '../../lib/perf';
 import { SITE_URL, SITE_NAME } from '../../lib/site';
 import { SEO_YEAR } from '../../lib/year';
 import { fitTitle, fitMeta } from '../../lib/seo';
@@ -39,14 +39,15 @@ const upRec = upcoming.filter(g => cpu.score >= g.rec_cpu_score!);
 const upMin = upcoming.filter(g => cpu.score >= g.min_cpu_score! && cpu.score < g.rec_cpu_score!);
 const upBelow = upcoming.filter(g => cpu.score < g.min_cpu_score!);
 
-/* Cards the bottleneck model calls balanced with this processor — the same
-   model /bottleneck uses, so the two pages cannot disagree. */
+/* Pairings from the same model /bottleneck uses (src/lib/perf.ts), at 1440p,
+   so the tool and this page cannot disagree. "Balanced" means the chip feeds the card
+   with under 10% to spare; the ceiling is the fastest card it can still feed. */
 const desktop = gpus.filter(g => !/laptop/i.test(g.name));
-const balanced = desktop
-  .filter(g => bottleneck(g.score, cpu.score).component === 'balanced')
-  .sort((a, b) => b.score - a.score);
+const pairing = (g: typeof desktop[number]) => bottleneck(perfOf(g), perfOf(cpu), PAIRING_RES).component;
+// Cards this chip fully feeds with under 10% processor to spare.
+const balanced = desktop.filter(g => pairing(g) === 'balanced' && cpuNeeded(perfOf(g), PAIRING_RES) <= perfOf(cpu)).sort((a, b) => b.score - a.score);
 const pairPicks = balanced.filter(g => g.msrp_usd).sort((a, b) => b.release_year - a.release_year || b.score - a.score).slice(0, 6);
-const ceilingCard = balanced[0] ?? null;
+const ceilingCard = desktop.filter(g => cpuNeeded(perfOf(g), PAIRING_RES) <= perfOf(cpu)).sort((a, b) => b.score - a.score)[0] ?? null;
 
 // Games that lean on the processor, where this chip matters most.
 const cpuHeavy = released
@@ -64,7 +65,7 @@ const role =
 const title = fitTitle(cpu.name, [' — Gaming Benchmarks & Specs', ' — Gaming Benchmarks', ' Benchmarks'], ` | ${SITE_NAME}`);
 const description = fitMeta([
   `${cpu.name}: ${cpu.cores} cores, ${cpu.threads} threads, faster than ${beatsPct}% of the CPUs we track.`,
-  ceilingCard ? `Balanced with cards up to the ${ceilingCard.name}.` : '',
+  ceilingCard ? `Keeps up with cards up to the ${ceilingCard.name} at 1440p.` : '',
   'See which games it handles.'
 ]);
 
@@ -72,7 +73,7 @@ const faq: { q: string; a: string }[] = [
   {
     q: `Which graphics card suits the ${cpu.name}?`,
     a: ceilingCard
-      ? `By our bottleneck model it is balanced with ${balanced.length} desktop cards, up to the ${ceilingCard.name}. A faster card than that will spend time waiting on the processor in CPU-heavy games.`
+      ? `At 1440p it keeps a card up to the ${ceilingCard.name} fully used, by our bottleneck model. ${balanced.length} desktop cards are an even match for it. A faster card than the ${ceilingCard.name} will spend time waiting on the processor, more so at 1080p.`
       : `No card in our index is an even match for it; use the bottleneck calculator to see how far apart a specific pairing is.`
   },
   {
@@ -126,7 +127,7 @@ const neighbours = [...above.reverse(), ...beneath];
       <h1>{cpu.name}</h1>
       <p class="summary">
         In gaming terms, <b>{role}</b>. It outscores <b>{beatsPct}%</b> of the {allCpus.length} processors in our index
-        {ceilingCard && <> and stays balanced with graphics cards up to the <b>{ceilingCard.name}</b></>}.
+        {ceilingCard && <> and keeps graphics cards up to the <b>{ceilingCard.name}</b> fully used at 1440p</>}.
       </p>
       <dl class="readouts">
         <div><dt>Index</dt><dd class="mono">{cpu.score}<small>/100</small></dd></div>
@@ -141,7 +142,7 @@ const neighbours = [...above.reverse(), ...beneath];
     <section class="block">
       <div class="block-head">
         <h2>Graphics cards that match it</h2>
-        <p>Recent cards our bottleneck model calls an even pairing with the {cpu.name} — neither part left waiting on the other.</p>
+        <p>Recent cards the {cpu.name} keeps fully used at 1440p without much processor to spare, by our bottleneck model.</p>
       </div>
       {pairPicks.length ? (
         <ul class="pairs">

@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { getGpu, getCpu } from '../../../lib/db';
+import { getGpu, getCpu, getGpus, getCpus } from '../../../lib/db';
+import { bottleneck, cpuNeeded, perfOf } from '../../../lib/perf';
 
 const headers = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -11,14 +12,6 @@ const headers = {
 
 export const OPTIONS: APIRoute = () => new Response(null, { status: 204, headers });
 
-/**
- * How much processor a graphics card needs to stay fed, as a ratio of the two
- * performance indices. Added pixels are work for the GPU alone, so the
- * processor requirement drops as resolution rises — the reason the same pair
- * can be CPU-bound at 1080p and GPU-bound at 4K.
- */
-const BALANCE: Record<string, number> = { '1080p': 1.0, '1440p': 0.8, '4k': 0.6 };
-
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
@@ -26,6 +19,7 @@ export const POST: APIRoute = async (context) => {
   try {
     const body: any = await context.request.json().catch(() => ({}));
     const resolution = ['1080p', '1440p', '4k'].includes(body.resolution) ? body.resolution : '1440p';
+    const resLabel = resolution === '4k' ? '4K' : resolution;
 
     const [cpu, gpu] = await Promise.all([
       getCpu(context.locals, String(body.cpu ?? '')),
@@ -35,83 +29,65 @@ export const POST: APIRoute = async (context) => {
       return new Response(JSON.stringify({ error: 'Pick both parts from the suggestions.' }), { status: 400, headers });
     }
 
-    const cpuPerf = cpu.perf ?? cpu.score;
-    const gpuPerf = gpu.perf ?? gpu.score;
+    const cpuPerf = perfOf(cpu);
+    const gpuPerf = perfOf(gpu);
+    // One model for the whole site (src/lib/perf.ts), so this tool, the CPU
+    // pages and the CPU comparison cannot disagree about a pairing.
+    const { component: limiter, percent: pct, needed } = bottleneck(gpuPerf, cpuPerf, resolution);
 
-    // The processor level this card wants at this resolution.
-    const needed = gpuPerf * BALANCE[resolution];
-
-    /**
-     * The two directions are not symmetrical and must not share a formula.
-     *
-     * Short of `needed`, the processor cannot feed the card and a measurable
-     * share of the card's capability goes unused — that share is the number
-     * worth reporting, and it is bounded by construction.
-     *
-     * Above `needed`, nothing is being wasted: the card is fully used, which is
-     * the healthy state for gaming. Reporting that as a large "GPU bottleneck"
-     * percentage (an earlier version did, calling a perfectly good pairing
-     * "73% GPU-limited") is alarming and wrong. We report spare CPU headroom
-     * instead, normalised against the processor so it stays sane.
-     */
-    let limiter: 'cpu' | 'gpu' | 'balanced';
-    let severity: 'ok' | 'mild' | 'bad';
-    let headline: string;
-    let pct: number;
-
-    if (cpuPerf < needed) {
-      pct = Math.round(((needed - cpuPerf) / needed) * 100);
-      if (pct < 10) {
-        limiter = 'balanced'; severity = 'ok'; headline = 'Well balanced';
-      } else {
-        limiter = 'cpu';
-        severity = pct >= 25 ? 'bad' : 'mild';
-        headline = `${pct}% CPU-limited at ${resolution}`;
-      }
-    } else {
-      pct = Math.round(((cpuPerf - needed) / Math.max(cpuPerf, 1)) * 100);
-      if (pct < 10) {
-        limiter = 'balanced'; severity = 'ok'; headline = 'Well balanced';
-      } else {
-        limiter = 'gpu';
-        severity = 'ok';                       // GPU-bound is where you want to be
-        headline = `GPU-bound — ${pct}% CPU headroom`;
-      }
-    }
+    /* The two directions are not symmetrical. Short of what the card needs, part
+       of the card goes unused — worth fixing. Above it, the card is fully used,
+       which is the healthy state; that is reported as processor headroom, never
+       as an alarming "GPU bottleneck" percentage. */
+    const severity = limiter === 'cpu' ? (pct >= 25 ? 'bad' : 'mild') : 'ok';
+    const headline = limiter === 'balanced'
+      ? `Well matched at ${resLabel}`
+      : limiter === 'cpu'
+        ? `Processor holds the card back ~${pct}% at ${resLabel}`
+        : `Card is the limit at ${resLabel} — ${pct}% processor headroom`;
 
     const cpuName = esc(cpu.name), gpuName = esc(gpu.name);
+    const detail = limiter === 'balanced'
+      ? `At ${resLabel} the <b>${cpuName}</b> keeps the <b>${gpuName}</b> busy without much to spare either way. Neither part is wasting the other.`
+      : limiter === 'cpu'
+        ? `At ${resLabel} the <b>${cpuName}</b> can’t prepare frames as fast as the <b>${gpuName}</b> can draw them, so roughly ${pct}% of the card sits idle in busy scenes. Lowering graphics settings won’t win that back.`
+        : `At ${resLabel} the <b>${gpuName}</b> sets the frame rate and the <b>${cpuName}</b> has about ${pct}% in reserve. That is the better way round to be unbalanced: the card you paid for is fully used.`;
 
-    let detail: string;
-    if (limiter === 'balanced') {
-      detail = `The <b>${cpuName}</b> and <b>${gpuName}</b> are well matched at ${resolution}. Neither part is holding the other back by enough to worry about.`;
-    } else if (limiter === 'cpu') {
-      detail = `At ${resolution} the <b>${cpuName}</b> cannot quite keep the <b>${gpuName}</b> fed, so the card will sit partly idle in CPU-heavy scenes. This is the kind of imbalance worth fixing — lowering graphics settings will not recover it.`;
-    } else {
-      detail = `At ${resolution} the <b>${gpuName}</b> is the limiting part, with the <b>${cpuName}</b> having roughly ${pct}% headroom to spare. For gaming this is the healthy direction to be unbalanced in — the card is fully used and your frame rate responds to settings. Nothing is being wasted here.`;
-    }
+    const desktop = (await getGpus(context.locals)).filter(g => !/laptop/i.test(g.name));
+    const cpus = await getCpus(context.locals);
+    const latestGpu = Math.max(...desktop.map(g => g.release_year));
+    const latestCpu = Math.max(...cpus.map(c => c.release_year));
 
     const advice: string[] = [];
     if (limiter === 'cpu') {
-      advice.push(`Moving to a higher resolution shifts load onto the graphics card and reduces this gap — the same pair is better matched at ${resolution === '1080p' ? '1440p' : '4K'}.`);
-      advice.push(`If you upgrade, target a processor scoring around <b>${Math.min(100, Math.round(needed))}</b> or better. See the <a href="/cpu-tier-list">CPU tier list</a>.`);
-      if (cpu.cores < 6) advice.push(`At <b>${cpu.cores} cores</b> you are under the 6-core baseline most 2024-onward titles assume.`);
+      // The lowest-rated recent processor that clears what this card needs.
+      const pick = cpus.filter(c => c.release_year >= latestCpu - 3 && c.cores >= 6 && perfOf(c) >= needed)
+        .sort((a, b) => perfOf(a) - perfOf(b))[0];
+      if (pick) advice.push(`A processor at the level of the <a href="/cpu/${pick.slug}">${esc(pick.name)}</a> or above would keep this card fed at ${resLabel}.`);
+      if (resolution !== '4k') advice.push(`A higher resolution moves load onto the card: this pair is closer to even at ${resolution === '1080p' ? '1440p' : '4K'}.`);
+      if (cpu.cores < 6) advice.push(`With <b>${cpu.cores} cores</b> the ${cpuName} is under the six most new games are built around.`);
     } else if (limiter === 'gpu') {
-      advice.push(`Your processor has room for a faster card: something scoring around <b>${Math.min(100, Math.round(cpuPerf / BALANCE[resolution]))}</b> would still be fed properly.`);
-      advice.push('Enabling upscaling (DLSS or FSR) reclaims most of a GPU deficit — see <a href="/dlss-fsr">DLSS vs FSR</a>.');
+      // The fastest recent card this processor can still feed at this resolution.
+      const top = desktop.filter(g => g.release_year >= latestGpu - 3 && cpuNeeded(perfOf(g), resolution) <= cpuPerf)
+        .sort((a, b) => perfOf(b) - perfOf(a))[0];
+      if (top && perfOf(top) > gpuPerf) advice.push(`The ${cpuName} could feed a card up to about the <a href="/gpu/${top.slug}">${esc(top.name)}</a> at ${resLabel}, so a graphics card upgrade is where extra frames come from.`);
+      advice.push('Upscaling (DLSS, FSR or XeSS) raises frame rate when the card is the limit — see <a href="/dlss-fsr">how the modes compare</a>.');
     } else {
-      advice.push('No upgrade is obviously overdue. If you want more frames, put the money toward a faster graphics card and keep the pairing roughly where it is.');
+      advice.push('Nothing here is overdue. If you want more frames later, upgrade both parts together so they stay matched.');
     }
-    advice.push('Check a specific title with the <a href="/can-it-run">requirements checker</a> before buying.');
+    advice.push('Games differ: check a specific title in <a href="/can-it-run">Can I Run It?</a> before buying.');
 
-    // Bars are drawn relative to whichever part is further ahead.
+    // Bars: what the processor has against what the card needs, on the processor scale.
     const peak = Math.max(cpuPerf, needed, 1);
     return new Response(JSON.stringify({
       headline, severity, limiter, percent: pct, resolution, detail, advice,
       cpu: { name: cpu.name, slug: cpu.slug, score: cpu.score },
       gpu: { name: gpu.name, slug: gpu.slug, score: gpu.score },
+      cpuHas: Math.round(cpuPerf),
+      cpuNeeded: Math.round(needed),
       cpuBar: Math.round(Math.min(100, (cpuPerf / peak) * 100)),
       gpuBar: Math.round(Math.min(100, (needed / peak) * 100)),
-      note: 'Modelled from each part’s relative performance index at the chosen resolution. Real bottlenecking is per-game — strategy and simulation titles lean on the processor far harder than a corridor shooter does.'
+      note: 'Our estimate of how much processor each card needs, adjusted for resolution. Real results vary by game — strategy and simulation games lean on the processor far harder than most shooters.'
     }), { status: 200, headers });
   } catch {
     return new Response(JSON.stringify({ error: 'Something went wrong.' }), { status: 500, headers });

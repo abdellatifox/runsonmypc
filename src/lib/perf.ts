@@ -46,13 +46,62 @@ export function estimateFps(
   return Math.max(5, Math.round(fps));
 }
 
-/** Which component limits this pairing, and by how much. */
-export function bottleneck(gpuScore: number, cpuScore: number) {
-  const diff = cpuScore - gpuScore;
-  const pct = Math.round((Math.abs(diff) / Math.max(gpuScore, cpuScore)) * 100);
-  if (pct < 8) return { component: 'balanced' as const, percent: pct };
-  return { component: (diff > 0 ? 'gpu' : 'cpu') as 'gpu' | 'cpu', percent: pct };
+/**
+ * Processor needed to keep a graphics card fully used.
+ *
+ * The two `perf` indices cannot be compared directly: cards are anchored at
+ * RTX 4090 = 100 and spread widely, processors at Ryzen 7 9800X3D = 100 and
+ * compress at the top. Comparing them raw called a Ryzen 5 5600 an even match
+ * for an RTX 5080. Instead each point below pairs a card with the processor we
+ * judge it needs at 1080p on high — the site's estimate, not a measurement:
+ *
+ *   GTX 1050 Ti (11) → Core i5-4460 (36)     GTX 1060 6GB (19) → Ryzen 5 1600 (40)
+ *   RTX 3060 12GB (34) → Ryzen 5 3600 (55)   RTX 3070 (51) → Ryzen 5 5600 (67)
+ *   RTX 4070 Ti SUPER (74) → Ryzen 7 7700 (79)   RTX 4090 (100) → Ryzen 7 7800X3D (95)
+ *   RTX 5090 (128) → Ryzen 7 9800X3D (100)
+ *
+ * Higher resolutions cut the frames a card can draw, so the card is treated as
+ * slower and needs less processor. The cut is gentler than the frame-rate
+ * model's RES_FACTOR: fast cards still run high frame rates at 1440p, and the
+ * processor has to keep up with those.
+ */
+const PAIRING_RES_FACTOR: Record<string, number> = { '1080p': 1, '1440p': 0.8, '4k': 0.6 };
+const CPU_FOR_GPU: [gpuPerf: number, cpuPerf: number][] = [
+  [0, 20], [11, 36], [19, 40], [34, 55], [51, 67], [74, 79], [100, 95], [128, 100]
+];
+
+export function cpuNeeded(gpuPerf: number, res: string = '1440p'): number {
+  const g = gpuPerf * (PAIRING_RES_FACTOR[res] ?? 1);
+  const pts = CPU_FOR_GPU;
+  if (g >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+    if (g <= x2) return y1 + ((g - x1) / (x2 - x1)) * (y2 - y1);
+  }
+  return pts[pts.length - 1][1];
 }
+
+/** Resolution at which pages that show no picker describe a pairing. */
+export const PAIRING_RES = '1440p';
+
+/**
+ * Which part limits a pairing, and by how much. Takes `perf` values, not the
+ * 0-100 display scores. Short of the processor the card needs, `percent` is the
+ * share of the card left unused; above it, `percent` is spare processor headroom.
+ * Within 10% either way counts as balanced.
+ */
+export function bottleneck(gpuPerf: number, cpuPerf: number, res: string = PAIRING_RES) {
+  const needed = cpuNeeded(gpuPerf, res);
+  if (cpuPerf < needed) {
+    const percent = Math.round(((needed - cpuPerf) / needed) * 100);
+    return { component: (percent < 10 ? 'balanced' : 'cpu') as 'balanced' | 'cpu' | 'gpu', percent, needed };
+  }
+  const percent = Math.round(((cpuPerf - needed) / Math.max(cpuPerf, 1)) * 100);
+  return { component: (percent < 10 ? 'balanced' : 'gpu') as 'balanced' | 'cpu' | 'gpu', percent, needed };
+}
+
+/** A part's `perf`, falling back to its display score for rows built before `perf` existed. */
+export const perfOf = (p: { perf?: number; score: number }) => p.perf ?? p.score;
 
 export type Verdict = 'ultra' | 'recommended' | 'minimum' | 'below';
 
