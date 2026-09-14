@@ -3,6 +3,14 @@ import cloudflare from '@astrojs/cloudflare';
 import { SITE_URL } from './src/lib/site';
 import { seoYear } from './src/lib/year';
 
+/* Google Tag Manager container. The ID is kept out of the repository: it is an
+   encrypted variable (GTM_ID) on the Cloudflare Pages production environment and
+   is read here during the build. Local and preview builds have no GTM_ID, so
+   they ship no tag and never send test traffic. Anything not shaped like a
+   container ID is ignored rather than injected into every page. */
+const GTM_ID = /^GTM-[A-Z0-9]{4,12}$/.test((process.env.GTM_ID ?? '').trim()) ? process.env.GTM_ID.trim() : '';
+if (process.env.GTM_ID && !GTM_ID) console.warn('GTM_ID is set but is not a valid container ID; no tag will be added.');
+
 export default defineConfig({
   output: 'server',
   adapter: cloudflare({
@@ -54,7 +62,8 @@ export default defineConfig({
     // Computed here, in Node, at build time — see src/lib/year.ts for why.
     define: {
       __SEO_YEAR__: JSON.stringify(seoYear()),
-      __CALENDAR_YEAR__: JSON.stringify(new Date().getUTCFullYear())
+      __CALENDAR_YEAR__: JSON.stringify(new Date().getUTCFullYear()),
+      __GTM_ID__: JSON.stringify(GTM_ID)
     },
     ssr: { external: ['node:buffer'] }
   }

@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
 import BrandMark from '../components/BrandMark.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath, SITE_DOMAIN, GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath, SITE_DOMAIN, GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION, GTM_ID } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
 
 interface Props {
@@ -92,6 +92,11 @@ const year = new Date().getFullYear();
     if (location.hostname === 'www.' + apex) location.replace('https://' + apex + location.pathname + location.search + location.hash);
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {GTM_ID && (
+    <script is:inline define:vars={{ gtmId: GTM_ID }}>
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',gtmId);
+    </script>
+  )}
   {GOOGLE_SITE_VERIFICATION && <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION} />}
   {BING_SITE_VERIFICATION && <meta name="msvalidate.01" content={BING_SITE_VERIFICATION} />}
   <title>{title}</title>
@@ -170,6 +175,9 @@ const year = new Date().getFullYear();
   {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)}></script>)}
 </head>
 <body>
+  {GTM_ID && (
+    <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`} height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
+  )}
   <IconSprite />
   <a href="#main" class="skip-link">Skip to content</a>
   <div class="progress"></div>

@@ -24,6 +24,11 @@ export const CONTACT_EMAIL = `hello@${SITE_DOMAIN}`;
  * Tools: "Meta tag"); an empty string renders nothing.
  */
 export const GOOGLE_SITE_VERIFICATION = '';
+
+/** Google Tag Manager container, injected at build time from the GTM_ID
+ *  Cloudflare Pages variable (see astro.config.mjs). Empty when not set. */
+declare const __GTM_ID__: string | undefined;
+export const GTM_ID = typeof __GTM_ID__ === 'string' ? __GTM_ID__ : '';
 export const BING_SITE_VERIFICATION = '';
 
 /**
