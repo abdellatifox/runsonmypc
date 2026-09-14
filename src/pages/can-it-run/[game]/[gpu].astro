@@ -59,7 +59,9 @@ const answer = !measurable
   : !atMin
     ? `No. The ${gpu.name} doesn't reach the minimum graphics requirement for ${game.name}.${vramNote(game.min_vram_gb, 'minimum')} It may not start, or run far below a playable frame rate.`
     : !atRec
-      ? `Yes, but below the recommended spec. Expect about ${show(fps![0])} FPS at 1080p on high; ${presetFor(fps![0]) ? `the ${presetFor(fps![0])} preset should hold 60` : 'reaching 60 needs lower settings than low, or upscaling'}.${vramNote(game.rec_vram_gb, 'recommended')}`
+      ? (gpu.score >= game.rec_gpu_score!
+          ? `Yes, though the ${gpu.name} is fast enough for ${game.name}'s recommended card but has ${gpu.vram_gb} GB of video memory against the ${game.rec_vram_gb} GB listed. Expect about ${show(fps![0])} FPS at 1080p on high, with textures turned down a step.`
+          : `Yes, below the recommended spec: the ${gpu.name} clears ${game.name}'s minimum but not its recommended card. Expect about ${show(fps![0])} FPS at 1080p on high; ${presetFor(fps![0]) ? `the ${presetFor(fps![0])} preset should hold 60` : 'reaching 60 needs lower settings than low, or upscaling'}.${vramNote(game.rec_vram_gb, 'recommended')}`)
       : `Yes. The ${gpu.name} ${margin! > 0 ? `is ${margin}% above` : 'matches'} the card ${game.name} recommends: about ${show(fps![0])} FPS at 1080p and ${show(fps![1])} at 1440p on high.`;
 
 // The nearest cards either side, for onward matchups.
