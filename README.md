@@ -65,12 +65,26 @@ every internal link, share images, 404s, http/www, the tool APIs. It must end
 `READY` (warnings allowed). If it reports the Worker is not answering, the
 daily Functions quota is spent — re-run after 00:00 UTC.
 
-Manual steps it cannot do:
+After a deploy that adds or changes many pages:
+
+```bash
+npm run indexnow
+```
+
+Notifies Bing, Yandex and the other IndexNow engines of every sitemap URL. The
+key is `INDEXNOW_KEY` in `src/lib/site.ts`, served as `public/<key>.txt`.
+
+Manual steps the token cannot do:
 1. Cloudflare dashboard → runsonmypc.com → Rules → Redirect Rules → template
-   "Redirect from WWW to root".
-2. Google Search Console → Add property → Domain → `runsonmypc.com`; put the
-   TXT record in Cloudflare DNS; submit `https://runsonmypc.com/sitemap.xml`.
-3. Bing Webmaster Tools → import the site from Search Console.
+   "Redirect from WWW to root". Until then an inline script in BaseLayout sends
+   www visitors to the apex, and canonicals point there.
+2. Cloudflare dashboard → Email → Email Routing → forward `hello@runsonmypc.com`
+   to a real inbox. The zone has no MX records, so mail to that address bounces.
+3. Google Search Console → Add property → URL prefix `https://runsonmypc.com/`
+   → HTML tag → paste the content value into `GOOGLE_SITE_VERIFICATION` in
+   `src/lib/site.ts`, deploy, verify, then submit `/sitemap.xml`.
+4. Bing Webmaster Tools → import from Search Console (or set
+   `BING_SITE_VERIFICATION` the same way).
 
 ## Blog
 
