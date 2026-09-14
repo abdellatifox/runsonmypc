@@ -64,7 +64,7 @@ const {
 
   {hint && <small class="ac-hint" id={`${id}-hint`}>{hint}</small>}
 
-  <!-- Resolved selection travels with the form; the text input stays human-readable. -->
+  {/* Resolved selection travels with the form; the text input stays human-readable. */}
   <input type="hidden" id={`${id}-value`} name={name ?? id} value="" />
 
   <ul class="ac-list" id={`${id}-list`} role="listbox" aria-label={label} hidden></ul>

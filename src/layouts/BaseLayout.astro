@@ -95,7 +95,7 @@ const year = new Date().getFullYear();
   <meta name="color-scheme" content="dark">
   {author && <meta name="author" content={author} />}
 
-  <!-- Open Graph -->
+  {/* Open Graph */}
   <meta property="og:site_name" content={SITE_NAME}>
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content={title}>
@@ -109,22 +109,22 @@ const year = new Date().getFullYear();
   {publishedAt && <meta property="article:published_time" content={publishedAt} />}
   {modifiedAt && <meta property="article:modified_time" content={modifiedAt} />}
 
-  <!-- Twitter -->
+  {/* Twitter */}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content={title}>
   <meta name="twitter:description" content={description}>
   <meta name="twitter:image" content={absOgImage}>
 
-  <!--
+  {/*
     Fonts are self-hosted (scripts/fetch-fonts.mjs). The previous Google Fonts
     <link> was render-blocking and cost two extra third-party connections
     before any glyph could paint. Preloading the two faces the first screen
     actually uses lets them start downloading alongside the CSS.
-  -->
-  <!-- No font preloads, on purpose. Both faces are font-display: swap, so text
+  */}
+  {/* No font preloads, on purpose. Both faces are font-display: swap, so text
        paints in the fallback without waiting; preloading 69 KB of fonts only
        competed with the document for the first round trips. Measured on
-       identical builds: with preloads 100/98, without 100/100 (mobile). -->
+       identical builds: with preloads 100/98, without 100/100 (mobile). */}
   {ART_BASE && (
     <>
       {/* Game art moved to R2, so the first card image now costs a second
@@ -140,25 +140,25 @@ const year = new Date().getFullYear();
   )}
 
 
-  <!-- Every reachable game now has locally-built art (scripts/build-art.mjs),
+  {/* Every reachable game now has locally-built art (scripts/build-art.mjs),
        so SteamGridDB is no longer on the critical path for any page. If a game
        is ever added without running that script first, GameArt.astro's plain
        <img> fallback still points at the remote URL — just without a warm
-       connection, which only matters for that rare, temporary case. -->
+       connection, which only matters for that rare, temporary case. */}
 
-  <!-- Icons -->
+  {/* Icons */}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-  <!-- iOS ignores SVG here, so this one has to be raster and opaque. -->
+  {/* iOS ignores SVG here, so this one has to be raster and opaque. */}
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- Feeds -->
+  {/* Feeds */}
   <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} Blog`} href="/rss.xml">
 
-  <!-- JSON-LD -->
+  {/* JSON-LD */}
   {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)}></script>)}
 </head>
 <body>
@@ -231,13 +231,13 @@ const year = new Date().getFullYear();
     </div>
   </footer>
 
-  <!--
+  {/*
     Labels table cells with their column header so that, on a phone, a table
     can collapse into cards that still say what each number is (see "Tables on
     phones" in global.css). Inline and synchronous, placed after the content:
     it runs before first paint, and the CSS reserves the label line, so the
     cards do not shift. The observer covers rows the tools render later.
-  -->
+  */}
   <script is:inline>
     (function () {
       function label(table) {

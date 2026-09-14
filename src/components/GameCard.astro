@@ -11,9 +11,11 @@ interface Props {
   eager?: boolean;
   /** Publisher's release-date text for an unreleased game; marks the card. */
   upcoming?: string | null;
+  /** Replaces the genre · year line when set. */
+  note?: string | null;
 }
 
-const { slug, name, genre, year, eager = false, upcoming = null } = Astro.props;
+const { slug, name, genre, year, eager = false, upcoming = null, note = null } = Astro.props;
 const art = getGameArt(slug, name);
 ---
 <a href={`/game/${slug}`} class="gcard" data-kind={art.kind}>
@@ -29,7 +31,7 @@ const art = getGameArt(slug, name);
   <div class="gcard-body">
     {upcoming !== null && <span class="gcard-soon">Unreleased</span>}
     <h3>{name}</h3>
-    {(genre || year) && (
+    {note ? <p class="meta">{note}</p> : (genre || year) && (
       <p class="meta">{[genre, year].filter(Boolean).join(' · ')}</p>
     )}
   </div>

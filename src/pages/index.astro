@@ -113,7 +113,7 @@ const faqSchema = {
   jsonLd={faqSchema}
 >
   <div class="home">
-    <!-- HERO + CHECKER -->
+    {/* HERO + CHECKER */}
     <section class="hero">
       <span class="eyebrow">Publisher requirements · checked in your browser</span>
       <h1>Will it run on <span class="g-text">your PC?</span></h1>
@@ -148,7 +148,7 @@ const faqSchema = {
       </dl>
     </section>
 
-    <!-- HOW IT WORKS -->
+    {/* HOW IT WORKS */}
     <section class="steps-sec">
       <ol class="steps">
         <li>
@@ -169,7 +169,7 @@ const faqSchema = {
       </ol>
     </section>
 
-    <!-- UPCOMING -->
+    {/* UPCOMING */}
     {upcoming.length > 0 && (
     <section class="upcoming-sec">
       <div class="sec-head row">
@@ -198,7 +198,7 @@ const faqSchema = {
     </section>
     )}
 
-    <!-- TOOLKIT -->
+    {/* TOOLKIT */}
     <section id="tools" class="toolkit">
       <div class="sec-head">
         <span class="eyebrow">Toolkit</span>
@@ -227,7 +227,7 @@ const faqSchema = {
       </div>
     </section>
 
-    <!-- FEATURED GAMES -->
+    {/* FEATURED GAMES */}
     <section class="games-sec">
       <div class="sec-head row">
         <div>
@@ -256,14 +256,14 @@ const faqSchema = {
       </div>
     </section>
 
-    <!-- CTA -->
+    {/* CTA */}
     <section class="cta-band">
       <h2>Got a game in mind?</h2>
       <p>Run the full check with your processor included, and read the publisher's exact wording next to the result.</p>
       <a href="/can-it-run" class="btn-primary">Open the full checker <Icon name="arrow-right" /></a>
     </section>
 
-    <!-- ABOUT THE DATA -->
+    {/* ABOUT THE DATA */}
     <section class="about-data">
       <h2>How {SITE_NAME} checks a game</h2>
       <div class="about-cols">
@@ -273,7 +273,7 @@ const faqSchema = {
       </div>
     </section>
 
-    <!-- FAQ -->
+    {/* FAQ */}
     <section class="faq">
       <h2>Questions</h2>
       {FAQ.map(f => (

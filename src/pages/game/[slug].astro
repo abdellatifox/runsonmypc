@@ -217,7 +217,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       </div>
     )}
 
-    <!-- ============ SPEC SHEET HEADER ============ -->
+    {/* ============ SPEC SHEET HEADER ============ */}
     <header class="sheet">
       <div class="cover" data-kind={art.kind} style={art.kind !== 'cover' ? `--hue:${art.hue}` : undefined}>
         <GameArt slug={game.slug} art={art} eager={true} sizes="(max-width: 720px) 160px, 220px"
@@ -259,7 +259,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       </div>
     </header>
 
-    <!-- ============ THE LADDER ============ -->
+    {/* ============ THE LADDER ============ */}
     {scorable && (
       <section class="block">
         <div class="block-head">
@@ -282,7 +282,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       </section>
     )}
 
-    <!-- ============ PUBLISHER TABLE ============ -->
+    {/* ============ PUBLISHER TABLE ============ */}
     <section class="block">
       <div class="block-head">
         <h2>What the publisher lists</h2>
@@ -311,7 +311,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       {game.notes && <p class="aside"><b>Publisher note:</b> {game.notes}</p>}
     </section>
 
-    <!-- ============ FRAME-RATE OUTLOOK ============ -->
+    {/* ============ FRAME-RATE OUTLOOK ============ */}
     {outlook.length > 0 && (
       <section class="block">
         <div class="block-head">
@@ -335,7 +335,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       </section>
     )}
 
-    <!-- ============ ANSWERS ============ -->
+    {/* ============ ANSWERS ============ */}
     {faq.length > 0 && (
       <section class="faq">
         <h2>Answers about {game.name} on PC</h2>
@@ -348,7 +348,7 @@ const rows: { part: string; min: string | null; rec: string | null; minEq?: any;
       </section>
     )}
 
-    <!-- ============ ALSO RUNS ============ -->
+    {/* ============ ALSO RUNS ============ */}
     {alsoRuns.length > 0 && (
       <section class="block">
         <div class="block-head">
