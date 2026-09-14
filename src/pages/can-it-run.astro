@@ -7,6 +7,8 @@ import Autocomplete from '../components/Autocomplete.astro';
 import { bundledCount } from '../lib/game-reqs';
 import Icon from '../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
+import { upcomingGames, releasedGames } from '../lib/games';
 
 /* Prerendered. ?game=<slug> is picked up in the browser: this map lets the
    script fill in both the readable name and the resolved value. Before, the
@@ -19,70 +21,71 @@ const bundled = bundledCount();
 const RAM_OPTIONS = [4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128].map(n => ({
   label: `${n} GB`,
   value: String(n),
-  meta: n <= 8 ? 'Below what most current releases assume'
-      : n <= 12 ? 'Workable for older titles'
-      : n === 16 ? 'The common target today'
-      : 'Comfortable headroom'
+  meta: n <= 8 ? 'Under most new games’ minimum'
+      : n <= 12 ? 'Fine for older games'
+      : n === 16 ? 'What most games recommend'
+      : 'More than most games ask for'
 }));
+
+const faq = [
+  {
+    q: 'How does the check decide?',
+    a: 'Your graphics card and processor are placed on our performance index, and so are the parts the publisher named for the minimum and recommended specs. If yours score at or above theirs, that line passes. Memory and video memory are compared directly in gigabytes.'
+  },
+  {
+    q: 'Whose requirements are these?',
+    a: 'The publisher’s, exactly as listed on the game’s Steam store page. Their wording is shown next to each line of the result, with a link back to the store page.'
+  },
+  {
+    q: 'Why does a line say "not stated"?',
+    a: 'The publisher left it out or wrote something that names no part — "256 MB video card", for example. Those lines are shown as unknown instead of being guessed.'
+  },
+  {
+    q: 'The game I want is not in the list. Now what?',
+    a: `Keep typing. Beyond the ${bundled.toLocaleString('en-US')} games stored here, the search looks up Steam directly and pulls the requirements on the spot.`
+  },
+  {
+    q: `Can I check a game that comes out in ${SEO_YEAR}?`,
+    a: 'Yes, if its publisher has already posted requirements. Unreleased games without them are listed, but the result will say there is nothing to check against yet.'
+  }
+];
+
+const upcomingReady = upcomingGames().filter(g => g.requirements_published).slice(0, 6);
+const popular = releasedGames().filter(g => g.demandPercentile != null && g.demandPercentile >= 0.9).slice(0, 6);
 
 const schema = [
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Can I Run It?",
+    "name": `Can I Run It? System requirements check (${SEO_YEAR})`,
     "url": `${SITE_URL}/can-it-run`,
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any (web browser)",
-    "description": "Check any PC game against your graphics card, processor and memory using the publisher's own stated system requirements.",
+    "description": "Compares your graphics card, processor and memory with the minimum and recommended specs a game's publisher lists on Steam.",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   },
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Will my PC run this game?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Pick the game and enter your GPU, CPU and RAM above — the checker compares them against the publisher's own stated requirements and gives you a pass/fail verdict in seconds." }
-      },
-      {
-        "@type": "Question",
-        "name": "Where do these system requirements come from?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Directly from the publisher's own listing on Steam. We show the exact wording the publisher wrote alongside our comparison, and we link to the store page so you can verify it yourself." }
-      },
-      {
-        "@type": "Question",
-        "name": "Do I need to download anything?",
-        "acceptedAnswer": { "@type": "Answer", "text": "No. The check runs in your browser against our hardware database. There is no download, no account and no installed agent." }
-      },
-      {
-        "@type": "Question",
-        "name": "What if my game is not listed?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Start typing and the search falls through to Steam's live catalogue, so titles outside our pre-loaded set are still found and their requirements fetched on the spot." }
-      },
-      {
-        "@type": "Question",
-        "name": "Why is a row marked \"not stated\"?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Because the publisher did not state it. Plenty of older titles list \"256MB video memory\" and no model name at all. We would rather mark that unverified than invent a number for it." }
-      }
-    ]
+    "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
   }
 ];
 ---
 <BaseLayout
-  title={`Can I Run It? — Check Any PC Game | ${SITE_NAME}`}
-  description="Will it run? Check any PC game against your graphics card, processor and memory using the publisher's own stated requirements. Free, instant, no download."
-  keywords="can i run it, will it run, will my pc run this game, can my pc run it, system requirements checker, can my pc run this game, pc game requirements"
+  title={`Can I Run It? Check Your PC Against Any Game (${SEO_YEAR}) | ${SITE_NAME}`}
+  description="Can your PC run it? Enter a game, your graphics card, processor and memory, and see line by line whether you meet the publisher's minimum and recommended specs. Free, no download."
+  keywords={`can i run it, can my pc run it, will my pc run this game, system requirements checker, can i run it ${SEO_YEAR}`}
   jsonLd={schema}
 >
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Can I Run It' }]} />
 
-    <header class="page-head">
+    <header class="head">
+      <span class="eyebrow">Requirement check</span>
       <h1>Can I Run It?</h1>
       <p class="lede">
-        Will my PC run this game? Pick a game and your parts. We check them against the requirements the
-        publisher actually published, and show you their exact wording next to the verdict.
+        Three fields and a game. The result goes line by line through the publisher's minimum and recommended specs,
+        with their own wording beside each part, so you can see exactly where your PC clears the bar and where it doesn't.
       </p>
     </header>
 
@@ -92,9 +95,9 @@ const schema = [
         <Autocomplete
           id="game"
           label="Game"
-          placeholder="Start typing a game name…"
+          placeholder="Which game? e.g. Elden Ring"
           endpoint="/api/games/search"
-          hint="Not in the list? Keep typing — we search Steam live."
+          hint="Missing? Keep typing and Steam is searched too."
           required
         />
 
@@ -102,28 +105,28 @@ const schema = [
           <Autocomplete
             id="gpu"
             label="Graphics card"
-            placeholder="e.g. RTX 4070, RX 6600, Arc B580…"
+            placeholder="Your card, e.g. RX 7600 or RTX 3060"
             endpoint="/api/gpus/search"
             required
           />
-          <button type="button" id="detect-gpu" class="detect" title="Detect my graphics card">
+          <button type="button" id="detect-gpu" class="detect" title="Read my graphics card from the browser">
             <Icon name="magic" />
-            <span class="sr">Detect my graphics card</span>
+            <span class="sr">Read my graphics card from the browser</span>
           </button>
         </div>
 
         <Autocomplete
           id="cpu"
           label="Processor"
-          placeholder="e.g. Ryzen 5 5600, i5-12400…"
+          placeholder="Your chip, e.g. Core i5-12400F"
           endpoint="/api/cpus/search"
-          hint="Optional, but it makes the verdict more accurate."
+          hint="Can be left empty; the processor lines will show as unchecked."
         />
 
         <Autocomplete
           id="ram"
-          label="System memory"
-          placeholder="e.g. 16 GB"
+          label="Memory (RAM)"
+          placeholder="How much? e.g. 16 GB"
           endpoint=""
           options={RAM_OPTIONS}
           freeText
@@ -131,7 +134,7 @@ const schema = [
         />
 
         <button type="submit" class="btn btn-primary submit" id="check-btn">
-          Check system requirements <span aria-hidden="true">&rarr;</span>
+          Run the check <span aria-hidden="true">&rarr;</span>
         </button>
         <p class="err" id="form-err" role="alert" hidden></p>
       </form>
@@ -139,52 +142,57 @@ const schema = [
       <div class="results" id="results" aria-live="polite">
         <div class="placeholder" id="placeholder">
           <Icon name="search" />
-          <h2>Enter your specs to see results</h2>
+          <h2>Your result appears here</h2>
           <p>{bundled > 0
-            ? `${bundled.toLocaleString('en-US')} games pre-loaded, plus live Steam search for everything else.`
-            : 'Games are searched live against Steam.'}</p>
+            ? `${bundled.toLocaleString('en-US')} games stored on the site; anything else is looked up on Steam as you type.`
+            : 'Games are looked up on Steam as you type.'}</p>
         </div>
       </div>
     </section>
 
+    {(upcomingReady.length > 0 || popular.length > 0) && (
+      <section class="shortcuts">
+        {upcomingReady.length > 0 && (
+          <div>
+            <h2>{SEO_YEAR} releases with specs out</h2>
+            <ul>{upcomingReady.map(g => <li><a href={`/can-it-run?game=${g.slug}`}>{g.name}</a> <small>{g.release_date}</small></li>)}</ul>
+          </div>
+        )}
+        {popular.length > 0 && (
+          <div>
+            <h2>Heavy games worth testing</h2>
+            <ul>{popular.map(g => <li><a href={`/can-it-run?game=${g.slug}`}>{g.name}</a></li>)}</ul>
+          </div>
+        )}
+      </section>
+    )}
+
     <section class="faq">
-      <h2>Frequently asked questions</h2>
-      <details>
-        <summary>Will my PC run this game?</summary>
-        <p>Pick the game and enter your GPU, CPU and RAM above — the checker compares them against the publisher's own stated requirements and gives you a pass/fail verdict in seconds.</p>
-      </details>
-      <details>
-        <summary>Where do these requirements come from?</summary>
-        <p>Straight from the publisher's own listing on Steam. We show their exact wording next to our comparison and link the store page so you can check it yourself.</p>
-      </details>
-      <details>
-        <summary>Do I need to download anything?</summary>
-        <p>No. The check runs in your browser against our hardware database — no download, no account, no agent installed.</p>
-      </details>
-      <details>
-        <summary>What if my game is not listed?</summary>
-        <p>Keep typing. The search falls through to Steam's live catalogue, so titles outside our pre-loaded set are still found and their requirements fetched on the spot.</p>
-      </details>
-      <details>
-        <summary>Why is a row marked "not stated"?</summary>
-        <p>Because the publisher did not state it. Plenty of older titles list "256MB video memory" and no model name at all. We would rather mark that unverified than invent a number for it.</p>
-      </details>
+      <h2>How the check works</h2>
+      {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
     </section>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/fps-estimator">FPS Calculator</a></li>
-        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
-        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
-        <li><a href="/games">All games</a></li>
-        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+        <li><a href="/what-can-my-pc-run">See every game your PC can run</a></li>
+        <li><a href="/fps-estimator">Estimate the frame rate you'll get</a></li>
+        <li><a href="/upgrade-advisor">Fall short? Find the cheapest fix</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 44px; }
+  .shortcuts > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .shortcuts h2 { font-size: 16px; margin-bottom: 8px; }
+  .shortcuts ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .shortcuts li { font-size: 14px; display: flex; justify-content: space-between; gap: 10px; }
+  .shortcuts a:hover { color: var(--accent); }
+  .shortcuts small { color: var(--faint); }
   .tool {
     display: grid;
     grid-template-columns: minmax(300px, 380px) 1fr;
@@ -427,7 +435,7 @@ const schema = [
       errEl.hidden = false;
     } finally {
       btn.disabled = false;
-      btn.innerHTML = 'Check system requirements <span aria-hidden="true">&rarr;</span>';
+      btn.innerHTML = 'Run the check <span aria-hidden="true">&rarr;</span>';
     }
   });
 

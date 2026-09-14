@@ -1,123 +1,205 @@
 ---
-import { SITE_NAME } from '../lib/site';
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getGpus, getCpus } from '../lib/db';
+import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
+
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
+
+// Laptop chips don't take a desktop power supply.
+const desktopGpus = gpus.filter(g => !/laptop/i.test(g.name) && g.tdp_watts);
+const byMaker = <T extends { brand: string; name: string }>(list: T[]) =>
+  [...new Set(list.map(x => x.brand))].sort().map(brand => ({
+    brand,
+    items: list.filter(x => x.brand === brand).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }))
+  }));
+const gpuGroups = byMaker(desktopGpus);
+const cpuGroups = byMaker(cpus.filter(c => c.tdp_watts));
+const hungriest = [...desktopGpus].sort((a, b) => b.tdp_watts - a.tdp_watts)[0];
+
+/* The sizing rule, stated once and used by the script below:
+   parts' rated power + 60 W for board, memory, drives and USB + 3 W per fan,
+   then 40% headroom for the short spikes modern graphics cards draw,
+   rounded up to the next common supply size. */
+const BASE_W = 60;
+const HEADROOM = 1.4;
+const SIZES = [450, 550, 650, 750, 850, 1000, 1200, 1300, 1600];
+
+const faq = [
+  {
+    q: 'Why add so much headroom?',
+    a: 'Graphics cards draw brief spikes well above their rated power when a scene changes suddenly. A supply sized to the average can trip its protection and switch the PC off, so the calculator leaves 40% on top.'
+  },
+  {
+    q: 'Is a bigger power supply wasteful?',
+    a: 'Not in any way you would notice. A supply only delivers what the PC asks for; a larger one simply runs cooler and quieter at the same load.'
+  },
+  {
+    q: 'Where do the wattages come from?',
+    a: 'Each graphics card and processor carries its rated power (TDP or board power) from our hardware table. Processors can briefly exceed their rating, which the headroom also covers.'
+  },
+  {
+    q: 'Which efficiency rating should I pick?',
+    a: '80 Plus Gold is the usual choice for gaming PCs. The rating changes how much power is wasted as heat, not how much the PC can draw.'
+  }
+];
+
+const description = `How big a power supply does your gaming PC need? Pick your graphics card and processor from ${desktopGpus.length + cpus.length} parts, add fans, and get a wattage with room for power spikes.`;
+
+const schema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": `PSU Calculator (${SEO_YEAR})`,
+    "url": `${SITE_URL}/psu-calculator`,
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (web browser)",
+    "description": description,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+  }
+];
 ---
-<BaseLayout
-  title={`PSU Calculator — What Wattage PSU Do I Need? | ${SITE_NAME}`}
-  description="Size your power supply correctly. Pick your GPU, CPU and drives to get a recommended wattage with proper transient and efficiency headroom."
-  keywords="psu calculator, power supply wattage, what psu do i need, pc power consumption"
->
-  <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'PSU Calculator' }]} />
-  <h1>PSU Calculator — Find Your Power Supply Wattage</h1>
+<BaseLayout title={`PSU Calculator ${SEO_YEAR}: What Wattage Power Supply Do I Need? | ${SITE_NAME}`} description={description}
+  keywords={`psu calculator, what psu do i need, power supply calculator, psu wattage calculator ${SEO_YEAR}`} jsonLd={schema}>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'PSU Calculator' }]} />
 
-  <div class="calculator-container">
-    <form id="psu-form" class="psu-form">
-      <div class="form-group">
-        <label>GPU (Graphics Card)</label>
-        <select id="gpu-tdp">
-          <option value="0">None</option>
-          <option value="450">RTX 4090 (450W)</option>
-          <option value="320">RTX 4080 (320W)</option>
-          <option value="200">RTX 4070 (200W)</option>
-        </select>
-      </div>
+    <header class="head">
+      <span class="eyebrow">Power sizing</span>
+      <h1>PSU Calculator</h1>
+      <p class="lede">
+        Choose your graphics card and processor; the rated power of each comes from our hardware table. Add the rest of the build
+        and you get a supply size with room for the power spikes that trip undersized units.
+      </p>
+    </header>
 
-      <div class="form-group">
-        <label>CPU (Processor)</label>
-        <select id="cpu-tdp">
-          <option value="0">None</option>
-          <option value="253">Core i9-14900K (253W)</option>
-          <option value="120">Ryzen 7 7800X3D (120W)</option>
-          <option value="65">Ryzen 5 7600 (65W)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>RAM Sticks (5W each)</label>
-        <input type="number" id="ram" min="0" max="8" value="2">
-      </div>
-
-      <div class="form-group">
-        <label>Storage Drives (HDDs 7W, SSDs 3W)</label>
-        <div style="display:flex;gap:1rem;">
-          <input type="number" id="hdd" min="0" max="10" value="0" placeholder="HDDs">
-          <input type="number" id="ssd" min="0" max="10" value="1" placeholder="SSDs">
+    <section class="tool">
+      <form class="panel" id="psu-form"
+        data-base={BASE_W} data-headroom={HEADROOM} data-sizes={SIZES.join(',')}>
+        <label>
+          <span>Graphics card</span>
+          <select id="gpu">
+            {gpuGroups.map(gr => (
+              <optgroup label={gr.brand}>
+                {gr.items.map(g => <option selected={g.slug === 'nvidia-geforce-rtx-4060'} value={g.tdp_watts}>{g.name} · {g.tdp_watts} W</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Processor</span>
+          <select id="cpu">
+            {cpuGroups.map(gr => (
+              <optgroup label={gr.brand}>
+                {gr.items.map(c => <option selected={c.slug === 'amd-ryzen-5-5600'} value={c.tdp_watts}>{c.name} · {c.tdp_watts} W</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <div class="two">
+          <label><span>Case fans</span><input type="number" id="fans" min="0" max="15" value="3" inputmode="numeric"></label>
+          <label><span>Extra drives</span><input type="number" id="drives" min="0" max="10" value="1" inputmode="numeric"></label>
         </div>
-      </div>
+        <label class="tick"><input type="checkbox" id="oc"> I overclock (adds 15% to the processor and card)</label>
+        <button type="submit" class="btn btn-primary">Size my power supply &rarr;</button>
+      </form>
 
-      <div class="form-group">
-        <label>Fans (3W each)</label>
-        <input type="number" id="fans" min="0" max="20" value="4">
+      <div class="out" id="out" aria-live="polite">
+        <p class="idle">Pick your parts and press the button.</p>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label><input type="checkbox" id="rgb"> Add RGB Lighting (+15W)</label>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" id="oc"> Overclocking (+15%)</label>
-      </div>
+    <section class="rule">
+      <h2>The rule behind the number</h2>
+      <ol>
+        <li><b>Rated power</b> of the graphics card and processor.</li>
+        <li><b>+ {BASE_W} W</b> for motherboard, memory, the boot drive and USB devices; <b>+ 3 W</b> per fan and <b>+ 8 W</b> per extra drive.</li>
+        <li><b>× {HEADROOM}</b> for spikes and ageing.</li>
+        <li><b>Round up</b> to the next common size: {SIZES.map(s => `${s} W`).join(', ')}.</li>
+      </ol>
+      {hungriest && <p class="note">The hungriest desktop card we track is the <a href={`/gpu/${hungriest.slug}`}>{hungriest.name}</a> at {hungriest.tdp_watts} W on its own.</p>}
+    </section>
 
-      <button type="submit" class="btn">Calculate PSU Wattage</button>
-    </form>
+    <section class="faq">
+      <h2>Power supply questions</h2>
+      {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
+    </section>
 
-    <div id="psu-results" class="psu-results" style="display: none;">
-      <h2>Results</h2>
-      <p>Total System TDP: <strong id="total-tdp"></strong></p>
-      <h3>Recommended PSU: <span id="rec-psu" class="highlight"></span></h3>
-      <p>Efficiency Tier: <strong id="eff-tier"></strong></p>
-      
-      <h4>Recommended Products</h4>
-      <ul id="product-recs"></ul>
-    </div>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
+      <ul>
+        <li><a href="/build-suggest">Parts lists by budget</a></li>
+        <li><a href="/upgrade-advisor">Planning a card upgrade?</a></li>
+        <li><a href="/gpus">Every card’s power draw</a></li>
+      </ul>
+    </nav>
   </div>
 </BaseLayout>
 
+<style>
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .tool { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 44px; }
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
+  .panel label { display: grid; gap: 6px; font-size: 14px; }
+  .panel label > span { color: var(--muted); font-size: 13px; }
+  .panel select, .panel input[type=number] { width: 100%; min-height: 44px; background: var(--bg); border: 1px solid var(--line-strong); color: var(--text); border-radius: var(--radius-sm); padding: 8px 10px; font: inherit; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tick { display: flex !important; align-items: center; gap: 8px; color: var(--muted); min-height: 44px; }
+  .out { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-height: 220px; }
+  .idle { color: var(--faint); }
+  .out :global(.big) { font-family: var(--font-display); font-size: 48px; color: var(--readout); line-height: 1; }
+  .out :global(.lbl) { color: var(--muted); font-size: 13px; margin: 4px 0 16px; }
+  .out :global(dl) { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; margin: 0; font-size: 14px; }
+  .out :global(dt) { color: var(--muted); }
+  .out :global(dd) { margin: 0; font-family: var(--font-mono); text-align: right; }
+  .out :global(.sum) { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 700; color: var(--text); }
+  .rule { margin-bottom: 44px; }
+  .rule h2 { font-size: 20px; margin-bottom: 10px; }
+  .rule ol { color: var(--muted); padding-left: 20px; display: grid; gap: 6px; }
+  .rule b { color: var(--text); }
+  .note { color: var(--muted); font-size: 14px; margin-top: 12px; }
+  .note a { color: var(--accent); }
+  @media (max-width: 800px) { .tool { grid-template-columns: 1fr; } }
+</style>
+
 <script>
-  document.getElementById('psu-form')?.addEventListener('submit', (e) => {
+  const form = document.getElementById('psu-form') as HTMLFormElement;
+  const out = document.getElementById('out')!;
+  const num = (id: string) => Math.max(0, Number((document.getElementById(id) as HTMLInputElement).value) || 0);
+
+  form.addEventListener('submit', e => {
     e.preventDefault();
-    const gpu = parseInt((document.getElementById('gpu-tdp') as HTMLSelectElement).value) || 0;
-    const cpu = parseInt((document.getElementById('cpu-tdp') as HTMLSelectElement).value) || 0;
-    const ram = parseInt((document.getElementById('ram') as HTMLInputElement).value) || 0;
-    const hdd = parseInt((document.getElementById('hdd') as HTMLInputElement).value) || 0;
-    const ssd = parseInt((document.getElementById('ssd') as HTMLInputElement).value) || 0;
-    const fans = parseInt((document.getElementById('fans') as HTMLInputElement).value) || 0;
-    const rgb = (document.getElementById('rgb') as HTMLInputElement).checked ? 15 : 0;
-    const oc = (document.getElementById('oc') as HTMLInputElement).checked;
+    const base = Number(form.dataset.base);
+    const headroom = Number(form.dataset.headroom);
+    const sizes = (form.dataset.sizes || '').split(',').map(Number);
+    const oc = (document.getElementById('oc') as HTMLInputElement).checked ? 1.15 : 1;
 
-    let total = gpu + cpu + (ram * 5) + (hdd * 7) + (ssd * 3) + (fans * 3) + rgb;
-    if (oc) total *= 1.15;
-    total = Math.ceil(total);
+    const gpu = Math.round(num('gpu') * oc);
+    const cpu = Math.round(num('cpu') * oc);
+    const fans = num('fans') * 3;
+    const drives = num('drives') * 8;
+    const load = gpu + cpu + base + fans + drives;
+    const target = Math.ceil(load * headroom);
+    const size = sizes.find(s => s >= target) ?? sizes[sizes.length - 1];
 
-    let rec = total * 1.25;
-    const standardSizes = [550, 650, 750, 850, 1000, 1200, 1600];
-    let finalPsu = standardSizes.find(s => s >= rec) || 1600;
-
-    const effTier = finalPsu >= 850 ? '80+ Gold or Platinum' : '80+ Bronze or Gold';
-
-    document.getElementById('psu-results')!.style.display = 'block';
-    document.getElementById('total-tdp')!.innerText = `${total}W`;
-    document.getElementById('rec-psu')!.innerText = `${finalPsu}W`;
-    document.getElementById('eff-tier')!.innerText = effTier;
-
-    document.getElementById('product-recs')!.innerHTML = `
-      <li><a href="#" target="_blank">Corsair RM${finalPsu}x (Amazon)</a></li>
-      <li><a href="#" target="_blank">EVGA SuperNOVA ${finalPsu} G6 (Amazon)</a></li>
-      <li><a href="#" target="_blank">SeaSonic Focus GX-${finalPsu} (Amazon)</a></li>
-    `;
+    out.innerHTML = `
+      <div class="big">${size} W</div>
+      <p class="lbl">Recommended power supply${target > sizes[sizes.length - 1] ? ' — your load is above the largest common size' : ''}</p>
+      <dl>
+        <dt>Graphics card</dt><dd>${gpu} W</dd>
+        <dt>Processor</dt><dd>${cpu} W</dd>
+        <dt>Board, memory, boot drive</dt><dd>${base} W</dd>
+        <dt>Fans and extra drives</dt><dd>${fans + drives} W</dd>
+        <dt class="sum">Estimated load</dt><dd class="sum">${load} W</dd>
+        <dt>With ${Math.round((headroom - 1) * 100)}% headroom</dt><dd>${target} W</dd>
+      </dl>`;
   });
 </script>
-
-<style>
-  .calculator-container { display: flex; gap: 2rem; flex-wrap: wrap; }
-  .psu-form { flex: 1; min-width: 300px; background: var(--surface, #111420); padding: 2rem; border-radius: 8px; }
-  .psu-results { flex: 1; min-width: 300px; background: #1a1a24; padding: 2rem; border-radius: 8px; }
-  .form-group { margin-bottom: 1.5rem; }
-  .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-  .form-group select, .form-group input[type="number"] { width: 100%; padding: 0.8rem; background: #000; border: 1px solid #444; color: #fff; border-radius: 4px; }
-  .btn { width: 100%; padding: 1rem; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
-  .highlight { color: var(--accent); font-size: 2rem; }
-  ul { padding-left: 1rem; }
-  li a { color: #fff; text-decoration: underline; }
-</style>

@@ -5,6 +5,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGpus, getCpus } from '../lib/db';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+const PATH = '/build-suggest';
 
 const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 
@@ -24,14 +25,33 @@ const builds = BUDGETS.map(b => {
   return { ...b, gpu, cpu };
 });
 
-const description = 'Get a complete PC parts list for your budget — matched GPU and CPU, memory, power supply and storage, sized for 1080p, 1440p or 4K gaming. Free build suggester.';
+const description = `Gaming PC builds for ${SEO_YEAR} at five budgets from $600 to $2,500+, each with a graphics card and processor matched on our index, plus memory, storage, power and cooling.`;
+
+const faq = [
+  {
+    q: `What does a decent gaming PC cost in ${SEO_YEAR}?`,
+    a: 'Roughly $900 for smooth 1080p on high settings, $1,200 to $1,800 for 1440p, and from about $2,500 for 4K at high frame rates — before the monitor.'
+  },
+  {
+    q: 'How are the graphics card and processor chosen?',
+    a: 'Each budget has a ceiling on our performance index for both parts. The strongest card and processor under those ceilings are picked, which keeps them close enough that neither spends its time waiting on the other.'
+  },
+  {
+    q: 'Is 16 GB of memory still enough?',
+    a: 'For gaming on its own, yes. The builds move to 32 GB from the $1,200 budget up, where streaming, voice chat and a browser alongside the game are more likely.'
+  },
+  {
+    q: 'Is last generation’s hardware a better deal?',
+    a: 'Frequently. An older card one step higher in the range can match or beat a newer one a step lower for the same money — compare the two before buying.'
+  }
+];
 
 const schema = [
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Gaming PC Build Suggester",
-    "url": `${SITE_URL}/build-suggest`,
+    "name": `Gaming PC Build Suggester (${SEO_YEAR})`,
+    "url": `${SITE_URL}${PATH}`,
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any (web browser)",
     "description": description,
@@ -40,41 +60,25 @@ const schema = [
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": `How much does a good gaming PC cost in ${SEO_YEAR}?`,
-        "acceptedAnswer": { "@type": "Answer", "text": "Around $900 buys a solid 1080p machine at high settings. $1,200 to $1,800 is the sweet spot for 1440p gaming, and 4K at high frame rates generally starts near $2,500 once the monitor is accounted for." }
-      },
-      {
-        "@type": "Question",
-        "name": "How much should I spend on the GPU versus the CPU?",
-        "acceptedAnswer": { "@type": "Answer", "text": "For a gaming-first build, roughly 40-50% of the total goes to the graphics card and 15-20% to the processor. Overspending on the CPU while under-buying the GPU is the most common mistake in first builds." }
-      },
-      {
-        "@type": "Question",
-        "name": "Do I need 32GB of RAM for gaming?",
-        "acceptedAnswer": { "@type": "Answer", "text": "16GB is enough for gaming alone. 32GB is worth it from roughly the $1,200 tier upward, or sooner if you stream, keep many browser tabs open, or work with large files on the same machine." }
-      }
-    ]
+    "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
   }
 ];
 ---
 <BaseLayout
-  title={`Gaming PC Build Suggester by Budget | ${SITE_NAME}`}
+  title={`Gaming PC Builds ${SEO_YEAR}: Parts Lists From $600 to $2,500 | ${SITE_NAME}`}
   description={description}
-  keywords="gaming pc build, pc parts list, build a gaming pc, pc builder by budget, 1440p gaming pc build"
+  keywords={`gaming pc build ${SEO_YEAR}, best gaming pc build for the money, pc parts list by budget, 1440p gaming pc build`}
   jsonLd={schema}
 >
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'Build Suggester' }]} />
 
-    <header class="page-head">
-      <h1>Gaming PC Build Suggester</h1>
+    <header class="head">
+      <span class="eyebrow">Parts lists</span>
+      <h1>Gaming PC builds by budget</h1>
       <p class="lede">
-        Pick a budget and get a balanced parts list — a graphics card and processor matched to
-        each other so neither one is wasted, plus the memory, power supply and storage to go
-        with them.
+        Choose a budget. Each list pairs a graphics card and processor of similar strength on our index — so money is not
+        spent on speed the other part can’t use — then fills in memory, storage, power and cooling to suit.
       </p>
     </header>
 
@@ -89,109 +93,98 @@ const schema = [
         <div class="build-head">
           <div>
             <span class="eyebrow">{b.label} build · targets {b.res}</span>
-            <h2>Balanced {b.res} gaming PC</h2>
+            <h2>{b.label} PC for {b.res} gaming</h2>
           </div>
           <div class="tgt">
             <b>{b.res}</b>
-            <span>target resolution</span>
+            <span>screen it is built for</span>
           </div>
         </div>
 
         <div class="table-scroll">
           <table class="data-table">
             <thead>
-              <tr><th>Component</th><th>Recommendation</th><th>Why</th></tr>
+              <tr><th>Part</th><th>Pick</th><th>Reasoning</th></tr>
             </thead>
             <tbody>
               <tr>
                 <td>Graphics card</td>
                 <td><a href={`/gpu/${b.gpu.slug}`}>{b.gpu.name}</a> <span class={`pill t-${b.gpu.tier}`}>{b.gpu.tier}</span></td>
-                <td class="why">{b.gpu.vram_gb}GB VRAM, {b.gpu.tdp_watts}W — the strongest card that fits this budget without starving the rest of the build.</td>
+                <td class="why">The fastest card under this budget’s ceiling, with {b.gpu.vram_gb} GB of video memory and {b.gpu.tdp_watts} W rated power.</td>
               </tr>
               <tr>
                 <td>Processor</td>
                 <td><a href={`/cpu/${b.cpu.slug}`}>{b.cpu.name}</a> <span class={`pill t-${b.cpu.tier}`}>{b.cpu.tier}</span></td>
-                <td class="why">{b.cpu.cores} cores / {b.cpu.threads} threads at up to {b.cpu.boost_ghz}GHz — matched to the GPU so neither bottlenecks the other.</td>
+                <td class="why">Chosen to keep pace with the card: {b.cpu.cores} cores, {b.cpu.threads} threads, up to {b.cpu.boost_ghz} GHz.</td>
               </tr>
               <tr>
                 <td>Memory</td>
                 <td>{b.ram}GB DDR5 (2 × {b.ram / 2}GB)</td>
-                <td class="why">Always two matched sticks for dual-channel. A single stick costs real frame rate.</td>
+                <td class="why">Two identical sticks, so the memory runs in dual channel.</td>
               </tr>
               <tr>
                 <td>Storage</td>
                 <td>{b.key === '600' ? '1TB' : '2TB'} NVMe SSD</td>
-                <td class="why">Modern installs run 70–150GB each. NVMe removes traversal stutter in open-world games.</td>
+                <td class="why">Big games take up a lot of room; an NVMe drive also loads open worlds without hitching.</td>
               </tr>
               <tr>
                 <td>Power supply</td>
                 <td>{b.psu}W 80+ Gold</td>
-                <td class="why">Leaves headroom for transient spikes. Verify with the <a href="/psu-calculator">PSU calculator</a>.</td>
+                <td class="why">Room above the parts’ draw for power spikes. Check your exact parts in the <a href="/psu-calculator">PSU calculator</a>.</td>
               </tr>
               <tr>
                 <td>Cooling</td>
                 <td>{b.cpu.tdp_watts >= 125 ? '240mm AIO or premium air tower' : 'Quality air tower'}</td>
-                <td class="why">Sized to the {b.cpu.tdp_watts}W processor TDP.</td>
+                <td class="why">Matched to the processor’s {b.cpu.tdp_watts} W rating.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div class="cta-row">
-          <a href={`/compare-gpu?a=${b.gpu.slug}`} class="btn btn-ghost">Compare this GPU</a>
-          <a href="/bottleneck" class="btn btn-ghost">Verify the pairing</a>
-          <a href="/psu-calculator" class="btn btn-ghost">Size the PSU</a>
+          <a href={`/compare-gpu?a=${b.gpu.slug}`} class="btn btn-ghost">Compare this card</a>
+          <a href="/bottleneck" class="btn btn-ghost">Check the pairing</a>
+          <a href="/psu-calculator" class="btn btn-ghost">Check the power supply</a>
         </div>
       </div>
     ))}
 
     <section class="split-guide">
-      <h2>How to split a gaming PC budget</h2>
+      <h2>A rule of thumb for splitting the money</h2>
       <div class="split-grid">
-        <div><b>40–50%</b><span>Graphics card</span><p>The single biggest lever on frame rate in almost every game.</p></div>
-        <div><b>15–20%</b><span>Processor</span><p>Enough to keep the GPU fed without overspending.</p></div>
-        <div><b>10%</b><span>Memory</span><p>16GB minimum, 32GB from the mid tier upward.</p></div>
-        <div><b>10%</b><span>Storage</span><p>NVMe over capacity — you can always add a second drive.</p></div>
-        <div><b>10%</b><span>PSU &amp; case</span><p>Never the place to cut corners; a bad PSU takes parts with it.</p></div>
-        <div><b>5%</b><span>Cooling</span><p>Scale to the processor's power draw, not to looks.</p></div>
+        <div><b>40–50%</b><span>Graphics card</span><p>Moves frame rate more than any other part.</p></div>
+        <div><b>15–20%</b><span>Processor</span><p>Enough to keep up with the card, no more.</p></div>
+        <div><b>~10%</b><span>Memory</span><p>16 GB to start; 32 GB on bigger budgets.</p></div>
+        <div><b>~10%</b><span>Storage</span><p>A fast NVMe drive first, more space later.</p></div>
+        <div><b>~10%</b><span>Power and case</span><p>A poor supply can damage other parts.</p></div>
+        <div><b>~5%</b><span>Cooling</span><p>Follow the processor’s power rating.</p></div>
       </div>
     </section>
 
     <section class="faq">
-      <h2>Frequently asked questions</h2>
-      <details>
-        <summary>How much does a good gaming PC cost in {SEO_YEAR}?</summary>
-        <p>Around $900 buys a solid 1080p machine at high settings. $1,200–$1,800 is the sweet spot for 1440p, and 4K at high frame rates generally starts near $2,500 once you account for the monitor.</p>
-      </details>
-      <details>
-        <summary>How much should I spend on the GPU versus the CPU?</summary>
-        <p>For a gaming-first build, roughly 40–50% of the total goes to the graphics card and 15–20% to the processor. Overspending on the CPU while under-buying the GPU is the most common mistake in first builds.</p>
-      </details>
-      <details>
-        <summary>Do I need 32GB of RAM?</summary>
-        <p>16GB is enough for gaming alone. 32GB is worth it from about the $1,200 tier upward, or sooner if you stream or keep heavy apps open while you play.</p>
-      </details>
-      <details>
-        <summary>Should I buy last generation to save money?</summary>
-        <p>Often yes. A previous-generation card one tier up frequently beats a current-generation card one tier down at the same price. Compare them directly on the <a href="/compare-gpu">GPU comparison tool</a>.</p>
-      </details>
+      <h2>Build questions</h2>
+      {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
     </section>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
-        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
-        <li><a href="/psu-calculator">PSU Calculator</a></li>
-        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
-        <li><a href="/cpu-tier-list">CPU Tier List</a></li>
-        <li><a href="/benchmarks">Benchmarks</a></li>
+        <li><a href="/psu-calculator">Size the power supply exactly</a></li>
+        <li><a href="/gpu-tier-list">Graphics cards ranked for {SEO_YEAR}</a></li>
+        <li><a href="/upgrade-advisor">Upgrading instead of building?</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .explain { margin: 0 0 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .explain > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .explain h2 { font-size: 15px; margin-bottom: 6px; color: var(--readout); font-family: var(--font-mono); letter-spacing: .02em; }
+  .explain p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
   .budget-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
   .bbtn {
     background: transparent; border: 1px solid var(--line-strong); color: var(--muted);

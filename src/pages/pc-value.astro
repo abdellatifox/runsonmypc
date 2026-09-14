@@ -4,18 +4,48 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { getGpus, getCpus } from '../lib/db';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
+const PATH = '/pc-value';
 
 const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 const thisYear = new Date().getFullYear();
 
-const description = 'Estimate what your gaming PC is worth second-hand. Enter your GPU, CPU, RAM and storage for a realistic private-sale price range.';
+const description = 'Selling or buying a used gaming PC? Pick its graphics card, processor, memory, storage and condition to get a rough private-sale price range and a per-part breakdown.';
+
+// Grouped by maker and sorted by name, so a reader can find their part quickly.
+const byMaker = <T extends { brand: string; name: string }>(list: T[]) =>
+  [...new Set(list.map(x => x.brand))].sort().map(brand => ({
+    brand,
+    items: list.filter(x => x.brand === brand).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }))
+  }));
+const gpuGroups = byMaker(gpus);
+const cpuGroups = byMaker(cpus);
+
+const faq = [
+  {
+    q: 'How is the price worked out?',
+    a: 'Each part starts from a launch-price figure and loses value with age; condition then scales the total. The graphics card usually carries most of the value, which is why it is listed first in the breakdown.'
+  },
+  {
+    q: 'Whole PC or separate parts?',
+    a: 'Separate parts usually fetch more in total, because most used buyers are after one upgrade. A whole PC sells faster and with less hassle — the gap is what your time is worth.'
+  },
+  {
+    q: 'When do used graphics card prices fall fastest?',
+    a: 'Around the launch of a new generation. If you plan to sell, doing it before the announcement tends to get a better price.'
+  },
+  {
+    q: 'How far should I trust the estimate?',
+    a: 'As a starting point only. Local demand, stock shortages and new launches move used prices a lot, so check recently sold listings where you live before you set a price.'
+  }
+];
 
 const schema = [
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "PC Value Calculator",
-    "url": `${SITE_URL}/pc-value`,
+    "name": `PC Value Calculator (${SEO_YEAR})`,
+    "url": `${SITE_URL}${PATH}`,
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any (web browser)",
     "description": description,
@@ -24,41 +54,25 @@ const schema = [
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "How much does a gaming PC lose in value each year?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Graphics cards hold value best but still lose roughly 18-25% per year, accelerating sharply when a new generation launches. Processors depreciate more slowly at around 15% per year, while memory and storage lose value mostly in line with falling new prices." }
-      },
-      {
-        "@type": "Question",
-        "name": "Is it better to sell a PC whole or in parts?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Selling parts individually typically nets 15-30% more than selling a complete system, because buyers are usually shopping for one specific upgrade. Selling whole is faster and far less effort, so the premium is really payment for your time." }
-      },
-      {
-        "@type": "Question",
-        "name": "When is the worst time to sell a graphics card?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Immediately after a new generation is announced. Prices on the outgoing generation drop fastest between the announcement and the first weeks of availability, so selling before an announcement is usually worth a noticeable amount." }
-      }
-    ]
+    "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
   }
 ];
 ---
 <BaseLayout
-  title={`PC Value Calculator — What Is My Gaming PC Worth? | ${SITE_NAME}`}
+  title={`PC Value Calculator ${SEO_YEAR}: How Much Is My Gaming PC Worth? | ${SITE_NAME}`}
   description={description}
-  keywords="pc value calculator, pc valuation, what is my gaming pc worth, sell my gaming pc, used gpu value, pc resale value"
+  keywords={`how much is my gaming pc worth, pc value calculator, used gaming pc price, sell gaming pc ${SEO_YEAR}`}
   jsonLd={schema}
 >
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'PC Value Calculator' }]} />
 
-    <header class="page-head">
-      <h1>What Is My Gaming PC Worth?</h1>
+    <header class="head">
+      <span class="eyebrow">Resale estimate</span>
+      <h1>How much is my gaming PC worth?</h1>
       <p class="lede">
-        A realistic private-sale estimate — a quick PC valuation — based on launch pricing, component age
-        and how each class of part actually depreciates. Useful whether you are selling, buying used, or
-        working out whether an upgrade is worth it.
+        Six quick choices give a rough price range for a used gaming PC, with each part’s share of the total — handy whether
+        you are listing one, checking an offer, or deciding if selling beats upgrading.
       </p>
     </header>
 
@@ -67,17 +81,25 @@ const schema = [
         <label>
           <span>Graphics card</span>
           <select id="gpu">
-            {gpus.map(g => <option value={`${g.msrp_usd || 0}|${g.release_year}`}>{g.name}</option>)}
+            {gpuGroups.map(gr => (
+              <optgroup label={gr.brand}>
+                {gr.items.map(g => <option selected={g.slug === 'nvidia-geforce-rtx-4060'} value={`${g.msrp_usd || 0}|${g.release_year}`}>{g.name}</option>)}
+              </optgroup>
+            ))}
           </select>
         </label>
         <label>
           <span>Processor</span>
           <select id="cpu">
-            {cpus.map(c => <option value={`${Math.round(c.score * 5.5)}|${c.release_year}`}>{c.name}</option>)}
+            {cpuGroups.map(gr => (
+              <optgroup label={gr.brand}>
+                {gr.items.map(c => <option selected={c.slug === 'amd-ryzen-5-5600'} value={`${Math.round(c.score * 5.5)}|${c.release_year}`}>{c.name}</option>)}
+              </optgroup>
+            ))}
           </select>
         </label>
         <label>
-          <span>System memory</span>
+          <span>Memory (RAM)</span>
           <select id="ram">
             <option value="30">8 GB</option>
             <option value="55" selected>16 GB</option>
@@ -95,78 +117,66 @@ const schema = [
           </select>
         </label>
         <label>
-          <span>Rest of system</span>
+          <span>Case, motherboard, power supply</span>
           <select id="rest">
-            <option value="120">Budget case, board and PSU</option>
-            <option value="220" selected>Mid-range case, board and PSU</option>
-            <option value="400">Premium case, board and PSU</option>
+            <option value="120">Basic</option>
+            <option value="220" selected>Mid-range</option>
+            <option value="400">High-end</option>
           </select>
         </label>
         <label>
           <span>Condition</span>
           <select id="cond">
-            <option value="1.0">Like new, boxed</option>
-            <option value="0.9" selected>Good, working order</option>
-            <option value="0.75">Heavy use or cosmetic damage</option>
+            <option value="1.0">As new, with boxes</option>
+            <option value="0.9" selected>Used, everything works</option>
+            <option value="0.75">Worn, marked or repaired</option>
           </select>
         </label>
       </div>
-      <button id="calc" class="btn btn-primary full">Estimate my PC's value</button>
+      <button id="calc" class="btn btn-primary full">Price my PC</button>
     </div>
 
     <div id="result" class="result" hidden>
       <div class="headline">
-        <span class="eyebrow">Estimated private sale value</span>
+        <span class="eyebrow">Likely private-sale range</span>
         <div class="range"><span id="low"></span> <em>–</em> <span id="high"></span></div>
-        <p class="sub">Selling as a complete system. Parting it out typically adds 15–30%.</p>
+        <p class="sub">For the PC sold whole. Selling parts one by one usually brings in more.</p>
       </div>
       <div class="table-scroll">
         <table class="data-table">
-          <thead><tr><th>Component</th><th>Estimated value</th><th>Share</th></tr></thead>
+          <thead><tr><th>Part</th><th>Worth about</th><th>Of total</th></tr></thead>
           <tbody id="breakdown"></tbody>
         </table>
       </div>
       <p class="disclaimer">
-        Estimates model launch pricing against age-based depreciation. Real prices swing with
-        local demand, generation launches and stock levels — always check recent completed
-        listings in your own market before setting a price.
+        A model of launch price and age, not a quote. Look at recently sold listings near you before you set a price.
       </p>
     </div>
 
     <section class="faq">
-      <h2>Frequently asked questions</h2>
-      <details>
-        <summary>How much value does a gaming PC lose each year?</summary>
-        <p>Graphics cards hold value best but still lose roughly 18–25% a year, accelerating sharply when a new generation launches. Processors depreciate more slowly at around 15%, while memory and storage track falling new prices.</p>
-      </details>
-      <details>
-        <summary>Is it better to sell whole or in parts?</summary>
-        <p>Parting out typically nets 15–30% more, because buyers are usually shopping for one specific upgrade. Selling whole is far faster, so the premium is really payment for your time.</p>
-      </details>
-      <details>
-        <summary>When is the worst time to sell a graphics card?</summary>
-        <p>Right after a new generation is announced. Outgoing-generation prices fall fastest between the announcement and the first weeks of availability.</p>
-      </details>
-      <details>
-        <summary>Should I sell or upgrade?</summary>
-        <p>If one part is dragging the rest down, upgrading that single part is usually better value than replacing the system. Run the <a href="/upgrade-advisor">upgrade advisor</a> before deciding.</p>
-      </details>
+      <h2>Resale questions</h2>
+      {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
     </section>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
-        <li><a href="/build-suggest">Build Suggester</a></li>
-        <li><a href="/compare-gpu">Compare GPUs</a></li>
-        <li><a href="/gpus">GPU Database</a></li>
-        <li><a href="/bottleneck">Bottleneck Calculator</a></li>
+        <li><a href="/upgrade-advisor">Upgrade instead of selling?</a></li>
+        <li><a href="/gpus">Launch prices of every card</a></li>
+        <li><a href="/build-suggest">What a new build costs</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .explain { margin: 0 0 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .explain > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .explain h2 { font-size: 15px; margin-bottom: 6px; color: var(--readout); font-family: var(--font-mono); letter-spacing: .02em; }
+  .explain p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
   .tool-panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 26px; margin-bottom: 30px; }
   .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
   .fields label { display: block; }

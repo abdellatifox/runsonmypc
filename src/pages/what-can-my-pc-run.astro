@@ -6,6 +6,8 @@ import Autocomplete from '../components/Autocomplete.astro';
 import Icon from '../components/Icon.astro';
 import { bundledCount } from '../lib/game-reqs';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
+const PATH = '/what-can-my-pc-run';
 
 const bundled = bundledCount();
 
@@ -14,55 +16,59 @@ const RAM_OPTIONS = [4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128].map(n => ({
   value: String(n)
 }));
 
+const faq = [
+  {
+    q: 'How are games sorted?',
+    a: 'Into three groups. Ultra: your graphics card is comfortably above the recommended spec. High: you meet the recommended spec. Medium: you clear the minimum but not the recommended.'
+  },
+  {
+    q: 'What about games my PC can’t run?',
+    a: 'They are left out of the results. To see exactly which part falls short for one game, open it in Can I Run It?.'
+  },
+  {
+    q: 'Why isn’t a game I own in the results?',
+    a: 'Either your PC is below its minimum, or its publisher’s requirements name nothing we can measure — a bare "DirectX 11 card", for example. We leave those out rather than guess.'
+  },
+  {
+    q: `Are ${SEO_YEAR} releases included?`,
+    a: 'No. Only released games are scanned, since an unreleased game’s requirements can still change before launch.'
+  }
+];
+
 const schema = [
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "What Can My PC Run?",
-    "url": `${SITE_URL}/what-can-my-pc-run`,
+    "name": `What Can My PC Run? (${SEO_YEAR})`,
+    "url": `${SITE_URL}${PATH}`,
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any (web browser)",
-    "description": "Enter your PC specs once and see every game your machine handles, checked against the publisher's own stated requirements.",
+    "description": 'Lists every released PC game a given graphics card, processor and memory can run, grouped by the settings they can manage.',
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   },
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What games can my PC run?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Enter your graphics card, processor and RAM once and we check them against every game in our library with publisher-stated requirements, sorting the results into Ultra, High and Medium so you can see what you can play and at roughly what setting." }
-      },
-      {
-        "@type": "Question",
-        "name": "What will my PC run at Ultra settings?",
-        "acceptedAnswer": { "@type": "Answer", "text": "A game lands in Ultra when your graphics card clears the recommended requirement with real headroom to spare — not just barely meets it. High means you meet the recommended spec; Medium means you clear the minimum but not the recommended tier." }
-      },
-      {
-        "@type": "Question",
-        "name": "Why is a game missing from the list?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Either the publisher never listed PC requirements for it, or the listed requirements name no dimension we can compare against your parts — we would rather leave a title out than guess." }
-      }
-    ]
+    "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
   }
 ];
 ---
 <BaseLayout
-  title={`What Can My PC Run? — Find Compatible Games | ${SITE_NAME}`}
-  description="What will my PC run? Enter your specs once to see every game your PC handles, and at which settings, checked against publisher-stated requirements."
-  keywords="what can my pc run, what will my pc run, what games can my pc run, compatible games for my pc, pc game compatibility"
+  title={`What Can My PC Run? Every Game Your Specs Handle (${SEO_YEAR}) | ${SITE_NAME}`}
+  description="What games can your PC run? Enter your graphics card, processor and memory once and get every game you can play, grouped into Ultra, High and Medium."
+  keywords={`what can my pc run, what games can my pc run, games my pc can run, what will my pc run ${SEO_YEAR}`}
   jsonLd={schema}
 >
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Tools', href: '/tools' }, { name: 'What Can My PC Run' }]} />
 
-    <header class="page-head">
+    <header class="head">
+      <span class="eyebrow">Library scan</span>
       <h1>What Can My PC Run?</h1>
       <p class="lede">
-        Enter your GPU, CPU and RAM once to see what games your PC can run — checked against
-        {bundled > 0 ? `${bundled.toLocaleString('en-US')} titles with` : 'every title with'} publisher-stated
-        requirements, and sorted by the settings you can expect.
+        The reverse of a single-game check: give us your parts once and we go through
+        {bundled > 0 ? ` all ${bundled.toLocaleString('en-US')} released games` : ' every released game'} on the site,
+        then hand back the ones you can play, grouped by the settings you can expect.
       </p>
     </header>
 
@@ -71,28 +77,28 @@ const schema = [
         <Autocomplete
           id="gpu"
           label="Graphics card"
-          placeholder="e.g. RTX 4070, RX 6600, Arc B580…"
+          placeholder="Your card, e.g. GTX 1660 Super"
           endpoint="/api/gpus/search"
           required
         />
         <Autocomplete
           id="cpu"
           label="Processor"
-          placeholder="e.g. Ryzen 5 5600, i5-12400…"
+          placeholder="Your chip, e.g. Core i7-9700K"
           endpoint="/api/cpus/search"
-          hint="Optional, but it rules out a few CPU-bound titles."
+          hint="Leave empty to judge on the graphics card and memory only."
         />
         <Autocomplete
           id="ram"
-          label="System memory"
-          placeholder="e.g. 16 GB"
+          label="Memory (RAM)"
+          placeholder="How much? e.g. 16 GB"
           endpoint=""
           options={RAM_OPTIONS}
           freeText
           required
         />
         <button type="submit" class="btn btn-primary submit" id="scan-btn">
-          Find compatible games <span aria-hidden="true">&rarr;</span>
+          Scan the library <span aria-hidden="true">&rarr;</span>
         </button>
         <p class="err" id="form-err" role="alert" hidden></p>
       </form>
@@ -100,43 +106,38 @@ const schema = [
       <div class="results" id="results" aria-live="polite">
         <div class="placeholder" id="placeholder">
           <Icon name="joystick" />
-          <h2>Enter your specs to see results</h2>
+          <h2>Your games appear here</h2>
           <p>{bundled > 0
-            ? `Checked against ${bundled.toLocaleString('en-US')} games with real, publisher-stated requirements.`
-            : 'Checked against publisher-stated requirements.'}</p>
+            ? `${bundled.toLocaleString('en-US')} games, each with the publisher’s own requirements.`
+            : 'Every game is judged on its publisher’s own requirements.'}</p>
         </div>
       </div>
     </section>
 
     <section class="faq">
-      <h2>Frequently asked questions</h2>
-      <details>
-        <summary>What games can my PC run?</summary>
-        <p>Enter your graphics card, processor and RAM once and we check them against every game in our library with publisher-stated requirements, sorting the results into Ultra, High and Medium.</p>
-      </details>
-      <details>
-        <summary>What will my PC run at Ultra settings?</summary>
-        <p>A game lands in Ultra when your graphics card clears the recommended requirement with real headroom to spare — not just barely meets it. High means you meet the recommended spec; Medium means you clear the minimum but not the recommended tier.</p>
-      </details>
-      <details>
-        <summary>Why is a game missing from the list?</summary>
-        <p>Either the publisher never listed PC requirements for it, or the listed requirements name no dimension we can compare against your parts — we would rather leave a title out than guess.</p>
-      </details>
+      <h2>Scan questions</h2>
+      {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
     </section>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/can-it-run">Can I Run It?</a></li>
-        <li><a href="/fps-estimator">FPS Calculator</a></li>
-        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
-        <li><a href="/games">All games</a></li>
+        <li><a href="/can-it-run">Check one game in detail</a></li>
+        <li><a href="/game-list/low-end-pc-games">Games for low-end PCs</a></li>
+        <li><a href="/upgrade-advisor">Unlock more games with one upgrade</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .explain { margin: 0 0 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .explain > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .explain h2 { font-size: 15px; margin-bottom: 6px; color: var(--readout); font-family: var(--font-mono); letter-spacing: .02em; }
+  .explain p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
   .tool {
     display: grid;
     grid-template-columns: minmax(300px, 380px) 1fr;
@@ -280,7 +281,7 @@ const schema = [
       errEl.hidden = false;
     } finally {
       btn.disabled = false;
-      btn.innerHTML = 'Find compatible games <span aria-hidden="true">&rarr;</span>';
+      btn.innerHTML = 'Scan the library <span aria-hidden="true">&rarr;</span>';
     }
   });
 </script>
