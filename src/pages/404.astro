@@ -1,84 +1,53 @@
 ---
-import { SITE_NAME } from '../lib/site';
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { TOOLS } from '../lib/site-data';
 import Icon from '../components/Icon.astro';
+import { TOOLS } from '../lib/site-data';
+import { SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
 
-const popular = TOOLS.slice(0, 6);
+const shortcuts = ['/can-it-run', '/what-can-my-pc-run', '/fps-estimator', '/gpu-tier-list']
+  .map(h => TOOLS.find(t => t.href === h))
+  .filter(Boolean) as typeof TOOLS;
 ---
 <BaseLayout
-  title={`Page Not Found (404) | ${SITE_NAME}`}
-  description="That page does not exist. Jump back to the game database, the hardware tier lists, or any of our free PC gaming tools."
+  title={`Not Found | ${SITE_NAME}`}
+  description="This address doesn't lead anywhere on the site. Search for a game or pick up from one of the main tools."
   noindex={true}
 >
   <div class="wrap nf">
-    <div class="nf-code" aria-hidden="true">404</div>
-    <h1>That page does not exist</h1>
+    <p class="code mono" aria-hidden="true">ERR · 404</p>
+    <h1>Nothing at this address</h1>
     <p class="lede">
-      The link may be out of date, or the game or part may have been renamed. Here is where
-      most people are heading.
+      It may be an old link, or a game or part that has since been renamed. Try searching for the game, or carry on from one
+      of these.
     </p>
 
-    <form class="nf-search" method="get" action="/games" role="search">
+    <form class="find" method="get" action="/games" role="search">
       <Icon name="search" />
-      <input type="search" name="q" placeholder="Search for a game…" aria-label="Search games" autocomplete="off">
-      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      <input type="search" name="q" placeholder="Game title" aria-label="Find a game" autocomplete="off">
+      <button type="submit" class="btn btn-primary btn-sm">Find</button>
     </form>
 
-    <div class="nf-grid">
-      {popular.map(t => (
-        <a href={t.href} class="nf-card">
-          <Icon name={t.icon} />
-          <span>{t.name}</span>
-        </a>
+    <ul class="go">
+      {shortcuts.map(t => (
+        <li><a href={t.href}><Icon name={t.icon} /> <span>{t.name}</span></a></li>
       ))}
-    </div>
-
-    <div class="nf-links">
-      <a href="/">Home</a>
-      <a href="/games">All games</a>
-      <a href="/gpus">GPU database</a>
-      <a href="/cpus">CPU database</a>
-      <a href="/tools">All tools</a>
-      <a href="/blog">Blog</a>
-    </div>
+      <li><a href={`/upcoming-games-${SEO_YEAR}`}><Icon name="stars" /> <span>{SEO_YEAR} releases</span></a></li>
+      <li><a href="/"><Icon name="arrow-right" /> <span>Home page</span></a></li>
+    </ul>
   </div>
 </BaseLayout>
 
 <style>
-  .nf { text-align: center; padding: 60px 0 80px; max-width: 760px; }
-  .nf-code {
-    font-family: var(--font-display);
-    font-size: clamp(76px, 16vw, 140px);
-    font-weight: 700;
-    line-height: 1;
-    color: var(--accent);
-    opacity: .18;
-    letter-spacing: -.04em;
-  }
-  .nf h1 { font-size: clamp(26px, 5vw, 38px); margin: -18px 0 14px; }
-  .nf .lede { color: var(--muted); font-size: 16px; line-height: 1.7; margin: 0 auto 30px; max-width: 52ch; }
-
-  .nf-search {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface); border: 1px solid var(--line-strong);
-    border-radius: var(--radius); padding: 10px 14px; margin: 0 auto 34px; max-width: 460px;
-  }
-  .nf-search :global(.icon) { color: var(--muted); }
-  .nf-search input { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; min-width: 0; }
-
-  .nf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 34px; }
-  .nf-card {
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    padding: 20px 14px; border: 1px solid var(--line); border-radius: var(--radius);
-    background: var(--surface); color: var(--text); text-decoration: none; font-size: 13.5px;
-    transition: border-color .2s var(--ease), transform .2s var(--ease);
-  }
-  .nf-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-  .nf-card :global(.icon) { font-size: 21px; color: var(--accent); }
-
-  .nf-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; }
-  .nf-links a { color: var(--muted); text-decoration: none; font-size: 14px; }
-  .nf-links a:hover { color: var(--accent); }
+  .nf { padding: 64px 0 72px; max-width: 720px; }
+  .code { color: var(--readout); font-size: 14px; letter-spacing: .12em; }
+  .nf h1 { font-size: clamp(30px, 5vw, 44px); margin: 8px 0 12px; }
+  .find { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 8px 12px; margin: 24px 0 18px; }
+  .find :global(.icon) { color: var(--muted); }
+  .find input { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; min-width: 0; min-height: 40px; }
+  .go { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .go a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); min-height: 48px; }
+  .go a:hover { border-color: rgb(var(--accent-rgb) / .55); }
+  .go :global(.icon) { color: var(--accent); }
 </style>

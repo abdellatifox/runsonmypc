@@ -2,60 +2,97 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL, SITE_NAME } from '../lib/site';
+import { getGpus, getCpus } from '../lib/db';
+import { SITE_URL, SITE_NAME, CONTACT_EMAIL } from '../lib/site';
+
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
+const topGpu = gpus[0];
+const topCpu = cpus[0];
 ---
 <BaseLayout
-  title={`Editorial Standards — How We Score Hardware | ${SITE_NAME}`}
-  description={`How ${SITE_NAME} builds its performance index, where our data comes from, how we handle corrections, and our policy on sponsorship and affiliate relationships.`}
-  keywords="editorial standards, methodology, how we test, gpu scoring methodology"
+  title={`Editorial Standards: Data Sources, Scoring and Corrections | ${SITE_NAME}`}
+  description={`Where ${SITE_NAME} gets game requirements and hardware data, how the performance index and frame-rate model work, what we refuse to guess, and how errors are corrected.`}
+  keywords="editorial standards, methodology, gpu performance index, system requirements data sources"
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Editorial Standards",
+    "name": "Editorial standards",
     "url": `${SITE_URL}/editorial-standards`,
     "publisher": { "@id": `${SITE_URL}/#organization` }
   }}
 >
   <div class="wrap">
-    <Breadcrumbs items={[{ name: 'Editorial Standards' }]} />
+    <Breadcrumbs items={[{ name: 'Editorial standards' }]} />
 
-    <header class="page-head">
-      <h1>Editorial Standards</h1>
-      <p class="lede">
-        How our numbers are produced, what they can and cannot tell you, and how we correct
-        them when they are wrong.
-      </p>
+    <header class="head">
+      <span class="eyebrow">Method</span>
+      <h1>Editorial standards</h1>
+      <p class="lede">The rules every number on this site follows, written down so you can hold us to them.</p>
     </header>
 
     <div class="prose">
-      <h2>Our performance index</h2>
-      <p>Every graphics card and processor on this site carries a score from 0 to 100. The scale is relative: the fastest consumer part we track anchors the top, and everything else is placed against it using aggregated benchmark data from public sources, normalised for gaming workloads specifically rather than synthetic or productivity tests.</p>
-      <p>Scores are recalibrated when a new flagship launches. That means a card's absolute number can move down over time even though its real performance has not changed — the ruler got longer, not the card slower.</p>
+      <h2>Rule 1: publisher requirements, word for word</h2>
+      <p>
+        Minimum and recommended specs come from each game’s Steam store listing. We keep the publisher’s wording and show it
+        beside every comparison. Unreleased games often list placeholders — “TBD”, “Coming soon”, a bare “OS” — and those are
+        removed, never treated as a requirement.
+      </p>
 
-      <h2>How estimates are calculated</h2>
-      <p>Frame-rate estimates anchor on a simple premise: a system that exactly meets a game's <em>recommended</em> requirement should reach roughly 60 FPS at 1080p on high settings. From that anchor we scale by the ratio of your hardware's score to the requirement, then apply resolution and preset multipliers, then apply a CPU-imposed ceiling.</p>
-      <p>This is a model, not a measurement. It is good at telling you whether a pairing is sensible and how two configurations compare. It is not a substitute for a review that actually ran the game.</p>
+      <h2>Rule 2: “not stated” beats a guess</h2>
+      <p>
+        If a publisher names no part we can place, the line is shown as not stated and left out of any calculation. A game
+        without a measurable graphics requirement does not appear in rankings or lists that depend on one.
+      </p>
 
-      <h2>Where our data comes from</h2>
-      <ul>
-        <li><strong>System requirements</strong> — publisher-published minimum and recommended specs, as listed on storefronts and official sites.</li>
-        <li><strong>Hardware specifications</strong> — manufacturer datasheets for core counts, clocks, memory and power figures.</li>
-        <li><strong>Performance data</strong> — aggregated from publicly available benchmark results across multiple independent outlets, rather than any single source.</li>
-        <li><strong>Game artwork</strong> — SteamGridDB, with rights remaining with the respective publishers.</li>
-      </ul>
+      <h2>Rule 3: one index for all hardware</h2>
+      <p>
+        Each graphics card and processor has a score from published gaming benchmark results, scaled so the fastest part we
+        list sits at the top — currently the {topGpu.name} for cards and the {topCpu.name} for processors. The processor index
+        weighs gaming results, so an eight-core gaming chip can outrank a workstation part with twice the cores.
+      </p>
+      <p>
+        The scale is relative. When a faster part launches, the rest are rescored and their numbers drop, although nothing about
+        them has changed.
+      </p>
 
-      <h2>What we label clearly</h2>
-      <p>Anywhere we show a modelled figure, we say so on the page. We do not present estimates as captured benchmark runs, and we do not publish a number we cannot explain the derivation of. Where a figure is a judgement call — tier boundaries, for instance — we say that too.</p>
+      <h2>Rule 4: models are labelled as models</h2>
+      <p>
+        Frame rates are estimated, not recorded. A PC exactly at a game’s recommended spec is taken as 60 FPS at 1080p on high;
+        your parts’ scores against that spec, the resolution and the preset move the figure, and the processor caps it. Every
+        page that shows such a number says it is an estimate, and very high results are shown as “300+” rather than as a
+        precise figure the model can’t support.
+      </p>
+      <p>Judgement calls — tier boundaries, VR headset thresholds, the power-supply headroom — are described as ours where they appear.</p>
+
+      <h2>Rule 5: unreleased means unreleased</h2>
+      <p>
+        Announced games are listed with the publisher’s date text, marked as unreleased, and kept out of anything that tells you
+        what you can play today. Anticipation claims carry a link to the source that measured them.
+      </p>
 
       <h2>Corrections</h2>
-      <p>Hardware data and game requirements change: patches shift requirements, manufacturers revise specifications, and we make mistakes. When we find an error, we fix the underlying data rather than patching the symptom, so every tool that reads it is corrected at once.</p>
-      <p>If you spot something wrong, tell us through the <a href="/contact">contact page</a> with the page URL and what you believe the correct value to be. Reports that identify a specific, checkable error get fixed fastest.</p>
+      <p>
+        Errors are fixed in the underlying data, so every page and tool that reads it updates together. Send the page address and
+        the correct value to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>; reports that point to a checkable source are
+        dealt with first.
+      </p>
 
-      <h2>Independence</h2>
-      <p>We are not affiliated with any hardware manufacturer, game developer or publisher. No manufacturer pays for placement, a tier position or a score, and no score has ever been changed at a third party's request. If that ever changes, this page changes with it — and any sponsored placement will be labelled as such on the page it appears on.</p>
+      <h2>Independence and money</h2>
+      <p>
+        No hardware maker, developer or publisher pays for a score, a tier or a place on a list, and none can have one changed.
+        If the site ever carries sponsored or affiliate content, it will be labelled on the page where it appears.
+      </p>
 
-      <h2>Scope and limits</h2>
-      <p>We cover desktop and laptop gaming hardware and PC game requirements. We do not test hardware ourselves, we do not review games, and we do not provide investment, financial or purchasing advice. Our tools are a starting point for a decision, not the decision itself.</p>
+      <h2>Images</h2>
+      <p>
+        Game art is limited to official logos from SteamGridDB, converted and served from this site. Logos and trademarks belong
+        to their owners.
+      </p>
     </div>
   </div>
 </BaseLayout>
+
+<style>
+  .head { padding: 28px 0 18px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+</style>

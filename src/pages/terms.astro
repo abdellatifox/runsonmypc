@@ -2,65 +2,84 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL, SITE_NAME, SITE_DOMAIN } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_DOMAIN, CONTACT_EMAIL } from '../lib/site';
 
-const updated = '2026-09-01';
+const updated = '2026-09-14';
 ---
 <BaseLayout
-  title={`Terms of Service | ${SITE_NAME}`}
-  description={`The terms governing use of ${SITE_NAME} — what our tools are, how our estimates should be treated, and the limits of our liability.`}
+  title={`Terms of Use | ${SITE_NAME}`}
+  description={`The terms for using ${SITE_DOMAIN}: estimates are guidance rather than guarantees, how the data may and may not be reused, and the limits of our responsibility.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Terms of Service",
+    "name": "Terms of use",
     "url": `${SITE_URL}/terms`,
     "dateModified": updated
   }}
 >
   <div class="wrap">
-    <Breadcrumbs items={[{ name: 'Terms of Service' }]} />
+    <Breadcrumbs items={[{ name: 'Terms' }]} />
 
-    <header class="page-head">
-      <h1>Terms of Service</h1>
-      <p class="lede">Last updated: 1 September 2026</p>
+    <header class="head">
+      <span class="eyebrow">Terms · updated 14 September 2026</span>
+      <h1>Terms of use</h1>
+      <p class="lede">Using {SITE_DOMAIN} means accepting the terms below. They are written to be read, not skimmed past.</p>
     </header>
 
     <div class="prose">
-      <h2>1. Acceptance</h2>
-      <p>By using {SITE_DOMAIN} you agree to these terms. If you do not agree with them, please do not use the site.</p>
+      <h2>The service</h2>
+      <p>
+        {SITE_NAME} is a free website that compares PC hardware with the requirements of PC games: requirement checks, frame-rate
+        estimates, pairing and upgrade suggestions, hardware rankings and power-supply sizing. It is offered for information.
+      </p>
 
-      <h2>2. What this service is</h2>
-      <p>{SITE_NAME} provides free, browser-based tools that estimate PC gaming performance: compatibility checks, frame-rate estimates, bottleneck analysis, hardware rankings and power-supply sizing. All tools are provided for informational purposes.</p>
+      <h2>Estimates are guidance</h2>
+      <p>
+        Frame rates, bottleneck gaps, resale values, wattages and similar outputs are produced by models from published
+        requirements and hardware data. Your real results depend on drivers, game updates, settings, cooling, memory
+        configuration and the individual parts in your PC. Please check independent reviews — and the seller’s return policy —
+        before spending money on the strength of a figure from this site.
+      </p>
 
-      <h2>3. Accuracy of estimates</h2>
-      <p>Our figures are <strong>modelled estimates, not measured benchmark results</strong>. They are derived from published system requirements and aggregated hardware performance data. Real-world performance varies with drivers, operating system, background load, thermals, memory configuration, game patches and individual hardware samples.</p>
-      <p>Do not treat our output as a guarantee. In particular, do not make a purchase decision solely on the basis of a number produced by this site — verify against independent reviews and, where possible, retailer return policies.</p>
+      <h2>Requirements can change</h2>
+      <p>
+        Publishers revise requirements, especially before release. We update our copy, but the store page remains the
+        authoritative version, and each game page links to it.
+      </p>
 
-      <h2>4. Hardware and game data</h2>
-      <p>Product names, logos and cover artwork belong to their respective owners. Game artwork is sourced from SteamGridDB and remains the property of the relevant publishers and rights holders. We claim no ownership over third-party trademarks and are not affiliated with, endorsed by, or sponsored by any hardware manufacturer, game developer or publisher named on this site.</p>
-
-      <h2>5. Acceptable use</h2>
-      <p>You may use the site for personal and commercial reference. You may not:</p>
+      <h2>Using our content</h2>
+      <p>You are welcome to link to any page and to quote short parts with a link back. Without written permission you may not:</p>
       <ul>
-        <li>Scrape, mirror or bulk-download the site or its underlying data without written permission</li>
-        <li>Attempt to disrupt, overload or gain unauthorised access to the service</li>
-        <li>Present our estimates as measured benchmark results, or as your own original data</li>
+        <li>copy the site, its tables or its dataset in bulk, by scraping or otherwise;</li>
+        <li>send traffic intended to overload or break the service, or try to access parts of it that aren’t public;</li>
+        <li>pass our estimates off as measured benchmark results.</li>
       </ul>
 
-      <h2>6. No warranty</h2>
-      <p>The service is provided "as is" and "as available", without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose and non-infringement.</p>
+      <h2>Names and trademarks</h2>
+      <p>
+        Game titles, logos, and hardware brand and model names belong to their owners and are used only to identify the products.
+        {SITE_NAME} is not affiliated with or endorsed by any of them.
+      </p>
 
-      <h2>7. Limitation of liability</h2>
-      <p>To the fullest extent permitted by law, {SITE_NAME} is not liable for any indirect, incidental or consequential damages arising from use of the site — including, without limitation, purchasing decisions made in reliance on our estimates.</p>
+      <h2>Links to other sites</h2>
+      <p>Pages link to store listings and sources elsewhere. Those sites are outside our control and have their own terms.</p>
 
-      <h2>8. External links</h2>
-      <p>We link to third-party sites for reference. We do not control those sites and are not responsible for their content, accuracy or privacy practices.</p>
+      <h2>No warranty; limited liability</h2>
+      <p>
+        The site is provided as it is and as available, without warranties of any kind. As far as the law allows, {SITE_NAME} is
+        not liable for losses arising from using it or relying on its output, including purchases made on that basis.
+      </p>
 
-      <h2>9. Changes</h2>
-      <p>We may update these terms. Material changes will be reflected in the "last updated" date above. Continued use after a change constitutes acceptance.</p>
+      <h2>Changes</h2>
+      <p>These terms may be revised; the date at the top shows the latest version. Continuing to use the site after a change means you accept it.</p>
 
-      <h2>10. Contact</h2>
-      <p>Questions about these terms can be sent via our <a href="/contact">contact page</a>.</p>
+      <h2>Contact</h2>
+      <p>Questions about these terms: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
     </div>
   </div>
 </BaseLayout>
+
+<style>
+  .head { padding: 28px 0 18px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+</style>

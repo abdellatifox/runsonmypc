@@ -2,44 +2,74 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SITE_URL, SITE_NAME, CONTACT_EMAIL } from '../lib/site';
+
+const updated = '2026-09-14';
 ---
 <BaseLayout
   title={`Privacy Policy | ${SITE_NAME}`}
-  description={`How ${SITE_NAME} handles your data: what we collect, what we do not, how the hardware specs you enter are processed, and your rights over any of it.`}
+  description={`${SITE_NAME} has no accounts, no analytics and no advertising trackers. What happens to the specs you enter, what our hosting provider logs, and how to reach us.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Privacy Policy",
-    "url": `${SITE_URL}/privacy`
+    "name": "Privacy policy",
+    "url": `${SITE_URL}/privacy`,
+    "dateModified": updated
   }}
 >
-  <div class="legal-container">
-  <Breadcrumbs items={[{ name: 'Privacy Policy' }]} />
-    <h1>Privacy Policy</h1>
-    <p>Last updated: September 2026</p>
+  <div class="wrap">
+    <Breadcrumbs items={[{ name: 'Privacy' }]} />
 
-    <section>
-      <h2>1. Information We Collect</h2>
-      <p>We collect information you provide directly to us, such as when you use our forms. We also collect anonymous usage data to improve our tools.</p>
-    </section>
+    <header class="head">
+      <span class="eyebrow">Privacy · updated 14 September 2026</span>
+      <h1>Privacy policy</h1>
+      <p class="lede">Short version: no accounts, no analytics, no ad trackers, and the specs you type are not kept.</p>
+    </header>
 
-    <section>
-      <h2>2. How We Use Your Information</h2>
-      <p>We use the hardware specifications you submit to calculate compatibility results. This data is not linked to your identity.</p>
-    </section>
+    <div class="prose">
+      <h2>Parts you enter into the tools</h2>
+      <p>
+        Some tools work entirely in your browser. Others — Can I Run It?, the FPS calculator and the search boxes — send your
+        choices (a game, a graphics card, a processor, a memory size) to our server to work out the answer. The answer is sent
+        back and the choices are not saved or tied to you.
+      </p>
+      <p>
+        When you look up a game we don’t already hold, its requirements are fetched from Steam and stored for up to 30 days so
+        the next person gets them faster. That stored copy is about the game, not about you.
+      </p>
 
-    <section>
-      <h2>3. Cookies</h2>
-      <p>We use standard cookies for site functionality and analytics.</p>
-    </section>
+      <h2>Cookies and tracking</h2>
+      <p>
+        The site sets no cookies of its own and runs no analytics or advertising scripts. Fonts and images are served from this
+        domain, so loading a page doesn’t call Google Fonts or any other third party.
+      </p>
+
+      <h2>Hosting</h2>
+      <p>
+        The site runs on Cloudflare. Like any web host, Cloudflare processes technical request data — IP address, browser and
+        the address requested — to deliver pages and protect the site from abuse, and may set a strictly necessary security
+        cookie to do so. Its handling is covered by Cloudflare’s own privacy policy.
+      </p>
+
+      <h2>Email</h2>
+      <p>
+        If you write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, we keep the message only as long as needed to
+        reply and act on it, and we don’t share it.
+      </p>
+
+      <h2>Children</h2>
+      <p>The site collects no personal information from anyone, including children.</p>
+
+      <h2>Changes and questions</h2>
+      <p>
+        If this policy changes, the date at the top changes with it. For any privacy question, email
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+      </p>
+    </div>
   </div>
 </BaseLayout>
 
 <style>
-  .legal-container { max-width: 800px; margin: 0 auto; }
-  h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  section { margin-bottom: 2rem; margin-top: 2rem; }
-  h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  p { line-height: 1.6; color: #ccc; }
+  .head { padding: 28px 0 18px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
 </style>

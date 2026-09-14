@@ -6,97 +6,105 @@ import Icon from '../components/Icon.astro';
 import { SITE_URL, CONTACT_EMAIL, SITE_NAME } from '../lib/site';
 
 const EMAIL = CONTACT_EMAIL;
+const TOPICS = [
+  {
+    icon: 'exclamation-triangle',
+    title: 'Something is wrong',
+    body: 'A requirement that doesn’t match the store page, a wrong spec, a card in the wrong place. The page address and the correct value (with a source, if you have one) are all we need.',
+    subject: 'Correction'
+  },
+  {
+    icon: 'plus-circle',
+    title: 'Something is missing',
+    body: 'A game, graphics card or processor you expected to find. Its name is enough; for a game, the Steam link helps.',
+    subject: 'Missing from the site'
+  },
+  {
+    icon: 'question-circle',
+    title: 'How did you get this number?',
+    body: 'Most answers are on the editorial standards page. If yours isn’t, ask, and say which page the number was on.',
+    subject: 'Question about a number'
+  },
+  {
+    icon: 'briefcase',
+    title: 'Press or partnerships',
+    body: 'Media requests and data licensing. Scores, tiers and list positions are not for sale.',
+    subject: 'Press or partnership'
+  }
+];
 ---
 <BaseLayout
-  title={`Contact Us | ${SITE_NAME}`}
-  description={`Get in touch with ${SITE_NAME} — report a data error, suggest a game or GPU to add, ask about our methodology, or raise a partnership enquiry.`}
+  title={`Contact ${SITE_NAME} | ${SITE_NAME}`}
+  description={`Email ${SITE_NAME} to correct a requirement or spec, ask for a game or part to be added, question a number, or for press and partnerships.`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "ContactPage",
     "name": `Contact ${SITE_NAME}`,
     "url": `${SITE_URL}/contact`,
-    "mainEntity": {
-      "@id": `${SITE_URL}/#organization`
-    }
+    "mainEntity": { "@id": `${SITE_URL}/#organization` }
   }}
 >
   <div class="wrap">
     <Breadcrumbs items={[{ name: 'Contact' }]} />
 
-    <header class="page-head">
-      <h1>Contact Us</h1>
+    <header class="head">
+      <span class="eyebrow">Contact</span>
+      <h1>Write to us</h1>
       <p class="lede">
-        Corrections get priority. If something on the site is wrong, tell us which page and
-        what the right value should be, and we will fix the underlying data.
+        One address for everything: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Pick the closest topic below and the subject line
+        is filled in for you. Corrections are read first.
       </p>
     </header>
 
-    <div class="contact-grid">
-      <div class="c-card">
-        <div class="ic"><Icon name="exclamation-triangle" /></div>
-        <h2>Report a data error</h2>
-        <p>Wrong system requirement, wrong specification, or a score that looks off. Include the page URL and the correct value if you know it.</p>
-        <a href={`mailto:${EMAIL}?subject=Data%20correction`}>{EMAIL}</a>
-      </div>
-      <div class="c-card">
-        <div class="ic"><Icon name="plus-circle" /></div>
-        <h2>Request an addition</h2>
-        <p>A game, graphics card or processor we do not cover yet. Tell us what is missing and we will look at adding it.</p>
-        <a href={`mailto:${EMAIL}?subject=Please%20add`}>{EMAIL}</a>
-      </div>
-      <div class="c-card">
-        <div class="ic"><Icon name="question-circle" /></div>
-        <h2>Methodology questions</h2>
-        <p>How a score was derived, or why two tools disagree. Our <a href="/editorial-standards">editorial standards</a> page covers most of it.</p>
-        <a href={`mailto:${EMAIL}?subject=Methodology`}>{EMAIL}</a>
-      </div>
-      <div class="c-card">
-        <div class="ic"><Icon name="briefcase" /></div>
-        <h2>Business enquiries</h2>
-        <p>Partnerships, licensing our data, or press. Note that we do not sell placement in tier lists or scores.</p>
-        <a href={`mailto:${EMAIL}?subject=Business%20enquiry`}>{EMAIL}</a>
-      </div>
-    </div>
+    <ul class="topics">
+      {TOPICS.map(t => (
+        <li>
+          <a href={`mailto:${EMAIL}?subject=${encodeURIComponent(t.subject)}`}>
+            <span class="ic"><Icon name={t.icon} /></span>
+            <span class="tx">
+              <b>{t.title}</b>
+              <small>{t.body}</small>
+              <em>Email about this →</em>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
 
-    <section class="before">
-      <h2>Before you write</h2>
-      <p>A few things that come up often:</p>
+    <section class="note">
+      <h2>Worth knowing first</h2>
       <ul>
-        <li><b>Our numbers are estimates, not benchmarks.</b> If a figure differs from a review that actually ran the game, the review is the better source — see <a href="/editorial-standards">how we calculate</a>.</li>
-        <li><b>Scores are relative and get recalibrated.</b> A card's number can drop when a new flagship launches without its real performance changing.</li>
-        <li><b>We do not test hardware ourselves.</b> We aggregate published data, so we cannot answer questions about individual sample variance or overclocking headroom.</li>
+        <li>Frame rates here are modelled. Where a review measured the game on your card, trust the review.</li>
+        <li>Hardware scores are relative to the fastest part we list, so they shift when something faster launches.</li>
+        <li>We don’t test parts ourselves, so we can’t help with a single faulty card or overclocking a specific chip.</li>
       </ul>
     </section>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="More about the site">
+      <h2>More about the site</h2>
       <ul>
-        <li><a href="/about">About us</a></li>
-        <li><a href="/editorial-standards">Editorial standards</a></li>
-        <li><a href="/privacy">Privacy policy</a></li>
-        <li><a href="/terms">Terms of service</a></li>
+        <li><a href="/about">What the site does</a></li>
+        <li><a href="/editorial-standards">How numbers are produced</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms of use</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
-  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 48px; }
-  .c-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; background: var(--surface); }
-  .c-card .ic {
-    width: 42px; height: 42px; display: grid; place-items: center; border-radius: var(--radius-sm);
-    background: rgb(var(--accent-rgb) / .1); color: var(--accent); font-size: 19px; margin-bottom: 14px;
-  }
-  .c-card h2 { font-size: 17px; margin: 0 0 8px; }
-  .c-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
-  .c-card p a, .c-card > a { color: var(--accent); text-decoration: none; font-size: 14px; word-break: break-all; }
-  .c-card > a:hover { text-decoration: underline; }
-
-  .before { margin-bottom: 48px; }
-  .before h2 { font-size: 22px; margin-bottom: 12px; }
-  .before p { color: var(--muted); margin-bottom: 12px; }
-  .before ul { padding-left: 20px; }
-  .before li { color: var(--muted); line-height: 1.75; margin-bottom: 10px; }
-  .before li b { color: var(--text); }
-  .before a { color: var(--accent); }
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(30px, 5vw, 44px); margin: 6px 0 12px; }
+  .lede a { color: var(--accent); overflow-wrap: anywhere; }
+  .topics { list-style: none; padding: 0; margin: 0 0 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+  .topics a { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 16px; height: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .topics a:hover { border-color: rgb(var(--accent-rgb) / .55); }
+  .ic { width: 40px; height: 40px; display: grid; place-items: center; background: rgb(var(--accent-rgb) / .1); color: var(--accent); font-size: 18px; border-radius: var(--radius-sm); }
+  .tx { display: flex; flex-direction: column; gap: 4px; }
+  .tx b { font-size: 16px; }
+  .tx small { color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .tx em { font-style: normal; color: var(--accent); font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .note { margin-bottom: 40px; }
+  .note h2 { font-size: 20px; margin-bottom: 10px; }
+  .note ul { color: var(--muted); padding-left: 20px; display: grid; gap: 6px; max-width: 72ch; }
 </style>
