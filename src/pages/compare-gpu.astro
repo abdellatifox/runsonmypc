@@ -2,298 +2,248 @@
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { getGpus } from '../lib/db';
-import Icon from '../components/Icon.astro';
+import { getGpus, getCpus } from '../lib/db';
+import { releasedGames } from '../lib/games';
+import { estimateFps } from '../lib/perf';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
+import { fitTitle, fitMeta } from '../lib/seo';
 
-const gpus = await getGpus(Astro.locals);
-
+const [gpus, cpus] = await Promise.all([getGpus(Astro.locals), getCpus(Astro.locals)]);
 const aSlug = Astro.url.searchParams.get('a');
 const bSlug = Astro.url.searchParams.get('b');
 const a = gpus.find(g => g.slug === aSlug) ?? null;
 const b = gpus.find(g => g.slug === bSlug) ?? null;
-const paired = Boolean(a && b);
+const paired = Boolean(a && b && a.slug !== b.slug);
 
-const diff = paired ? a!.score - b!.score : 0;
-const pct = paired
-  ? Math.round((Math.abs(diff) / Math.min(a!.score, b!.score)) * 100)
-  : 0;
-const winner = paired ? (diff > 0 ? a! : diff < 0 ? b! : null) : null;
+const byMaker = [...new Set(gpus.map(g => g.brand))].sort().map(brand => ({
+  brand,
+  items: gpus.filter(g => g.brand === brand).sort((x, y) => x.name.localeCompare(y.name, 'en', { numeric: true }))
+}));
 
-// Value = performance per dollar of MSRP.
-const valueA = paired && a!.msrp_usd ? a!.score / a!.msrp_usd * 1000 : 0;
-const valueB = paired && b!.msrp_usd ? b!.score / b!.msrp_usd * 1000 : 0;
+type Card = typeof gpus[number];
+// Released games whose recommended card we can place — never compared against a missing score.
+const games = releasedGames().filter(g => g.rec_gpu_score != null);
+const clears = (c: Card, g: typeof games[number]) => c.score >= g.rec_gpu_score! && (g.rec_vram_gb == null || c.vram_gb >= g.rec_vram_gb);
+
+let view: any = null;
+if (paired) {
+  const A = a!, B = b!;
+  const lead = A.score === B.score ? null : A.score > B.score ? A : B;
+  const trail = lead ? (lead === A ? B : A) : null;
+  const gap = lead ? Math.round((lead.score / trail!.score - 1) * 100) : 0;
+  const recA = games.filter(g => clears(A, g)).length;
+  const recB = games.filter(g => clears(B, g)).length;
+  const onlyLead = lead ? games.filter(g => clears(lead, g) && !clears(trail!, g)).sort((x, y) => (y.demandPercentile ?? 0) - (x.demandPercentile ?? 0)) : [];
+  const cpu = cpus[0];
+  const heavy = games.filter(g => g.rec_cpu_score != null && g.demandPercentile != null).sort((x, y) => y.demandPercentile! - x.demandPercentile!).slice(0, 3);
+  const CAP = 300;
+  const show = (n: number) => (n >= CAP ? `${CAP}+` : String(n));
+  const fpsRows = heavy.map(g => ({ g, a: show(estimateFps(g, A.score, cpu.score, '1440p', 'high')), b: show(estimateFps(g, B.score, cpu.score, '1440p', 'high')) }));
+  const per100 = (c: Card) => (c.msrp_usd ? (c.score / c.msrp_usd) * 100 : null);
+  view = { A, B, lead, trail, gap, recA, recB, onlyLead, fpsRows, per100, cpu };
+}
+
+// Without a pair: each recent NVIDIA card against the nearest AMD card by index — the real buying question.
+const recentYear = Math.max(...gpus.map(g => g.release_year)) - 3;
+const desktop = gpus.filter(g => !/laptop/i.test(g.name) && g.release_year >= recentYear);
+const rivals = desktop.filter(g => g.brand === 'NVIDIA').slice(0, 10).map(n => {
+  const amd = desktop.filter(g => g.brand === 'AMD').sort((x, y) => Math.abs(x.score - n.score) - Math.abs(y.score - n.score))[0];
+  return amd ? [n, amd] as const : null;
+}).filter(Boolean) as (readonly [Card, Card])[];
 
 const title = paired
-  ? `${a!.name} vs ${b!.name} — Which GPU Is Faster? | ${SITE_NAME}`
-  : `GPU Comparison Tool — Compare Graphics Cards | ${SITE_NAME}`;
-
+  ? fitTitle(`${a!.name} vs ${b!.name}`, [` (${SEO_YEAR} Comparison)`, ''], ` | ${SITE_NAME}`)
+  : `Compare Graphics Cards Side by Side (${SEO_YEAR}) | ${SITE_NAME}`;
 const description = paired
-  ? `${a!.name} vs ${b!.name}: ${winner ? `the ${winner.name} is about ${pct}% faster` : 'both cards perform identically'}. Full comparison of performance, VRAM, power draw, upscaling support and price.`
-  : 'Compare any two graphics cards side by side — performance score, VRAM, TDP, MSRP, DLSS/FSR support and value for money. Free and instant.';
+  ? fitMeta([
+      view.lead ? `The ${view.lead.name} scores ${view.gap}% higher than the ${view.trail.name} on our index.` : `The ${a!.name} and ${b!.name} score the same on our index.`,
+      `It meets the recommended card for ${view.lead === b ? view.recB : view.recA} games against ${view.lead === b ? view.recA : view.recB}.`,
+      'Memory, power and launch price compared.'
+    ])
+  : `Put any two of ${gpus.length} graphics cards side by side: index, memory, power, launch price, and how many PC games each one meets at the recommended spec.`;
 
-// Popular matchups double as internal links and as crawlable long-tail entry points.
-const suggested: Array<[typeof gpus[0], typeof gpus[0]]> = [];
-for (let i = 0; i < Math.min(gpus.length - 1, 12); i++) {
-  suggested.push([gpus[i], gpus[i + 1]]);
-}
-
-const schema: object[] = [
+const faq = paired ? [
   {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "GPU Comparison Tool",
-    "url": `${SITE_URL}/compare-gpu`,
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "Any (web browser)",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    q: `Is the ${a!.name} faster than the ${b!.name}?`,
+    a: view.lead
+      ? `${view.lead === a ? 'Yes' : 'No'} — the ${view.lead.name} scores ${view.lead.score} on our index to the ${view.trail.name}'s ${view.trail.score}, a ${view.gap}% gap.`
+      : 'They score the same on our index, so memory, power and price decide it.'
+  },
+  {
+    q: 'Which one runs more games at the recommended spec?',
+    a: `The ${a!.name} meets the recommended graphics card of ${view.recA} of ${games.length} games; the ${b!.name}, ${view.recB}.`
   }
-];
-if (paired && winner) {
-  schema.push({
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-      "@type": "Question",
-      "name": `Is the ${a!.name} better than the ${b!.name}?`,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `The ${winner.name} is the faster card, scoring ${winner.score}/100 against ${(winner.slug === a!.slug ? b! : a!).score}/100 — roughly ${pct}% more gaming performance. The ${a!.name} carries ${a!.vram_gb}GB of VRAM at ${a!.tdp_watts}W, while the ${b!.name} carries ${b!.vram_gb}GB at ${b!.tdp_watts}W.`
-      }
-    }]
-  });
-}
+] : [];
+
+const schema: object[] = [{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": `Graphics card comparison (${SEO_YEAR})`,
+  "url": `${SITE_URL}/compare-gpu`,
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any (web browser)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}];
+if (faq.length) schema.push({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+});
+
+const rows = paired ? [
+  { label: 'Performance index', a: view.A.score, b: view.B.score, fmt: (v: number) => String(v), better: 'high' },
+  { label: 'Video memory', a: view.A.vram_gb, b: view.B.vram_gb, fmt: (v: number) => `${v} GB`, better: 'high' },
+  { label: 'Rated power', a: view.A.tdp_watts, b: view.B.tdp_watts, fmt: (v: number) => `${v} W`, better: 'low' },
+  { label: 'Launch price', a: view.A.msrp_usd, b: view.B.msrp_usd, fmt: (v: number | null) => (v ? `$${v}` : 'no list price'), better: 'low' },
+  { label: 'Index per $100', a: view.per100(view.A), b: view.per100(view.B), fmt: (v: number | null) => (v ? v.toFixed(1) : '—'), better: 'high' },
+  { label: 'Games at recommended', a: view.recA, b: view.recB, fmt: (v: number) => String(v), better: 'high' }
+] : [];
+const winSide = (r: any) => (r.a == null || r.b == null || r.a === r.b) ? '' : (r.better === 'high' ? (r.a > r.b ? 'a' : 'b') : (r.a < r.b ? 'a' : 'b'));
+const barW = (r: any, v: number | null) => (v == null ? 0 : Math.round((v / Math.max(r.a ?? 0, r.b ?? 0, 1)) * 100));
+const feat = (c: Card) => [c.supports_dlss && 'DLSS', c.supports_fsr && 'FSR', c.supports_xess && 'XeSS', c.supports_ray_tracing && 'ray tracing'].filter(Boolean).join(' · ') || 'none';
 ---
 <BaseLayout title={title} description={description} jsonLd={schema}
   canonical={paired ? `${SITE_URL}/compare-gpu?a=${a!.slug}&b=${b!.slug}` : `${SITE_URL}/compare-gpu`}
-  keywords={paired ? `${a!.name} vs ${b!.name}, ${a!.name} comparison, gpu comparison, gpu benchmark comparison` : 'gpu comparison, gpu benchmark comparison, compare graphics cards, gpu vs gpu'}>
+  keywords={paired ? `${a!.name} vs ${b!.name}, ${a!.name} or ${b!.name}` : `compare graphics cards, gpu comparison ${SEO_YEAR}, gpu vs gpu`}>
   <div class="wrap">
     <Breadcrumbs items={paired
-      ? [{ name: 'GPU Database', href: '/gpus' }, { name: 'Compare', href: '/compare-gpu' }, { name: `${a!.name} vs ${b!.name}` }]
-      : [{ name: 'Tools', href: '/tools' }, { name: 'Compare GPUs' }]} />
+      ? [{ name: 'Graphics cards', href: '/gpus' }, { name: 'Compare', href: '/compare-gpu' }, { name: `${a!.name} vs ${b!.name}` }]
+      : [{ name: 'Graphics cards', href: '/gpus' }, { name: 'Compare' }]} />
 
-    <header class="page-head">
-      <h1>{paired ? `${a!.name} vs ${b!.name}` : 'Compare Graphics Cards'}</h1>
+    <header class="head">
+      <span class="eyebrow">Head to head</span>
+      <h1>{paired ? `${a!.name} vs ${b!.name}` : 'Compare two graphics cards'}</h1>
       <p class="lede">
         {paired
-          ? (winner
-              ? `The ${winner.name} is the faster card by roughly ${pct}%. Here is how the two compare across every spec that matters for gaming.`
-              : 'These two cards score identically in our gaming index. The decision comes down to VRAM, power draw and price.')
-          : 'A free GPU benchmark comparison tool — pick any two graphics cards to see performance, memory, power draw, upscaling support and value for money side by side.'}
+          ? (view.lead
+              ? <>The <b>{view.lead.name}</b> is ahead by {view.gap}% on our index and meets the recommended card of {Math.abs(view.recA - view.recB)} more games. Below: where each one wins.</>
+              : <>Level on our index. Memory, power and price are what separate them.</>)
+          : <>Choose two cards. You get their index, memory, power and launch price side by side, plus a count of the PC games each one meets at the publisher’s recommended spec.</>}
       </p>
     </header>
 
     <form class="picker" method="get" action="/compare-gpu">
-      <label>
-        <span>First card</span>
-        <select name="a">
-          <option value="">Select a GPU…</option>
-          {gpus.map(g => <option value={g.slug} selected={g.slug === aSlug}>{g.name}</option>)}
-        </select>
-      </label>
-      <span class="vs" aria-hidden="true">VS</span>
-      <label>
-        <span>Second card</span>
-        <select name="b">
-          <option value="">Select a GPU…</option>
-          {gpus.map(g => <option value={g.slug} selected={g.slug === bSlug}>{g.name}</option>)}
-        </select>
-      </label>
+      {(['a', 'b'] as const).map((k, i) => (
+        <label>
+          <span>{i === 0 ? 'Card one' : 'Card two'}</span>
+          <select name={k} required>
+            <option value="">Choose a card</option>
+            {byMaker.map(gr => (
+              <optgroup label={gr.brand}>
+                {gr.items.map(g => <option value={g.slug} selected={g.slug === (k === 'a' ? aSlug : bSlug)}>{g.name}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+      ))}
       <button type="submit" class="btn btn-primary">Compare</button>
     </form>
 
     {paired && (
       <>
-        <div class="verdict-banner">
-          {winner
-            ? <><Icon name="trophy-fill" /> <b>{winner.name}</b> wins — about <b>{pct}% faster</b> in gaming workloads</>
-            : <><Icon name="dash-circle" /> Dead heat — both cards score {a!.score}/100</>}
-        </div>
+        <section class="duel" aria-label="Side by side">
+          <div class="names"><span></span><a href={`/gpu/${a!.slug}`}>{a!.name}</a><a href={`/gpu/${b!.slug}`}>{b!.name}</a></div>
+          {rows.map(r => {
+            const w = winSide(r);
+            return (
+              <div class="row">
+                <span class="lbl">{r.label}</span>
+                <span class={`side ${w === 'a' ? 'win' : ''}`}><i style={`width:${barW(r, r.a)}%`}></i><b class="mono">{r.fmt(r.a)}</b></span>
+                <span class={`side ${w === 'b' ? 'win' : ''}`}><i style={`width:${barW(r, r.b)}%`}></i><b class="mono">{r.fmt(r.b)}</b></span>
+              </div>
+            );
+          })}
+          <div class="row txt"><span class="lbl">Released</span><span>{a!.release_year}</span><span>{b!.release_year}</span></div>
+          <div class="row txt"><span class="lbl">Features</span><span>{feat(a!)}</span><span>{feat(b!)}</span></div>
+        </section>
 
-        <div class="table-scroll">
-          <table class="data-table cmp keep-table">
-            <thead>
-              <tr>
-                <th>Specification</th>
-                <th><a href={`/gpu/${a!.slug}`}>{a!.name}</a></th>
-                <th><a href={`/gpu/${b!.slug}`}>{b!.name}</a></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Performance score</td>
-                <td class={a!.score >= b!.score ? 'win' : ''}>{a!.score}/100</td>
-                <td class={b!.score >= a!.score ? 'win' : ''}>{b!.score}/100</td>
-              </tr>
-              <tr>
-                <td>Tier</td>
-                <td><span class={`pill t-${a!.tier}`}>{a!.tier}</span></td>
-                <td><span class={`pill t-${b!.tier}`}>{b!.tier}</span></td>
-              </tr>
-              <tr>
-                <td>VRAM</td>
-                <td class={a!.vram_gb >= b!.vram_gb ? 'win' : ''}>{a!.vram_gb} GB</td>
-                <td class={b!.vram_gb >= a!.vram_gb ? 'win' : ''}>{b!.vram_gb} GB</td>
-              </tr>
-              <tr>
-                <td>Power draw (TDP)</td>
-                <td class={a!.tdp_watts <= b!.tdp_watts ? 'win' : ''}>{a!.tdp_watts} W</td>
-                <td class={b!.tdp_watts <= a!.tdp_watts ? 'win' : ''}>{b!.tdp_watts} W</td>
-              </tr>
-              <tr>
-                <td>Launch MSRP</td>
-                <td class={a!.msrp_usd && a!.msrp_usd <= (b!.msrp_usd || 1e9) ? 'win' : ''}>{a!.msrp_usd ? `$${a!.msrp_usd}` : '—'}</td>
-                <td class={b!.msrp_usd && b!.msrp_usd <= (a!.msrp_usd || 1e9) ? 'win' : ''}>{b!.msrp_usd ? `$${b!.msrp_usd}` : '—'}</td>
-              </tr>
-              <tr>
-                <td>Performance per $100</td>
-                <td class={valueA >= valueB ? 'win' : ''}>{valueA ? (valueA / 10).toFixed(1) : '—'}</td>
-                <td class={valueB >= valueA ? 'win' : ''}>{valueB ? (valueB / 10).toFixed(1) : '—'}</td>
-              </tr>
-              <tr>
-                <td>Release year</td>
-                <td class={a!.release_year >= b!.release_year ? 'win' : ''}>{a!.release_year}</td>
-                <td class={b!.release_year >= a!.release_year ? 'win' : ''}>{b!.release_year}</td>
-              </tr>
-              <tr>
-                <td>DLSS</td>
-                <td>{a!.supports_dlss ? '✓ Yes' : '— No'}</td>
-                <td>{b!.supports_dlss ? '✓ Yes' : '— No'}</td>
-              </tr>
-              <tr>
-                <td>FSR</td>
-                <td>{a!.supports_fsr ? '✓ Yes' : '— No'}</td>
-                <td>{b!.supports_fsr ? '✓ Yes' : '— No'}</td>
-              </tr>
-              <tr>
-                <td>XeSS</td>
-                <td>{a!.supports_xess ? '✓ Yes' : '— No'}</td>
-                <td>{b!.supports_xess ? '✓ Yes' : '— No'}</td>
-              </tr>
-              <tr>
-                <td>Ray tracing</td>
-                <td>{a!.supports_ray_tracing ? '✓ Yes' : '— No'}</td>
-                <td>{b!.supports_ray_tracing ? '✓ Yes' : '— No'}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {view.fpsRows.length > 0 && (
+          <section class="block">
+            <h2>At 1440p in the heaviest games</h2>
+            <ul class="fps">
+              {view.fpsRows.map((r: any) => (
+                <li><a href={`/game/${r.g.slug}`}>{r.g.name}</a><span class="mono">{r.a}</span><span class="mono">{r.b}</span></li>
+              ))}
+            </ul>
+            <p class="fine">Modelled FPS, high preset, {view.cpu.name}. Left: {a!.name}; right: {b!.name}.</p>
+          </section>
+        )}
 
-        <section class="takeaway">
-          <h2>Which should you buy?</h2>
-          <p>
-            {winner
-              ? <>The <b>{winner.name}</b> is the stronger performer of the two, and it is the
-                  default choice if raw frame rate is what you care about. </>
-              : <>Performance is a tie, so the tie-breakers below decide it. </>}
-            {a!.vram_gb !== b!.vram_gb && (
-              <>The <b>{a!.vram_gb > b!.vram_gb ? a!.name : b!.name}</b> carries more
-              VRAM ({Math.max(a!.vram_gb, b!.vram_gb)}GB vs {Math.min(a!.vram_gb, b!.vram_gb)}GB),
-              which matters at 1440p and above and for texture-heavy titles. </>
-            )}
-            {a!.tdp_watts !== b!.tdp_watts && (
-              <>The <b>{a!.tdp_watts < b!.tdp_watts ? a!.name : b!.name}</b> draws
-              {' '}{Math.abs(a!.tdp_watts - b!.tdp_watts)}W less, so it is easier on your power
-              supply and case cooling — check the <a href="/psu-calculator">PSU calculator</a> before
-              committing. </>
-            )}
-            {valueA > 0 && valueB > 0 && (
-              <>On launch pricing, the <b>{valueA >= valueB ? a!.name : b!.name}</b> offers better
-              performance per dollar.</>
-            )}
-          </p>
-          <div class="cta-row">
-            <a href="/bottleneck" class="btn btn-ghost">Check for a CPU bottleneck</a>
-            <a href="/can-it-run" class="btn btn-ghost">See what these cards run</a>
-          </div>
+        {view.onlyLead.length > 0 && (
+          <section class="block">
+            <h2>Games only the {view.lead.name} runs at recommended</h2>
+            <ul class="only">
+              {view.onlyLead.slice(0, 8).map((g: any) => <li><a href={`/can-it-run/${g.slug}/${view.trail.slug}`}>{g.name}</a></li>)}
+            </ul>
+            {view.onlyLead.length > 8 && <p class="fine">And {view.onlyLead.length - 8} more.</p>}
+          </section>
+        )}
+
+        <section class="faq">
+          <h2>Quick answers</h2>
+          {faq.map(f => (<details><summary>{f.q}</summary><p>{f.a}</p></details>))}
         </section>
       </>
     )}
 
-    {!paired && (
-      <section class="suggested">
-        <h2>Popular comparisons</h2>
-        <ul class="sug-list">
-          {suggested.map(([x, y]) => (
-            <li><a href={`/compare-gpu?a=${x.slug}&b=${y.slug}`}>{x.name} vs {y.name}</a></li>
-          ))}
+    {!paired && rivals.length > 0 && (
+      <section class="block">
+        <h2>NVIDIA against its closest AMD rival</h2>
+        <ul class="only">
+          {rivals.map(([n, r]) => <li><a href={`/compare-gpu?a=${n.slug}&b=${r.slug}`}>{n.name} vs {r.name}</a></li>)}
         </ul>
       </section>
     )}
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/gpus">GPU Database</a></li>
-        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
-        <li><a href="/compare-cpu">Compare CPUs</a></li>
-        <li><a href="/benchmarks">Benchmarks</a></li>
-        <li><a href="/psu-calculator">PSU Calculator</a></li>
-        <li><a href="/upgrade-advisor">Upgrade Advisor</a></li>
+        <li><a href="/gpu-tier-list">{SEO_YEAR} graphics card tiers</a></li>
+        <li><a href="/bottleneck">Will your processor keep up?</a></li>
+        <li><a href="/psu-calculator">Power supply for either card</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
-  .picker {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr auto;
-    gap: 14px;
-    align-items: end;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 28px;
-  }
-  .picker label { display: block; }
-  .picker label span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
-  .picker select {
-    width: 100%;
-    background: var(--bg-soft);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-sm);
-    padding: 11px 12px;
-    color: var(--text);
-    font: inherit;
-    outline: none;
-  }
-  .picker select:focus { border-color: var(--accent); }
-  .vs { font-family: var(--font-display); font-weight: 700; color: var(--faint); padding-bottom: 11px; }
-  @media (max-width: 780px) {
+  .head { padding: 28px 0 20px; }
+  .head h1 { font-size: clamp(26px, 4.4vw, 40px); margin: 6px 0 12px; }
+  .lede b { color: var(--text); }
+  .picker { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 14px; margin-bottom: 32px; }
+  .picker label { display: grid; gap: 6px; }
+  .picker span { font-size: 12px; color: var(--faint); }
+  .picker select { min-height: 44px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 8px 10px; font: inherit; width: 100%; }
+
+  .duel { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 40px; }
+  .duel > div { display: grid; grid-template-columns: minmax(110px, .8fr) 1fr 1fr; gap: 14px; align-items: center; padding: 10px 14px; background: var(--surface); }
+  .duel > div + div { border-top: 1px solid var(--line); }
+  .names { font-weight: 700; font-size: 14px; background: var(--surface-2) !important; }
+  .names a:hover { color: var(--accent); }
+  .lbl { color: var(--muted); font-size: 13px; }
+  .side { position: relative; display: block; height: 26px; }
+  .side i { position: absolute; inset: 0 auto 0 0; background: rgb(var(--readout-rgb) / .14); border-radius: 3px; }
+  .side.win i { background: rgb(var(--ok-rgb) / .22); }
+  .side b { position: relative; line-height: 26px; padding-left: 8px; font-size: 14px; }
+  .side.win b { color: var(--ok); }
+  .txt span { font-size: 13.5px; }
+
+  .block { margin-bottom: 40px; }
+  .block h2 { font-size: 20px; margin-bottom: 12px; }
+  .fps { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  .fps li { display: grid; grid-template-columns: 1fr 70px 70px; gap: 10px; padding: 9px 14px; background: var(--surface); font-size: 14px; }
+  .fps li + li { border-top: 1px solid var(--line); }
+  .fps span { text-align: right; color: var(--readout); }
+  .fine { color: var(--faint); font-size: 13px; margin-top: 8px; }
+  .only { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+  .only a { display: block; padding: 9px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 14px; }
+  .only a:hover { border-color: rgb(var(--accent-rgb) / .55); }
+
+  @media (max-width: 700px) {
     .picker { grid-template-columns: 1fr; }
-    .vs { text-align: center; padding: 0; }
+    .duel > div { grid-template-columns: 1fr 1fr; row-gap: 4px; }
+    .duel .lbl { grid-column: 1 / -1; }
+    .names span { display: none; }
   }
-
-  .verdict-banner {
-    background: rgb(var(--accent-rgb) / .08);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    font-size: 15px;
-  }
-  .verdict-banner :global(.icon) { color: var(--accent); margin-right: 6px; }
-
-  .cmp th:not(:first-child), .cmp td:not(:first-child) { text-align: center; }
-  .cmp td:first-child { color: var(--muted); }
-  .cmp .win { color: var(--accent); font-weight: 700; }
-
-  .takeaway { margin-top: 44px; }
-  .takeaway h2 { font-size: 22px; margin-bottom: 14px; }
-  .takeaway p { color: var(--muted); line-height: 1.8; max-width: 78ch; }
-  .takeaway b { color: var(--text); }
-  .takeaway a { color: var(--accent); }
-  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-
-  .suggested { margin-top: 40px; }
-  .suggested h2 { font-size: 22px; margin-bottom: 16px; }
-  .sug-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
-  .sug-list a {
-    display: block; padding: 13px 16px; border: 1px solid var(--line);
-    border-radius: var(--radius-sm); color: var(--text); text-decoration: none; font-size: 14px;
-    transition: border-color .2s var(--ease);
-  }
-  .sug-list a:hover { border-color: var(--accent); color: var(--accent); }
 </style>
