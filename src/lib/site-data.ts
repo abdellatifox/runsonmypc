@@ -13,21 +13,21 @@ export interface Tool {
 }
 
 export const TOOLS: Tool[] = [
-  { name: 'Can I Run It?',       href: '/can-it-run',       icon: 'bi-controller',       short: 'Can I Run It',      blurb: 'Match any game against your exact GPU, CPU and RAM and get a verdict in seconds.' },
-  { name: 'FPS Calculator',      href: '/fps-estimator',    icon: 'bi-speedometer2',     short: 'FPS Calculator',    blurb: 'Estimate average frame rates at 1080p, 1440p and 4K on low through ultra presets.' },
-  { name: 'Bottleneck Calculator', href: '/bottleneck',     icon: 'bi-diagram-3',        short: 'Bottleneck Calc',   blurb: 'Find out whether your CPU or your GPU is holding the other one back, and by how much.' },
-  { name: 'Build Suggester',     href: '/build-suggest',    icon: 'bi-pc-display',       short: 'Build Suggester',   blurb: 'Get a complete parts list tuned to your budget, target resolution and frame rate.' },
-  { name: 'Compare GPUs',        href: '/compare-gpu',      icon: 'bi-bar-chart-line',   short: 'Compare GPUs',      blurb: 'Put two graphics cards side by side across performance, VRAM, power draw and price.' },
-  { name: 'Compare CPUs',        href: '/compare-cpu',      icon: 'bi-cpu',              short: 'Compare CPUs',      blurb: 'Head-to-head processor comparison for gaming: cores, clocks, tier and real value.' },
-  { name: 'GPU Tier List',       href: '/gpu-tier-list',    icon: 'bi-trophy',           short: 'GPU Tier List',     blurb: 'Every modern graphics card ranked S through F by real gaming performance.' },
-  { name: 'CPU Tier List',       href: '/cpu-tier-list',    icon: 'bi-list-ol',          short: 'CPU Tier List',     blurb: 'Every modern gaming processor ranked S through F, updated for 2026.' },
-  { name: 'PSU Calculator',      href: '/psu-calculator',   icon: 'bi-plug',             short: 'PSU Calculator',    blurb: 'Size your power supply correctly with proper transient and headroom margins.' },
-  { name: 'Upgrade Advisor',     href: '/upgrade-advisor',  icon: 'bi-arrow-up-circle',  short: 'Upgrade Advisor',   blurb: 'See which single upgrade buys you the most frames per dollar on your current PC.' },
-  { name: 'PC Value Calculator', href: '/pc-value',         icon: 'bi-cash-coin',        short: 'PC Value',          blurb: 'Estimate what your build is worth today on the second-hand market.' },
-  { name: 'VR Ready Test',       href: '/vr-ready',         icon: 'bi-badge-vr',         short: 'VR Ready Test',     blurb: 'Check your PC against Quest Link, Index and Pimax headset requirements.' },
-  { name: 'Ray Tracing Check',   href: '/ray-tracing',      icon: 'bi-lightbulb',        short: 'Ray Tracing',       blurb: 'Which ray-traced games your card can actually handle, and at what settings.' },
-  { name: 'DLSS vs FSR',         href: '/dlss-fsr',         icon: 'bi-magic',            short: 'DLSS vs FSR',       blurb: 'Pick the right upscaler for your card and see the frame-rate uplift to expect.' },
-  { name: 'What Can My PC Run?', href: '/what-can-my-pc-run', icon: 'bi-search',         short: 'What Can I Run',    blurb: 'Enter your specs once and browse every game your machine handles comfortably.' }
+  { name: 'Can I Run It?',       href: '/can-it-run',       icon: 'bi-controller',       short: 'Can I Run It',      blurb: "Pick a game, enter your graphics card, processor and memory, and see which of the publisher's two specs you clear." },
+  { name: 'FPS Calculator',      href: '/fps-estimator',    icon: 'bi-speedometer2',     short: 'FPS Calculator',    blurb: "A modelled frame rate for your parts in any game we track, from 1080p low up to 4K ultra." },
+  { name: 'Bottleneck Calculator', href: '/bottleneck',     icon: 'bi-diagram-3',        short: 'Bottleneck Calc',   blurb: "Tells you which part of a CPU and GPU pairing runs out first, and how wide the gap is." },
+  { name: 'Build Suggester',     href: '/build-suggest',    icon: 'bi-pc-display',       short: 'Build Suggester',   blurb: "Give it a budget and a target resolution; it returns a parts list balanced around that." },
+  { name: 'Compare GPUs',        href: '/compare-gpu',      icon: 'bi-bar-chart-line',   short: 'Compare GPUs',      blurb: "Two graphics cards in one view: index, memory, power and launch price." },
+  { name: 'Compare CPUs',        href: '/compare-cpu',      icon: 'bi-cpu',              short: 'Compare CPUs',      blurb: "Two processors in one view: cores, speed, power and where each lands for gaming." },
+  { name: 'GPU Tier List',       href: '/gpu-tier-list',    icon: 'bi-trophy',           short: 'GPU Tier List',     blurb: "Every graphics card we score, cut into six bands with the share of games each one runs." },
+  { name: 'CPU Tier List',       href: '/cpu-tier-list',    icon: 'bi-list-ol',          short: 'CPU Tier List',     blurb: "Every gaming processor we score, cut into six bands from S down to F." },
+  { name: 'PSU Calculator',      href: '/psu-calculator',   icon: 'bi-plug',             short: 'PSU Calculator',    blurb: "Adds up your parts' power draw, leaves room for spikes, then names a wattage." },
+  { name: 'Upgrade Advisor',     href: '/upgrade-advisor',  icon: 'bi-arrow-up-circle',  short: 'Upgrade Advisor',   blurb: "Works out which one part to replace first for the biggest gain on the PC you have." },
+  { name: 'PC Value Calculator', href: '/pc-value',         icon: 'bi-cash-coin',        short: 'PC Value',          blurb: "A rough resale figure for a used gaming PC, based on its main parts." },
+  { name: 'VR Ready Test',       href: '/vr-ready',         icon: 'bi-badge-vr',         short: 'VR Ready Test',     blurb: "Checks a PC against the published requirements of the main PC VR headsets." },
+  { name: 'Ray Tracing Check',   href: '/ray-tracing',      icon: 'bi-lightbulb',        short: 'Ray Tracing',       blurb: "Games with confirmed ray tracing, and how hard each graphics card can push it." },
+  { name: 'DLSS vs FSR',         href: '/dlss-fsr',         icon: 'bi-magic',            short: 'DLSS vs FSR',       blurb: "Which upscaler your card can use, what each mode renders at, and the games that have them." },
+  { name: 'What Can My PC Run?', href: '/what-can-my-pc-run', icon: 'bi-search',         short: 'What Can I Run',    blurb: "Enter your parts once and get every game sorted by how comfortably your PC runs it." }
 ];
 
 export interface GameList {
@@ -77,27 +77,27 @@ const pctAtLeast = (g: any, n: number) => g.demandPercentile != null && g.demand
 export const GAME_LISTS: GameList[] = [
   {
     slug: 'low-end-pc-games',
-    title: 'Best Games for Low-End PCs',
-    h1: `Best Games for Low-End PCs in ${SEO_YEAR}`,
-    blurb: 'Games that run well on integrated graphics, old GTX cards and office laptops. Every title here has a minimum GPU requirement low enough for entry-level hardware.',
+    title: "Games for Low-End PCs",
+    h1: `Low-End PC Games ${SEO_YEAR}: What Runs on Weak Hardware`,
+    blurb: "The lightest 35% of the library by graphics requirement. If your PC has integrated graphics, an older GTX card or a work laptop, start here.",
     icon: 'bi-laptop',
     filter: (g) => pctAtMost(g, 0.35),
     sort: (a, b) => (a.demandPercentile ?? 9) - (b.demandPercentile ?? 9)
   },
   {
     slug: 'most-demanding-pc-games',
-    title: 'Most Demanding PC Games',
-    h1: `The Most Demanding PC Games in ${SEO_YEAR}`,
-    blurb: 'The titles that punish even flagship hardware. Ranked by recommended GPU requirement — these are the games to benchmark a new build with.',
+    title: "Most Demanding PC Games",
+    h1: `Most Demanding PC Games ${SEO_YEAR}`,
+    blurb: "The heaviest 15% of the library by recommended graphics card, heaviest first. Useful for stress-testing a new build or deciding how far to stretch a budget.",
     icon: 'bi-fire',
     filter: (g) => pctAtLeast(g, 0.85),
     sort: (a, b) => (b.demandPercentile ?? -1) - (a.demandPercentile ?? -1)
   },
   {
     slug: 'ray-tracing-games',
-    title: 'Games With Ray Tracing',
-    h1: 'Every PC Game With Ray Tracing Support',
-    blurb: 'Titles with hardware ray tracing, from light reflections to full path tracing. Check the intensity column before turning it on.',
+    title: "Ray Tracing Games",
+    h1: `PC Games With Ray Tracing (${SEO_YEAR} List)`,
+    blurb: "Games where ray tracing is confirmed, with how heavy each implementation is, so you know what to expect before switching it on.",
     icon: 'bi-lightbulb',
     filter: (g) => g.supports_ray_tracing === 1,
     featureBased: true,
@@ -105,9 +105,9 @@ export const GAME_LISTS: GameList[] = [
   },
   {
     slug: 'dlss-games',
-    title: 'Games With DLSS Support',
-    h1: 'PC Games That Support NVIDIA DLSS',
-    blurb: 'Every game in our database with DLSS upscaling. On an RTX card this is usually the single biggest free frame-rate win available.',
+    title: "DLSS Games",
+    h1: `PC Games With DLSS (${SEO_YEAR} List)`,
+    blurb: "Games with NVIDIA's upscaler confirmed. Owners of RTX cards can usually trade a little sharpness for a lot of frames in these.",
     icon: 'bi-magic',
     filter: (g) => g.supports_dlss === 1,
     featureBased: true,
@@ -115,9 +115,9 @@ export const GAME_LISTS: GameList[] = [
   },
   {
     slug: 'cpu-intensive-games',
-    title: 'CPU-Intensive Games',
-    h1: 'The Most CPU-Intensive PC Games',
-    blurb: 'Simulation, strategy and open-world titles where the processor, not the graphics card, sets your frame rate. Upgrade priorities differ for these.',
+    title: "CPU-Heavy Games",
+    h1: 'CPU-Heavy PC Games: Where the Processor Matters Most',
+    blurb: "Strategy, simulation and crowded open worlds, where frame rate is capped by the processor long before the graphics card runs out.",
     icon: 'bi-cpu',
     filter: (g) => g.cpu_intensive === 1,
     featureBased: true,
@@ -125,27 +125,27 @@ export const GAME_LISTS: GameList[] = [
   },
   {
     slug: 'games-under-8gb-ram',
-    title: 'Games That Run on 8GB RAM',
-    h1: 'PC Games That Run Fine on 8GB of RAM',
-    blurb: 'Still on 8GB? These titles list 8GB or less as their minimum, so you can play now and upgrade memory later.',
+    title: "Games for 8GB of RAM",
+    h1: 'PC Games You Can Play With 8GB of RAM',
+    blurb: "Every game whose publisher lists 8GB or less as the memory minimum, lowest first.",
     icon: 'bi-memory',
     filter: (g) => lte(g.min_ram_gb, 8),
     sort: (a, b) => (a.min_ram_gb ?? 999) - (b.min_ram_gb ?? 999)
   },
   {
     slug: 'newest-pc-games',
-    title: 'Newest PC Games',
-    h1: 'Newest PC Game Releases and Their Requirements',
-    blurb: 'The most recent releases in our database, with full minimum and recommended system requirements for each.',
+    title: "Newest PC Games",
+    h1: 'New PC Games and Their System Requirements',
+    blurb: "Recent releases, newest first, each with the publisher's minimum and recommended hardware.",
     icon: 'bi-stars',
     filter: (g) => gte(g.release_year, 2024),
     sort: (a, b) => (b.release_year ?? 0) - (a.release_year ?? 0)
   },
   {
     slug: 'esports-games',
-    title: 'Best Esports Games for Any PC',
-    h1: 'Esports Games and Their PC Requirements',
-    blurb: 'Competitive shooters and MOBAs built to run at high frame rates on modest hardware. Membership is curated: Steam reports one primary genre per title and it is "Action" for most of them, so a genre filter cannot express this list.',
+    title: "Esports Games",
+    h1: 'Esports Games: PC Requirements for Competitive Play',
+    blurb: "Competitive shooters, MOBAs and arena games that aim for high frame rates on ordinary hardware. Chosen by hand, because Steam files most of them under a single Action genre.",
     icon: 'bi-trophy',
     appids: [
       730,      // Counter-Strike 2

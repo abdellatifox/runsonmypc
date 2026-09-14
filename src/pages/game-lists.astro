@@ -2,87 +2,87 @@
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Icon from '../components/Icon.astro';
 import { getReleasedGames } from '../lib/db';
 import { GAME_LISTS } from '../lib/site-data';
-import Icon from '../components/Icon.astro';
 import { SITE_URL, SITE_NAME } from '../lib/site';
+import { SEO_YEAR } from '../lib/year';
 
 const all = await getReleasedGames(Astro.locals);
-const lists = GAME_LISTS.map(l => ({ ...l, count: all.filter(l.filter).length }));
+const lists = GAME_LISTS.map(l => {
+  let members = l.appids ? all.filter(g => g.steam_id != null && l.appids!.includes(g.steam_id)) : all.filter(l.filter);
+  if (l.sort) members = [...members].sort(l.sort);
+  return { ...l, count: members.length, preview: members.slice(0, 3) };
+});
 
-const description = 'Curated PC game lists by hardware requirement — best games for low-end PCs, the most demanding titles, ray tracing and DLSS support, CPU-heavy games and more.';
+const description = `${GAME_LISTS.length} ways into ${all.length} PC games: what runs on weak hardware, what needs a flagship, ray tracing and DLSS titles, CPU-heavy games, 8GB-friendly games and more.`;
 
 const schema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "PC Game Lists",
+  "name": `PC game lists ${SEO_YEAR}`,
   "description": description,
   "url": `${SITE_URL}/game-lists`,
   "mainEntity": {
     "@type": "ItemList",
     "numberOfItems": lists.length,
-    "itemListElement": lists.map((l, i) => ({
-      "@type": "ListItem",
-      "position": i + 1,
-      "url": `${SITE_URL}/game-list/${l.slug}`,
-      "name": l.title
-    }))
+    "itemListElement": lists.map((l, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${SITE_URL}/game-list/${l.slug}`, "name": l.title }))
   }
 };
 ---
-<BaseLayout
-  title={`PC Game Lists by Hardware Requirement | ${SITE_NAME}`}
-  description={description}
-  keywords="pc game lists, best games for low end pc, most demanding pc games, ray tracing games, dlss games"
-  jsonLd={schema}
->
+<BaseLayout title={`PC Game Lists ${SEO_YEAR}: Sorted by What Your Hardware Can Handle | ${SITE_NAME}`} description={description}
+  keywords={`pc game lists ${SEO_YEAR}, low end pc games, most demanding pc games, dlss games list, ray tracing games list`} jsonLd={schema}>
   <div class="wrap">
-    <Breadcrumbs items={[{ name: 'Games', href: '/games' }, { name: 'Game Lists' }]} />
+    <Breadcrumbs items={[{ name: 'Games', href: '/games' }, { name: 'Lists' }]} />
 
-    <header class="page-head">
-      <h1>PC Game Lists</h1>
+    <header class="head">
+      <span class="eyebrow">{lists.length} lists · {all.length} released games</span>
+      <h1>Game lists, sorted by hardware</h1>
       <p class="lede">
-        Games grouped by what they actually ask of your hardware, built from the same
-        requirements database that powers our compatibility checker.
+        Shortcuts through the library. Each list is rebuilt from the requirement data whenever games are added,
+        so the counts below are always current.
       </p>
     </header>
 
-    <div class="list-grid">
+    <ul class="lists">
       {lists.map(l => (
-        <a href={`/game-list/${l.slug}`} class="list-card">
-          <div class="ic"><Icon name={l.icon} /></div>
-          <h2>{l.title}</h2>
-          <p>{l.blurb}</p>
-          <span class="cnt">{l.count} games</span>
-        </a>
+        <li>
+          <a href={`/game-list/${l.slug}`} class="lc">
+            <span class="top">
+              <span class="ic"><Icon name={l.icon} /></span>
+              <span class="cnt mono">{l.count}</span>
+            </span>
+            <h2>{l.title}</h2>
+            <p>{l.blurb}</p>
+            {l.preview.length > 0 && (
+              <span class="pv">Starts with {l.preview.map(g => g.name).join(', ')}</span>
+            )}
+          </a>
+        </li>
       ))}
-    </div>
+    </ul>
 
-    <section class="related">
-      <h2>Related</h2>
+    <nav class="related" aria-label="Next steps">
+      <h2>Keep going</h2>
       <ul>
-        <li><a href="/games">All games</a></li>
-        <li><a href="/can-it-run">Can I Run It?</a></li>
-        <li><a href="/what-can-my-pc-run">What can my PC run?</a></li>
-        <li><a href="/gpu-tier-list">GPU Tier List</a></li>
+        <li><a href="/what-can-my-pc-run">Every game your own PC can run</a></li>
+        <li><a href={`/upcoming-games-${SEO_YEAR}`}>Games due in {SEO_YEAR}</a></li>
+        <li><a href="/games">The full A–Z library</a></li>
       </ul>
-    </section>
+    </nav>
   </div>
 </BaseLayout>
 
 <style>
-  .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-  .list-card {
-    display: block; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius);
-    background: var(--surface); text-decoration: none; color: inherit;
-    transition: transform .25s var(--ease), border-color .25s var(--ease);
-  }
-  .list-card:hover { transform: translateY(-4px); border-color: var(--accent); }
-  .list-card .ic {
-    width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radius);
-    background: rgb(var(--accent-rgb) / .1); color: var(--accent); font-size: 20px; margin-bottom: 16px;
-  }
-  .list-card h2 { font-size: 17px; margin: 0 0 8px; }
-  .list-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
-  .list-card .cnt { color: var(--accent); font-size: 13px; font-weight: 600; }
+  .head { padding: 28px 0 22px; }
+  .head h1 { font-size: clamp(28px, 4.6vw, 42px); margin: 6px 0 12px; }
+  .lists { list-style: none; padding: 0; margin: 0 0 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .lc { display: flex; flex-direction: column; height: 100%; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .lc:hover { border-color: rgb(var(--accent-rgb) / .55); }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .ic { color: var(--accent); font-size: 20px; }
+  .cnt { color: var(--readout); font-size: 20px; font-weight: 600; }
+  .lc h2 { font-size: 17px; margin-bottom: 6px; }
+  .lc p { color: var(--muted); font-size: 14px; line-height: 1.55; flex: 1; }
+  .pv { margin-top: 10px; font-size: 12.5px; color: var(--faint); }
 </style>
