@@ -18,6 +18,20 @@ export const SITE_NAME_PARTS = { bold: 'RunsOn', rest: 'MyPC' } as const;
 
 export const CONTACT_EMAIL = `hello@${SITE_DOMAIN}`;
 
+/**
+ * Ownership tokens for search engines. Paste only the content value of the
+ * meta tag each console gives you (Search Console: "HTML tag"; Bing Webmaster
+ * Tools: "Meta tag"); an empty string renders nothing.
+ */
+export const GOOGLE_SITE_VERIFICATION = '';
+export const BING_SITE_VERIFICATION = '';
+
+/**
+ * IndexNow key (Bing, Yandex, Seznam, Naver). The same value must be served
+ * as /<key>.txt from public/ — scripts/indexnow.mjs checks that before submitting.
+ */
+export const INDEXNOW_KEY = '437540073dff256fee22b0ce139ec9c6';
+
 /** Identifies our fetchers to Steam, SteamSpy and SteamGridDB. */
 export const USER_AGENT = `${SITE_NAME}/1.0 (+${SITE_URL})`;
 

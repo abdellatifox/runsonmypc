@@ -1,7 +1,16 @@
 # HTTPS only, for a year. No includeSubDomains or preload: those commit every
 # future subdomain to HTTPS and are hard to undo.
+# X-Frame-Options: nothing here needs to be framed by another site (clickjacking).
+# Permissions-Policy: the site uses no camera, microphone, location or payment APIs.
 /*
   Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+/*.txt
+  Cache-Control: public, max-age=3600
 
 # Cloudflare Pages default is Cache-Control: max-age=14400 (4h) for everything
 # under public/. Game art, covers and fonts never change once built under a

@@ -20,7 +20,8 @@
     "seo:audit": "node scripts/audit-seo.mjs",
     "cf": "node scripts/cf.mjs",
     "data:blog": "node scripts/build-blog.mjs && node scripts/build-covers.mjs",
-    "check:prelaunch": "node scripts/prelaunch-check.mjs"
+    "check:prelaunch": "node scripts/prelaunch-check.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.0.0",

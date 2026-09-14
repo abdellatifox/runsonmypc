@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar.astro';
 import { getPageCover } from '../lib/images';
 import BrandMark from '../components/BrandMark.astro';
 import IconSprite from '../components/IconSprite.astro';
-import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath } from '../lib/site';
+import { SITE_URL, SITE_NAME, SITE_NAME_PARTS, ART_BASE, publicPath, SITE_DOMAIN, GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION } from '../lib/site';
 import { SEO_YEAR } from '../lib/year';
 
 interface Props {
@@ -85,7 +85,15 @@ const year = new Date().getFullYear();
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  {/* www should 301 to the apex at the edge (a Cloudflare Redirect Rule). Until
+      that rule exists, send visitors on www to the same page on the apex; the
+      canonical tag already tells search engines which host to index. */}
+  <script is:inline define:vars={{ apex: SITE_DOMAIN }}>
+    if (location.hostname === 'www.' + apex) location.replace('https://' + apex + location.pathname + location.search + location.hash);
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {GOOGLE_SITE_VERIFICATION && <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION} />}
+  {BING_SITE_VERIFICATION && <meta name="msvalidate.01" content={BING_SITE_VERIFICATION} />}
   <title>{title}</title>
   <meta name="description" content={description}>
   <meta name="keywords" content={keywords}>
