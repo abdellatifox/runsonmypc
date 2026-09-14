@@ -804,6 +804,12 @@ select:focus, input:focus {
   transition: color .2s var(--ease);
 }
 .foot-cols a:hover { color: var(--text); }
+/* "Cookie settings" reopens the consent banner; styled as a footer link. */
+.foot-consent {
+  display: block; background: none; border: 0; padding: 4px 0; margin: 0;
+  font: inherit; font-size: 14px; color: var(--muted); cursor: pointer; text-align: left;
+}
+.foot-consent:hover { color: var(--text); }
 @media (max-width: 780px) {
   .foot-cols { grid-template-columns: repeat(2, 1fr); gap: 20px; }
 }

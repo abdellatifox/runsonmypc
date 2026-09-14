@@ -48,15 +48,20 @@ const measured = Boolean(GTM_ID);
       {measured ? (
         <>
           <p>
-            We use Google Tag Manager to load Google’s measurement tools, such as Google Analytics. They may set cookies and
+            We use Google Tag Manager to load Google’s measurement tools, such as Google Analytics. If you accept, they may set cookies and
             collect details like the pages you visit, how long you stay, your approximate location, device and browser, so we can
             see which pages and tools are used. We don’t use this for advertising and don’t sell it. Google processes the data
             under <a href="https://policies.google.com/privacy" rel="nofollow noopener" target="_blank">its own privacy policy</a>.
           </p>
           <p>
-            You can block these cookies in your browser settings, or install Google’s
-            <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Analytics opt-out add-on</a>;
-            the site works the same either way. Our own fonts and images are served from this domain.
+            <strong>Nothing is measured with cookies until you say yes.</strong> On your first visit a banner asks; until you
+            accept, Google’s tags run in their cookieless mode. Your answer is remembered in your browser, and you can change it
+            at any time from <em>Cookie settings</em> at the bottom of every page. The site works the same either way.
+          </p>
+          <p>
+            You can also block cookies in your browser settings, or install Google’s
+            <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Analytics opt-out add-on</a>.
+            Our own fonts and images are served from this domain.
           </p>
         </>
       ) : (
